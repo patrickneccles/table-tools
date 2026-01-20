@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { MoodBoard, sampleMoods, Mood } from "@/components/mood-board";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { Wrench } from "lucide-react";
 
 export default function Home() {
   const [currentMood, setCurrentMood] = useState<Mood>(sampleMoods[0]);
@@ -66,18 +68,33 @@ export default function Home() {
               Virtual soundboard for immersive audio
             </p>
           </div>
-          {/* Light/dark toggle - subtle pill button */}
-          <button
-            onClick={toggleTheme}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-              isLightMode
-                ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
-                : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
-            )}
-          >
-            {isLightMode ? "Dark" : "Light"}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Builder link */}
+            <Link
+              href="/builder"
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                isLightMode
+                  ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
+                  : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+              )}
+            >
+              <Wrench className="h-3 w-3" />
+              Builder
+            </Link>
+            {/* Light/dark toggle - subtle pill button */}
+            <button
+              onClick={toggleTheme}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                isLightMode
+                  ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
+                  : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+              )}
+            >
+              {isLightMode ? "Dark" : "Light"}
+            </button>
+          </div>
         </div>
 
         {/* Mood Selector - styled like keyboard profile selector */}
