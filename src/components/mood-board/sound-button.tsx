@@ -12,6 +12,8 @@ type SoundButtonProps = {
   volume: number;
   theme?: MoodTheme;
   isLightMode?: boolean;
+  hotkey?: string;
+  triggerRef?: React.MutableRefObject<(() => void) | null>;
   className?: string;
 };
 
@@ -25,6 +27,8 @@ export function SoundButton({
   volume,
   theme,
   isLightMode = false,
+  hotkey,
+  triggerRef,
   className,
 }: SoundButtonProps) {
   const [isActive, setIsActive] = useState(false);
@@ -168,6 +172,18 @@ export function SoundButton({
     }
   }, [isActive, fade, fadeIn, fadeOut, loop, volume, hasError]);
 
+  // Expose toggle function to parent via ref
+  useEffect(() => {
+    if (triggerRef) {
+      triggerRef.current = toggleSound;
+    }
+    return () => {
+      if (triggerRef) {
+        triggerRef.current = null;
+      }
+    };
+  }, [triggerRef, toggleSound]);
+
   // Keycap-style button with glow effect
   const glowColor = theme?.secondary ?? "#3b82f6";
   const accentColor = theme?.primary ?? "#3b82f6";
@@ -268,6 +284,25 @@ export function SoundButton({
             background: `radial-gradient(ellipse at center, ${glowColor}${isLightMode ? "15" : "20"} 0%, transparent 70%)`,
           }}
         />
+      )}
+
+      {/* Hotkey indicator */}
+      {hotkey && (
+        <span
+          className={cn(
+            "absolute top-1.5 right-1.5 sm:top-2 sm:right-2",
+            "flex items-center justify-center",
+            "w-4 h-4 sm:w-5 sm:h-5 rounded text-[10px] sm:text-xs font-bold uppercase",
+            "transition-all pointer-events-none",
+            isActive
+              ? "bg-white/20 text-white/90"
+              : isLightMode
+                ? "bg-zinc-200/80 text-zinc-400"
+                : "bg-zinc-800/80 text-zinc-500"
+          )}
+        >
+          {hotkey}
+        </span>
       )}
     </button>
   );

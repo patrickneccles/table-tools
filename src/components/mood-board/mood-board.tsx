@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,32 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Mood, MoodTheme } from "./types";
 import { SoundButton } from "./sound-button";
 import { cn } from "@/lib/utils";
+
+// Hotkey mapping: QWER for row 1 (Ambience 1-4), ASDF for row 2 (Ambience 5-8), ZXCV for row 3 (Effects 1-4)
+const HOTKEY_MAP: Record<string, { type: "ambience" | "effect"; index: number }> = {
+  q: { type: "ambience", index: 0 },
+  w: { type: "ambience", index: 1 },
+  e: { type: "ambience", index: 2 },
+  r: { type: "ambience", index: 3 },
+  a: { type: "ambience", index: 4 },
+  s: { type: "ambience", index: 5 },
+  d: { type: "ambience", index: 6 },
+  f: { type: "ambience", index: 7 },
+  z: { type: "effect", index: 0 },
+  x: { type: "effect", index: 1 },
+  c: { type: "effect", index: 2 },
+  v: { type: "effect", index: 3 },
+};
+
+// Get hotkey for a given type and index
+function getHotkey(type: "ambience" | "effect", index: number): string | undefined {
+  for (const [key, mapping] of Object.entries(HOTKEY_MAP)) {
+    if (mapping.type === type && mapping.index === index) {
+      return key;
+    }
+  }
+  return undefined;
+}
 
 const defaultTheme: MoodTheme = {
   primary: "#3b82f6",      // Blue
@@ -30,8 +56,65 @@ export function MoodBoard({ mood, isLightMode = false }: MoodBoardProps) {
   const [volume, setVolume] = useState(75);
   const [fade, setFade] = useState(true);
 
+  // Create stable refs for all possible slots (8 ambience + 4 effects)
+  const ambienceRef0 = useRef<(() => void) | null>(null);
+  const ambienceRef1 = useRef<(() => void) | null>(null);
+  const ambienceRef2 = useRef<(() => void) | null>(null);
+  const ambienceRef3 = useRef<(() => void) | null>(null);
+  const ambienceRef4 = useRef<(() => void) | null>(null);
+  const ambienceRef5 = useRef<(() => void) | null>(null);
+  const ambienceRef6 = useRef<(() => void) | null>(null);
+  const ambienceRef7 = useRef<(() => void) | null>(null);
+  const effectRef0 = useRef<(() => void) | null>(null);
+  const effectRef1 = useRef<(() => void) | null>(null);
+  const effectRef2 = useRef<(() => void) | null>(null);
+  const effectRef3 = useRef<(() => void) | null>(null);
+
+  const ambienceRefs = [
+    ambienceRef0, ambienceRef1, ambienceRef2, ambienceRef3,
+    ambienceRef4, ambienceRef5, ambienceRef6, ambienceRef7,
+  ];
+  const effectRefs = [effectRef0, effectRef1, effectRef2, effectRef3];
+
   const audioVolume = volume / 100;
   const theme = mood.theme ?? defaultTheme;
+
+  // Handle keyboard shortcuts
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Ignore if user is typing in an input, textarea, or contenteditable
+    const target = event.target as HTMLElement;
+    if (
+      target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.isContentEditable
+    ) {
+      return;
+    }
+
+    const key = event.key.toLowerCase();
+    const mapping = HOTKEY_MAP[key];
+
+    if (mapping) {
+      event.preventDefault();
+      
+      if (mapping.type === "ambience") {
+        const trigger = ambienceRefs[mapping.index]?.current;
+        if (trigger) trigger();
+      } else {
+        const trigger = effectRefs[mapping.index]?.current;
+        if (trigger) trigger();
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Refs are stable, arrays are just wrappers
+
+  // Attach keyboard listener
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   return (
     <div className="relative">
@@ -178,7 +261,7 @@ export function MoodBoard({ mood, isLightMode = false }: MoodBoardProps) {
                     )}
                   >
                     <div className="grid grid-cols-4 gap-2 md:gap-4">
-                      {mood.ambience.map((sound) => (
+                      {mood.ambience.map((sound, index) => (
                         <SoundButton
                           key={sound.id}
                           sound={sound}
@@ -187,6 +270,8 @@ export function MoodBoard({ mood, isLightMode = false }: MoodBoardProps) {
                           volume={audioVolume}
                           theme={theme}
                           isLightMode={isLightMode}
+                          hotkey={getHotkey("ambience", index)}
+                          triggerRef={ambienceRefs[index]}
                         />
                       ))}
                     </div>
@@ -213,13 +298,15 @@ export function MoodBoard({ mood, isLightMode = false }: MoodBoardProps) {
                     )}
                   >
                     <div className="grid grid-cols-4 gap-2 md:gap-4">
-                      {mood.effects.map((sound) => (
+                      {mood.effects.map((sound, index) => (
                         <SoundButton
                           key={sound.id}
                           sound={sound}
                           volume={audioVolume}
                           theme={theme}
                           isLightMode={isLightMode}
+                          hotkey={getHotkey("effect", index)}
+                          triggerRef={effectRefs[index]}
                         />
                       ))}
                     </div>
