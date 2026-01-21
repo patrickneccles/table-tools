@@ -5,7 +5,6 @@ import {
   CloudRain,
   Wind,
   Waves,
-  Moon,
   Flame,
   Footprints,
   Zap,
@@ -18,10 +17,7 @@ import {
   DoorOpen,
   Bell,
   Church,
-  Castle,
-  Megaphone,
   Droplets,
-  Rabbit,
   ChessKnight,
 } from "lucide-react";
 
@@ -47,24 +43,23 @@ export const sampleMoods: Mood[] = [
       secondary: "#34d399",    // Bright mint green glow
       primaryForeground: "#ffffff",
     },
+    // 4 ambient loops for layered atmosphere
     ambience: [
       { id: "birds", name: "Birds", audioSrc: "/audio/ambience-woodlands.mp3", icon: Bird },
-      { id: "insects", name: "Insects", audioSrc: "/audio/ambience-woodlands-night.mp3", icon: Bug },
-      { id: "rain", name: "Rain", audioSrc: "/audio/ambience-woodlands-rain.mp3", icon: CloudRain },
-      { id: "wind", name: "Wind", audioSrc: "/audio/ambience-woodlands-wind.mp3", icon: Wind },
       { id: "stream", name: "Stream", audioSrc: "/audio/ambience-woodlands-stream.mp3", icon: Waves },
-      // { id: "river", name: "River", audioSrc: "/audio/ambience-generic-river.mp3", icon: Droplets },
-      // { id: "howls", name: "Howls", audioSrc: "/audio/ambience-woodland-wolves.mp3", icon: Moon },
+      { id: "wind", name: "Wind", audioSrc: "/audio/ambience-woodlands-wind.mp3", icon: Wind },
       { id: "campfire", name: "Campfire", audioSrc: "/audio/ambience-campfire.mp3", icon: Flame },
-      { id: "footsteps", name: "Footsteps", audioSrc: "/audio/ambience-woodlands-footsteps.mp3", icon: Footprints },
-      { id: "gallop", name: "Gallop", audioSrc: "/audio/ambience-generic-gallop.mp3", icon: ChessKnight },
     ],
+    // 8 effects for reactive moments
     effects: [
       { id: "thunder", name: "Thunder", audioSrc: "/audio/thunder.mp3", icon: Zap },
-      { id: "branch-snap", name: "Branches Snapping", audioSrc: "/audio/sfx-branch-snapping.mp3", icon: TreePine },
-      { id: "elephant-roar", name: "Trumpeted Roar", audioSrc: "/audio/sfx-elephant-roar.mp3", icon: Volume2 },
-      // { id: "lion-growl", name: "Deep Growl", audioSrc: "/audio/sfx-lion-growl.mp3", icon: Volume2 },
+      { id: "rain", name: "Rain Burst", audioSrc: "/audio/ambience-woodlands-rain.mp3", icon: CloudRain },
+      { id: "branch-snap", name: "Branches", audioSrc: "/audio/sfx-branch-snapping.mp3", icon: TreePine },
       { id: "wolf-snarl", name: "Snarls", audioSrc: "/audio/sfx-wolf-snarl.mp3", icon: Dog },
+      { id: "elephant-roar", name: "Roar", audioSrc: "/audio/sfx-elephant-roar.mp3", icon: Volume2 },
+      { id: "insects", name: "Insects", audioSrc: "/audio/ambience-woodlands-night.mp3", icon: Bug },
+      { id: "footsteps", name: "Footsteps", audioSrc: "/audio/ambience-woodlands-footsteps.mp3", icon: Footprints },
+      { id: "gallop", name: "Gallop", audioSrc: "/audio/ambience-generic-gallop.mp3", icon: ChessKnight },
     ],
   },
   {
@@ -77,23 +72,23 @@ export const sampleMoods: Mood[] = [
       secondary: "#fbbf24",    // Golden yellow glow
       primaryForeground: "#ffffff",
     },
+    // 4 ambient loops for town atmosphere
     ambience: [
       { id: "market", name: "Market", audioSrc: "/audio/ambience-town-market.mp3", icon: Store },
       { id: "tavern", name: "Tavern", audioSrc: "/audio/pub.mp3", icon: Beer },
       { id: "blacksmith", name: "Blacksmith", audioSrc: "/audio/ambience-town-blacksmith.mp3", icon: Hammer },
       { id: "town-wind", name: "Wind", audioSrc: "/audio/wind-sound-effect.wav", icon: Wind },
-      { id: "town-river", name: "River", audioSrc: "/audio/ambience-generic-river.mp3", icon: Droplets },
-      { id: "town-rain", name: "Rain", audioSrc: "/audio/ambience-woodlands-rain.mp3", icon: CloudRain },
-      { id: "marching", name: "Marching", audioSrc: "/audio/ambience-marching.mp3", icon: Footprints },
-      { id: "town-gallop", name: "Gallop", audioSrc: "/audio/ambience-generic-gallop.mp3", icon: ChessKnight },
     ],
+    // 8 effects for town interactions
     effects: [
       { id: "town-thunder", name: "Thunder", audioSrc: "/audio/thunder.mp3", icon: Zap },
       { id: "door", name: "Door", audioSrc: "/audio/door.mp3", icon: DoorOpen },
       { id: "shop-bell", name: "Shop Bell", audioSrc: "/audio/sfx-shop-bell.mp3", icon: Bell },
       { id: "church-bell", name: "Church Bell", audioSrc: "/audio/sfx-church-bells.mp3", icon: Church },
-      // { id: "drawbridge", name: "Drawbridge", audioSrc: "/audio/sfx-town-drawbridge.mp3", icon: Castle },
-      // { id: "hunting-horn", name: "Hunting Horn", audioSrc: "/audio/sfx-fox-hunt-horn.mp3", icon: Megaphone },
+      { id: "town-rain", name: "Rain", audioSrc: "/audio/ambience-woodlands-rain.mp3", icon: CloudRain },
+      { id: "town-river", name: "River", audioSrc: "/audio/ambience-generic-river.mp3", icon: Droplets },
+      { id: "marching", name: "Marching", audioSrc: "/audio/ambience-marching.mp3", icon: Footprints },
+      { id: "town-gallop", name: "Gallop", audioSrc: "/audio/ambience-generic-gallop.mp3", icon: ChessKnight },
     ],
   },
 ];

@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { SoundDefinition } from "./types";
 import { MoodTheme } from "../types";
 import { X, Plus } from "lucide-react";
+import { audioManager } from "@/lib/audio-manager";
 
 type DroppableSlotProps = {
   id: string;
@@ -14,6 +15,10 @@ type DroppableSlotProps = {
   sound: SoundDefinition | null;
   theme: MoodTheme;
   isLightMode?: boolean;
+  squareEffects?: boolean; // When true, effects use large square buttons
+  rectangularAmbience?: boolean; // When true, ambience uses short rectangular buttons
+  isPreviewMode?: boolean; // When true, clicking plays/stops the sound
+  previewVolume?: number; // Volume for preview playback (0-1)
   onRemove?: () => void;
 };
 
@@ -24,51 +29,108 @@ export function DroppableSlot({
   sound,
   theme,
   isLightMode = false,
+  squareEffects = false,
+  rectangularAmbience = false,
+  isPreviewMode = false,
+  previewVolume = 0.75,
   onRemove,
 }: DroppableSlotProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  
   const { isOver, setNodeRef } = useDroppable({
     id,
     data: { slotType, slotIndex },
+    disabled: isPreviewMode, // Disable dropping when in preview mode
   });
+
+  // Handle click in preview mode
+  const handlePreviewClick = useCallback(async () => {
+    if (!isPreviewMode || !sound) return;
+
+    const playId = `preview-slot-${id}`;
+    const isLoop = slotType === "ambience";
+
+    if (isPlaying) {
+      await audioManager.stop(playId, { fadeOut: true, fadeOutDuration: 0.3 });
+      setIsPlaying(false);
+    } else {
+      const success = await audioManager.play(playId, sound.audioSrc, {
+        volume: previewVolume,
+        loop: isLoop,
+        fadeIn: true,
+        fadeInDuration: 0.2,
+        soundType: slotType === "ambience" ? "ambience" : "effect",
+      });
+      if (success) {
+        setIsPlaying(true);
+        // For non-looping sounds, auto-reset playing state when finished
+        if (!isLoop) {
+          // Estimate duration or use a reasonable timeout
+          setTimeout(() => setIsPlaying(false), 10000);
+        }
+      }
+    }
+  }, [isPreviewMode, sound, isPlaying, id, slotType, previewVolume]);
 
   const Icon = sound?.icon;
   const isAmbience = slotType === "ambience";
+  // Determine layout: square vs rectangular
+  // - Ambience: square by default, rectangular if rectangularAmbience is true
+  // - Effects: rectangular by default, square if squareEffects is true
+  const useSquareLayout = isAmbience ? !rectangularAmbience : squareEffects;
 
   return (
     <div
       ref={setNodeRef}
+      onClick={handlePreviewClick}
       className={cn(
         "relative flex items-center justify-center overflow-hidden",
-        "rounded-xl border-2 border-dashed transition-all duration-200",
+        "rounded-xl border-2 transition-all duration-200",
         "font-medium select-none",
-        // Size variants
-        isAmbience
+        // Size variants - use square layout for ambience OR when squareEffects is enabled
+        useSquareLayout
           ? "aspect-square min-h-16 sm:min-h-20 md:min-h-24 flex-col gap-2 p-3 text-xs sm:text-sm"
           : "h-16 px-4 sm:h-20 sm:px-6 flex-row gap-2 text-xs sm:text-sm",
         // Empty slot styling
         !sound && [
+          "border-dashed",
           isLightMode
             ? "border-zinc-300 bg-zinc-100/50"
             : "border-zinc-700 bg-zinc-900/50",
           isOver && "border-solid",
         ],
-        // Filled slot styling
-        sound && [
-          "border-solid cursor-pointer group",
+        // Filled slot styling - different based on preview mode and playing state
+        sound && !isPreviewMode && [
+          "border-dashed border-solid cursor-pointer group",
           isLightMode
             ? "border-zinc-200 bg-gradient-to-b from-white to-zinc-50 hover:border-zinc-300"
             : "border-zinc-700 bg-gradient-to-b from-zinc-800 to-zinc-900 hover:border-zinc-600",
         ],
-        // Drag over state
-        isOver && "scale-105"
+        // Preview mode - filled slot
+        sound && isPreviewMode && [
+          "border-solid cursor-pointer",
+          isPlaying
+            ? "border-transparent"
+            : isLightMode
+              ? "border-zinc-200 bg-gradient-to-b from-white to-zinc-50 hover:border-zinc-300 active:translate-y-[1px]"
+              : "border-zinc-700 bg-gradient-to-b from-zinc-800 to-zinc-900 hover:border-zinc-600 active:translate-y-[1px]",
+        ],
+        // Drag over state (only when not in preview mode)
+        !isPreviewMode && isOver && "scale-105"
       )}
       style={
-        isOver
+        isOver && !isPreviewMode
           ? {
               borderColor: theme.secondary,
               boxShadow: `0 0 20px ${theme.secondary}40`,
             }
-          : undefined
+          : isPlaying && sound
+            ? {
+                borderColor: theme.secondary,
+                backgroundColor: theme.primary,
+                boxShadow: `0 0 24px ${theme.secondary}60, inset 0 0 20px ${theme.secondary}20`,
+              }
+            : undefined
       }
     >
       {sound ? (
@@ -78,37 +140,51 @@ export function DroppableSlot({
             {Icon && (
               <Icon
                 className={cn(
-                  isAmbience ? "h-6 w-6 sm:h-8 sm:w-8" : "h-4 w-4 sm:h-5 sm:w-5",
-                  isLightMode ? "text-zinc-600" : "text-zinc-400"
+                  useSquareLayout ? "h-6 w-6 sm:h-8 sm:w-8" : "h-4 w-4 sm:h-5 sm:w-5",
+                  isPlaying
+                    ? "text-white drop-shadow-[0_0_8px_currentColor]"
+                    : isLightMode ? "text-zinc-600" : "text-zinc-400"
                 )}
               />
             )}
             <span
               className={cn(
                 "truncate text-center",
-                isLightMode ? "text-zinc-700" : "text-zinc-300"
+                isPlaying
+                  ? "text-white"
+                  : isLightMode ? "text-zinc-700" : "text-zinc-300"
               )}
             >
               {sound.name}
             </span>
           </div>
 
-          {/* Remove button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove?.();
-            }}
-            className={cn(
-              "absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100",
-              "transition-opacity",
-              isLightMode
-                ? "bg-zinc-200 hover:bg-zinc-300 text-zinc-600"
-                : "bg-zinc-700 hover:bg-zinc-600 text-zinc-300"
-            )}
-          >
-            <X className="h-3 w-3" />
-          </button>
+          {/* Pulsing glow indicator when playing */}
+          {isPlaying && (
+            <div
+              className="absolute inset-0 rounded-xl animate-pulse opacity-20"
+              style={{ backgroundColor: theme.secondary }}
+            />
+          )}
+
+          {/* Remove button - hidden in preview mode */}
+          {!isPreviewMode && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove?.();
+              }}
+              className={cn(
+                "absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100",
+                "transition-opacity",
+                isLightMode
+                  ? "bg-zinc-200 hover:bg-zinc-300 text-zinc-600"
+                  : "bg-zinc-700 hover:bg-zinc-600 text-zinc-300"
+              )}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </>
       ) : (
         <>
@@ -125,7 +201,7 @@ export function DroppableSlot({
             className={cn(
               "text-xs",
               isLightMode ? "text-zinc-400" : "text-zinc-600",
-              isAmbience && "absolute bottom-2"
+              useSquareLayout && "absolute bottom-2"
             )}
           >
             {isAmbience ? `Ambience ${slotIndex + 1}` : `Effect ${slotIndex + 1}`}

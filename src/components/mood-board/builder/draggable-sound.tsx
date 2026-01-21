@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@/lib/utils";
 import { SoundDefinition } from "./types";
-import { Check } from "lucide-react";
+import { Check, Play, Square } from "lucide-react";
+import { audioManager } from "@/lib/audio-manager";
 
 type DraggableSoundProps = {
   sound: SoundDefinition;
@@ -17,12 +18,29 @@ export function DraggableSoundItem({
   isLightMode = false,
   isPlaced = false,
 }: DraggableSoundProps) {
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: sound.id,
     data: { sound },
   });
 
   const Icon = sound.icon;
+
+  const handlePreviewClick = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (isPreviewing) {
+      await audioManager.stopPreview(sound.audioSrc);
+      setIsPreviewing(false);
+    } else {
+      setIsPreviewing(true);
+      await audioManager.playPreview(sound.audioSrc, 3);
+      // Auto-reset after preview duration
+      setTimeout(() => setIsPreviewing(false), 3300);
+    }
+  }, [isPreviewing, sound.audioSrc]);
 
   // Don't apply transform - let DragOverlay handle the visual during drag
   // This prevents the side-scrolling issue
@@ -69,6 +87,32 @@ export function DraggableSoundItem({
       >
         {sound.name}
       </span>
+      
+      {/* Preview button - prevent drag events from triggering */}
+      <button
+        onClick={handlePreviewClick}
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        className={cn(
+          "flex-shrink-0 p-1 rounded transition-colors",
+          isPreviewing
+            ? isLightMode
+              ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+              : "bg-blue-900/50 text-blue-400 hover:bg-blue-900"
+            : isLightMode
+              ? "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100"
+              : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-700"
+        )}
+        title={isPreviewing ? "Stop preview" : "Preview sound"}
+      >
+        {isPreviewing ? (
+          <Square className="h-3 w-3" />
+        ) : (
+          <Play className="h-3 w-3" />
+        )}
+      </button>
+
       {isPlaced && (
         <Check
           className={cn(

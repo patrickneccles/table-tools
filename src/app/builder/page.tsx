@@ -1,10 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BoardBuilder } from "@/components/mood-board/builder";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+// Dynamically import BoardBuilder with SSR disabled to prevent hydration errors
+// @dnd-kit generates different aria-describedby IDs on server vs client
+const BoardBuilder = dynamic(
+  () => import("@/components/mood-board/builder").then((mod) => mod.BoardBuilder),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center gap-3 text-zinc-500">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="text-sm">Loading builder...</span>
+        </div>
+      </div>
+    ),
+  }
+);
 
 export default function BuilderPage() {
   const [isLightMode, setIsLightMode] = useState(false);
@@ -32,18 +50,21 @@ export default function BuilderPage() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link
-              href="/"
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors",
                 isLightMode
                   ? "text-zinc-600 hover:text-zinc-800 hover:bg-zinc-200"
                   : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
               )}
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
+              <Link href="/">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Link>
+            </Button>
             <div>
               <h1
                 className={cn(
@@ -63,17 +84,19 @@ export default function BuilderPage() {
               </p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={toggleTheme}
             className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+              "rounded-full text-xs",
               isLightMode
                 ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
                 : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
             )}
           >
             {isLightMode ? "Dark" : "Light"}
-          </button>
+          </Button>
         </div>
 
         {/* Builder */}

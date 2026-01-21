@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Sound, MoodTheme } from "./types";
 import { Loader2 } from "lucide-react";
+import { audioManager, SoundType } from "@/lib/audio-manager";
 
 type SoundButtonProps = {
   sound: Sound;
@@ -14,11 +15,10 @@ type SoundButtonProps = {
   isLightMode?: boolean;
   hotkey?: string;
   triggerRef?: React.MutableRefObject<(() => void) | null>;
+  square?: boolean; // Override: true = square, false = rectangular, undefined = use loop value
+  soundType?: SoundType; // "ambience" or "effect" - determines ducking behavior
   className?: string;
 };
-
-const FADE_RATE = 0.025;
-const FADE_INTERVAL_MS = 50;
 
 export function SoundButton({
   sound,
@@ -29,148 +29,95 @@ export function SoundButton({
   isLightMode = false,
   hotkey,
   triggerRef,
+  square,
+  soundType,
   className,
 }: SoundButtonProps) {
+  // Determine if button should be square: use explicit prop if provided, otherwise use loop value
+  const isSquare = square !== undefined ? square : loop;
+  // Determine sound type: use explicit prop if provided, otherwise infer from loop
+  const effectiveSoundType: SoundType = soundType ?? (loop ? "ambience" : "effect");
+  
   const [isActive, setIsActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const soundIdRef = useRef<string | null>(null);
+  
+  // Generate stable sound ID on mount
+  useEffect(() => {
+    soundIdRef.current = `sound-${sound.id}-${Date.now()}`;
+  }, [sound.id]);
 
   const Icon = sound.icon;
 
-  // Initialize audio element
+  // Preload audio on mount
   useEffect(() => {
-    const audio = new Audio(sound.audioSrc);
-    audio.preload = "metadata";
-    audioRef.current = audio;
-
-    const handleEnded = () => {
-      setIsActive(false);
-    };
-
-    const handleError = () => {
+    audioManager.preload(sound.audioSrc).catch(() => {
       setHasError(true);
-      setIsLoading(false);
-      setIsActive(false);
-    };
-
-    const handleCanPlay = () => {
-      setIsLoading(false);
-      setHasError(false);
-    };
-
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("error", handleError);
-    audio.addEventListener("canplaythrough", handleCanPlay);
-
+    });
+    
+    const currentSoundId = soundIdRef.current;
     return () => {
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("error", handleError);
-      audio.removeEventListener("canplaythrough", handleCanPlay);
-      
-      // Clear any pending fade interval
-      if (fadeIntervalRef.current) {
-        clearInterval(fadeIntervalRef.current);
+      // Stop sound when component unmounts
+      if (currentSoundId) {
+        audioManager.stop(currentSoundId, { fadeOut: false });
       }
-      
-      audio.pause();
-      audio.src = "";
     };
   }, [sound.audioSrc]);
 
-  // Update volume when it changes
+  // Update volume when it changes (only for active sounds)
   useEffect(() => {
-    if (audioRef.current && isActive) {
-      audioRef.current.volume = volume;
+    if (isActive && soundIdRef.current) {
+      audioManager.setVolume(soundIdRef.current, volume);
     }
   }, [volume, isActive]);
-
-  const fadeOut = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    fadeIntervalRef.current = setInterval(() => {
-      if (audio.volume <= FADE_RATE) {
-        if (fadeIntervalRef.current) {
-          clearInterval(fadeIntervalRef.current);
-          fadeIntervalRef.current = null;
-        }
-        audio.pause();
-        audio.currentTime = 0;
-        audio.volume = volume;
-        setIsActive(false);
-      } else {
-        audio.volume = Math.max(0, audio.volume - FADE_RATE);
-      }
-    }, FADE_INTERVAL_MS);
-  }, [volume]);
-
-  const fadeIn = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    audio.volume = 0;
-    audio.loop = loop;
+  
+  // Poll for playback status (to detect when non-looping sounds end)
+  useEffect(() => {
+    if (!isActive || !soundIdRef.current) return;
     
-    setIsLoading(true);
-    audio.play().then(() => {
-      setIsLoading(false);
-      
-      fadeIntervalRef.current = setInterval(() => {
-        if (audio.volume >= volume - FADE_RATE) {
-          if (fadeIntervalRef.current) {
-            clearInterval(fadeIntervalRef.current);
-            fadeIntervalRef.current = null;
-          }
-          audio.volume = volume;
-        } else {
-          audio.volume = Math.min(1, audio.volume + FADE_RATE);
-        }
-      }, FADE_INTERVAL_MS);
-    }).catch(() => {
-      setHasError(true);
-      setIsLoading(false);
-      setIsActive(false);
-    });
-  }, [loop, volume]);
+    const currentSoundId = soundIdRef.current;
+    const checkStatus = setInterval(() => {
+      if (!audioManager.isPlaying(currentSoundId)) {
+        setIsActive(false);
+      }
+    }, 100);
+    
+    return () => clearInterval(checkStatus);
+  }, [isActive]);
 
-  const toggleSound = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || hasError) return;
+  const toggleSound = useCallback(async () => {
+    if (hasError || !soundIdRef.current) return;
 
-    // Clear any existing fade interval
-    if (fadeIntervalRef.current) {
-      clearInterval(fadeIntervalRef.current);
-      fadeIntervalRef.current = null;
-    }
+    const currentSoundId = soundIdRef.current;
 
     if (isActive) {
-      if (fade) {
-        fadeOut();
-      } else {
-        audio.pause();
-        audio.currentTime = 0;
-        setIsActive(false);
-      }
+      // Stop the sound
+      await audioManager.stop(currentSoundId, { 
+        fadeOut: fade, 
+        fadeOutDuration: 0.5 
+      });
+      setIsActive(false);
     } else {
-      setIsActive(true);
-      if (fade) {
-        fadeIn();
+      // Start the sound
+      setIsLoading(true);
+      const success = await audioManager.play(currentSoundId, sound.audioSrc, {
+        volume,
+        loop,
+        fadeIn: fade,
+        fadeInDuration: 0.5,
+        soundType: effectiveSoundType,
+      });
+      
+      setIsLoading(false);
+      
+      if (success) {
+        setIsActive(true);
       } else {
-        audio.volume = volume;
-        audio.loop = loop;
-        setIsLoading(true);
-        audio.play().then(() => {
-          setIsLoading(false);
-        }).catch(() => {
-          setHasError(true);
-          setIsLoading(false);
-          setIsActive(false);
-        });
+        setHasError(true);
       }
     }
-  }, [isActive, fade, fadeIn, fadeOut, loop, volume, hasError]);
+  }, [isActive, fade, loop, volume, hasError, sound.audioSrc, effectiveSoundType]);
 
   // Expose toggle function to parent via ref
   useEffect(() => {
@@ -211,8 +158,8 @@ export function SoundButton({
         "relative flex items-center justify-center overflow-hidden",
         "rounded-xl border-2 transition-all duration-200",
         "font-medium select-none cursor-pointer",
-        // Size variants
-        loop
+        // Size variants - use isSquare to determine layout
+        isSquare
           ? "aspect-square min-h-16 sm:min-h-20 md:min-h-24 flex-col gap-2 p-3 text-xs sm:text-sm"
           : "h-16 px-4 sm:h-20 sm:px-6 flex-row gap-2 text-xs sm:text-sm",
         // Inactive state - light mode
@@ -262,18 +209,18 @@ export function SoundButton({
           <Loader2
             className={cn(
               "animate-spin",
-              loop ? "h-8 w-8 sm:h-10 sm:w-10" : "h-4 w-4 sm:h-5 sm:w-5"
+              isSquare ? "h-8 w-8 sm:h-10 sm:w-10" : "h-4 w-4 sm:h-5 sm:w-5"
             )}
           />
         ) : Icon ? (
           <Icon
             className={cn(
-              loop ? "h-8 w-8 sm:h-10 sm:w-10" : "h-4 w-4 sm:h-5 sm:w-5",
+              isSquare ? "h-8 w-8 sm:h-10 sm:w-10" : "h-4 w-4 sm:h-5 sm:w-5",
               isActive && "drop-shadow-[0_0_8px_currentColor]"
             )}
           />
         ) : null}
-        <span className={cn("truncate", loop && "max-w-full")}>{sound.name}</span>
+        <span className={cn("truncate", isSquare && "max-w-full")}>{sound.name}</span>
       </span>
 
       {/* RGB glow indicator for active state */}
