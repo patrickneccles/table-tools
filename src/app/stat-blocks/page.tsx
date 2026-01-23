@@ -1,59 +1,98 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { StatBlockView, defaultStatBlock } from "@/components/stat-block";
-import type { StatBlockData } from "@/components/stat-block";
-import { ArrowLeft, Printer, Plus, Trash2, Scroll } from "lucide-react";
+import { ArrowLeft, Printer, Scroll } from "lucide-react";
+import {
+  StatBlockView,
+  TraitEditor,
+  EditorCard,
+  TextInput,
+  NumberInput,
+  defaultStatBlock,
+  ABILITY_KEYS,
+  TRAIT_SECTION_KEYS,
+} from "@/components/stat-block";
+import type { StatBlockData, TraitSectionKey, AbilityKey } from "@/components/stat-block";
 
-export default function StatBlocksPage() {
-  const [statBlock, setStatBlock] = useState<StatBlockData>(defaultStatBlock);
+// ============================================================================
+// Custom Hooks
+// ============================================================================
 
-  const updateField = <K extends keyof StatBlockData>(
+function useStatBlockEditor(initialData: StatBlockData) {
+  const [statBlock, setStatBlock] = useState<StatBlockData>(initialData);
+
+  const updateField = useCallback(<K extends keyof StatBlockData>(
     field: K,
     value: StatBlockData[K]
   ) => {
     setStatBlock((prev) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const updateAbility = (ability: keyof StatBlockData["abilities"], value: number) => {
+  const updateAbility = useCallback((ability: AbilityKey, value: number) => {
     setStatBlock((prev) => ({
       ...prev,
       abilities: { ...prev.abilities, [ability]: value },
     }));
-  };
+  }, []);
 
-  const addTrait = (section: "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions") => {
-    const current = statBlock[section] || [];
-    updateField(section, [...current, { name: "New Entry", description: "Description here..." }]);
-  };
+  const addTrait = useCallback((section: TraitSectionKey) => {
+    setStatBlock((prev) => ({
+      ...prev,
+      [section]: [...(prev[section] || []), { name: "New Entry", description: "Description here..." }],
+    }));
+  }, []);
 
-  const updateTrait = (
-    section: "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions",
+  const updateTrait = useCallback((
+    section: TraitSectionKey,
     index: number,
     field: "name" | "description",
     value: string
   ) => {
-    const current = [...(statBlock[section] || [])];
-    current[index] = { ...current[index], [field]: value };
-    updateField(section, current);
-  };
+    setStatBlock((prev) => {
+      const current = [...(prev[section] || [])];
+      current[index] = { ...current[index], [field]: value };
+      return { ...prev, [section]: current };
+    });
+  }, []);
 
-  const removeTrait = (
-    section: "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions",
-    index: number
-  ) => {
-    const current = [...(statBlock[section] || [])];
-    current.splice(index, 1);
-    updateField(section, current);
+  const removeTrait = useCallback((section: TraitSectionKey, index: number) => {
+    setStatBlock((prev) => {
+      const current = [...(prev[section] || [])];
+      current.splice(index, 1);
+      return { ...prev, [section]: current };
+    });
+  }, []);
+
+  return {
+    statBlock,
+    updateField,
+    updateAbility,
+    addTrait,
+    updateTrait,
+    removeTrait,
   };
+}
+
+// ============================================================================
+// Page Component
+// ============================================================================
+
+export default function StatBlocksPage() {
+  const {
+    statBlock,
+    updateField,
+    updateAbility,
+    addTrait,
+    updateTrait,
+    removeTrait,
+  } = useStatBlockEditor(defaultStatBlock);
 
   const handlePrint = () => {
     window.print();
@@ -93,124 +132,90 @@ export default function StatBlocksPage() {
           <div className="flex-1 print:hidden">
             <ScrollArea className="h-[calc(100vh-140px)] pr-4">
               <div className="space-y-4">
-              {/* Basic Info */}
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-medium text-zinc-200">Basic Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                {/* Basic Info */}
+                <EditorCard title="Basic Information">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <Label htmlFor="name" className="text-zinc-400 text-xs">Name</Label>
-                      <Input
-                        id="name"
-                        value={statBlock.name}
-                        onChange={(e) => updateField("name", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="size" className="text-zinc-400 text-xs">Size</Label>
-                      <Input
-                        id="size"
-                        value={statBlock.size}
-                        onChange={(e) => updateField("size", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="type" className="text-zinc-400 text-xs">Type</Label>
-                      <Input
-                        id="type"
-                        value={statBlock.type}
-                        onChange={(e) => updateField("type", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="alignment" className="text-zinc-400 text-xs">Alignment</Label>
-                      <Input
-                        id="alignment"
-                        value={statBlock.alignment}
-                        onChange={(e) => updateField("alignment", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
+                    <TextInput
+                      id="name"
+                      label="Name"
+                      value={statBlock.name}
+                      onChange={(v) => updateField("name", v)}
+                      className="col-span-2"
+                    />
+                    <TextInput
+                      id="size"
+                      label="Size"
+                      value={statBlock.size}
+                      onChange={(v) => updateField("size", v)}
+                    />
+                    <TextInput
+                      id="type"
+                      label="Type"
+                      value={statBlock.type}
+                      onChange={(v) => updateField("type", v)}
+                    />
+                    <TextInput
+                      id="alignment"
+                      label="Alignment"
+                      value={statBlock.alignment}
+                      onChange={(v) => updateField("alignment", v)}
+                      className="col-span-2"
+                    />
                   </div>
-                </CardContent>
-              </Card>
+                </EditorCard>
 
-              {/* Combat Stats */}
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-medium text-zinc-200">Combat Statistics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                {/* Combat Stats */}
+                <EditorCard title="Combat Statistics">
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="ac" className="text-zinc-400 text-xs">Armor Class</Label>
-                      <Input
-                        id="ac"
-                        type="number"
-                        value={statBlock.armorClass}
-                        onChange={(e) => updateField("armorClass", parseInt(e.target.value) || 0)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="acType" className="text-zinc-400 text-xs">AC Type</Label>
-                      <Input
-                        id="acType"
-                        value={statBlock.armorType || ""}
-                        onChange={(e) => updateField("armorType", e.target.value)}
-                        placeholder="e.g., natural armor"
-                        className="bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-600"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="hp" className="text-zinc-400 text-xs">Hit Points</Label>
-                      <Input
-                        id="hp"
-                        type="number"
-                        value={statBlock.hitPoints}
-                        onChange={(e) => updateField("hitPoints", parseInt(e.target.value) || 0)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="hitDice" className="text-zinc-400 text-xs">Hit Dice</Label>
-                      <Input
-                        id="hitDice"
-                        value={statBlock.hitDice}
-                        onChange={(e) => updateField("hitDice", e.target.value)}
-                        placeholder="e.g., 4d8 + 4"
-                        className="bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-600"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="speed" className="text-zinc-400 text-xs">Speed</Label>
-                      <Input
-                        id="speed"
-                        value={statBlock.speed}
-                        onChange={(e) => updateField("speed", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
+                    <NumberInput
+                      id="ac"
+                      label="Armor Class"
+                      value={statBlock.armorClass}
+                      onChange={(v) => updateField("armorClass", v ?? 10)}
+                    />
+                    <TextInput
+                      id="acType"
+                      label="AC Type"
+                      value={statBlock.armorType || ""}
+                      onChange={(v) => updateField("armorType", v || undefined)}
+                      placeholder="e.g., natural armor"
+                    />
+                    <NumberInput
+                      id="hp"
+                      label="Hit Points"
+                      value={statBlock.hitPoints}
+                      onChange={(v) => updateField("hitPoints", v ?? 1)}
+                    />
+                    <TextInput
+                      id="hitDice"
+                      label="Hit Dice"
+                      value={statBlock.hitDice}
+                      onChange={(v) => updateField("hitDice", v)}
+                      placeholder="e.g., 4d8 + 4"
+                    />
+                    <TextInput
+                      id="speed"
+                      label="Speed"
+                      value={statBlock.speed}
+                      onChange={(v) => updateField("speed", v)}
+                      className="col-span-2"
+                    />
                   </div>
-                </CardContent>
-              </Card>
+                </EditorCard>
 
-              {/* Ability Scores */}
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-medium text-zinc-200">Ability Scores</CardTitle>
-                </CardHeader>
-                <CardContent>
+                {/* Ability Scores */}
+                <EditorCard title="Ability Scores">
                   <div className="grid grid-cols-6 gap-2">
-                    {(["str", "dex", "con", "int", "wis", "cha"] as const).map((ability) => (
+                    {ABILITY_KEYS.map((ability) => (
                       <div key={ability} className="text-center">
-                        <Label className="text-[10px] uppercase text-zinc-500 font-semibold">{ability}</Label>
+                        <Label 
+                          htmlFor={`ability-${ability}`}
+                          className="text-[10px] uppercase text-zinc-500 font-semibold"
+                        >
+                          {ability}
+                        </Label>
                         <Input
+                          id={`ability-${ability}`}
                           type="number"
                           min={1}
                           max={30}
@@ -221,148 +226,78 @@ export default function StatBlocksPage() {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </EditorCard>
 
-              {/* Proficiencies & Senses */}
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-medium text-zinc-200">Proficiencies & Senses</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <Label htmlFor="saves" className="text-zinc-400 text-xs">Saving Throws</Label>
-                    <Input
-                      id="saves"
-                      value={statBlock.savingThrows?.join(", ") || ""}
-                      onChange={(e) => updateField("savingThrows", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-                      placeholder="e.g., Int +5, Wis +4"
-                      className="bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-600"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="skills" className="text-zinc-400 text-xs">Skills</Label>
-                    <Input
-                      id="skills"
-                      value={statBlock.skills?.join(", ") || ""}
-                      onChange={(e) => updateField("skills", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-                      placeholder="e.g., Arcana +5, Stealth +3"
-                      className="bg-zinc-800/50 border-zinc-700 text-white placeholder:text-zinc-600"
-                    />
-                  </div>
+                {/* Proficiencies & Senses */}
+                <EditorCard title="Proficiencies & Senses">
+                  <TextInput
+                    id="saves"
+                    label="Saving Throws"
+                    value={statBlock.savingThrows?.join(", ") || ""}
+                    onChange={(v) => updateField("savingThrows", v.split(",").map(s => s.trim()).filter(Boolean))}
+                    placeholder="e.g., Int +5, Wis +4"
+                  />
+                  <TextInput
+                    id="skills"
+                    label="Skills"
+                    value={statBlock.skills?.join(", ") || ""}
+                    onChange={(v) => updateField("skills", v.split(",").map(s => s.trim()).filter(Boolean))}
+                    placeholder="e.g., Arcana +5, Stealth +3"
+                  />
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="senses" className="text-zinc-400 text-xs">Senses</Label>
-                      <Input
-                        id="senses"
-                        value={statBlock.senses || ""}
-                        onChange={(e) => updateField("senses", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="languages" className="text-zinc-400 text-xs">Languages</Label>
-                      <Input
-                        id="languages"
-                        value={statBlock.languages || ""}
-                        onChange={(e) => updateField("languages", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
+                    <TextInput
+                      id="senses"
+                      label="Senses"
+                      value={statBlock.senses || ""}
+                      onChange={(v) => updateField("senses", v || undefined)}
+                    />
+                    <TextInput
+                      id="languages"
+                      label="Languages"
+                      value={statBlock.languages || ""}
+                      onChange={(v) => updateField("languages", v || undefined)}
+                    />
                   </div>
                   <Separator className="bg-zinc-800" />
                   <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="cr" className="text-zinc-400 text-xs">Challenge Rating</Label>
-                      <Input
-                        id="cr"
-                        value={statBlock.challengeRating}
-                        onChange={(e) => updateField("challengeRating", e.target.value)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="xp" className="text-zinc-400 text-xs">Experience Points</Label>
-                      <Input
-                        id="xp"
-                        type="number"
-                        value={statBlock.experiencePoints || ""}
-                        onChange={(e) => updateField("experiencePoints", parseInt(e.target.value) || undefined)}
-                        className="bg-zinc-800/50 border-zinc-700 text-white"
-                      />
-                    </div>
+                    <TextInput
+                      id="cr"
+                      label="Challenge Rating"
+                      value={statBlock.challengeRating}
+                      onChange={(v) => updateField("challengeRating", v)}
+                    />
+                    <NumberInput
+                      id="xp"
+                      label="Experience Points"
+                      value={statBlock.experiencePoints}
+                      onChange={(v) => updateField("experiencePoints", v)}
+                    />
                   </div>
-                </CardContent>
-              </Card>
+                </EditorCard>
 
-              {/* Traits/Actions Editor */}
-              {(["traits", "actions", "bonusActions", "reactions", "legendaryActions"] as const).map((section) => (
-                <Card key={section} className="bg-zinc-900/50 border-zinc-800">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-medium text-zinc-200 capitalize">
-                        {section.replace(/([A-Z])/g, " $1").trim()}
-                      </CardTitle>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => addTrait(section)}
-                        className="h-7 text-xs text-zinc-400 hover:text-white hover:bg-zinc-800"
-                      >
-                        <Plus className="h-3 w-3 mr-1" /> Add
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  {(statBlock[section]?.length ?? 0) > 0 && (
-                    <CardContent className="space-y-3 pt-0">
-                      {(statBlock[section] || []).map((item, index) => (
-                        <div key={index} className="rounded-lg bg-zinc-800/30 border border-zinc-700/50 p-3 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={item.name}
-                              onChange={(e) => updateTrait(section, index, "name", e.target.value)}
-                              placeholder="Name"
-                              className="flex-1 h-8 bg-zinc-800/50 border-zinc-700 text-white text-sm"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeTrait(section, index)}
-                              className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                          <Textarea
-                            value={item.description}
-                            onChange={(e) => updateTrait(section, index, "description", e.target.value)}
-                            placeholder="Description"
-                            rows={2}
-                            className="bg-zinc-800/50 border-zinc-700 text-white text-sm resize-none"
-                          />
-                        </div>
-                      ))}
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
+                {/* Trait Sections */}
+                {TRAIT_SECTION_KEYS.map((section) => (
+                  <TraitEditor
+                    key={section}
+                    section={section}
+                    entries={statBlock[section]}
+                    onAdd={() => addTrait(section)}
+                    onUpdate={(index, field, value) => updateTrait(section, index, field, value)}
+                    onRemove={(index) => removeTrait(section, index)}
+                  />
+                ))}
 
-              {/* Description/Lore */}
-              <Card className="bg-zinc-900/50 border-zinc-800">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-medium text-zinc-200">Description / Lore</CardTitle>
-                </CardHeader>
-                <CardContent>
+                {/* Description/Lore */}
+                <EditorCard title="Description / Lore">
                   <Textarea
                     value={statBlock.description || ""}
-                    onChange={(e) => updateField("description", e.target.value)}
+                    onChange={(e) => updateField("description", e.target.value || undefined)}
                     placeholder="Background information, lore, or notes about this creature..."
                     rows={4}
                     className="bg-zinc-800/50 border-zinc-700 text-white resize-none placeholder:text-zinc-600"
                   />
-                </CardContent>
-              </Card>
-            </div>
+                </EditorCard>
+              </div>
             </ScrollArea>
           </div>
 

@@ -1,8 +1,38 @@
-export type AbilityScore = {
+/** The six D&D ability score keys */
+export type AbilityKey = "str" | "dex" | "con" | "int" | "wis" | "cha";
+
+/** Ability scores mapped by key */
+export type AbilityScores = Record<AbilityKey, number>;
+
+/** A trait/action entry with name and description */
+export type TraitEntry = {
   name: string;
-  value: number;
-  modifier: number;
+  description: string;
 };
+
+/** Keys for sections that contain trait entries */
+export type TraitSectionKey = "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions";
+
+/** Display names for trait sections */
+export const TRAIT_SECTION_LABELS: Record<TraitSectionKey, string> = {
+  traits: "Traits",
+  actions: "Actions",
+  bonusActions: "Bonus Actions",
+  reactions: "Reactions",
+  legendaryActions: "Legendary Actions",
+};
+
+/** Ordered list of ability keys for consistent rendering */
+export const ABILITY_KEYS: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
+
+/** All trait section keys for iteration */
+export const TRAIT_SECTION_KEYS: TraitSectionKey[] = [
+  "traits",
+  "actions",
+  "bonusActions",
+  "reactions",
+  "legendaryActions",
+];
 
 export type StatBlockData = {
   // Basic Info
@@ -19,14 +49,7 @@ export type StatBlockData = {
   speed: string;
   
   // Ability Scores
-  abilities: {
-    str: number;
-    dex: number;
-    con: number;
-    int: number;
-    wis: number;
-    cha: number;
-  };
+  abilities: AbilityScores;
   
   // Proficiencies
   savingThrows?: string[];
@@ -46,11 +69,11 @@ export type StatBlockData = {
   experiencePoints?: number;
   
   // Traits & Abilities
-  traits?: { name: string; description: string }[];
-  actions?: { name: string; description: string }[];
-  bonusActions?: { name: string; description: string }[];
-  reactions?: { name: string; description: string }[];
-  legendaryActions?: { name: string; description: string }[];
+  traits?: TraitEntry[];
+  actions?: TraitEntry[];
+  bonusActions?: TraitEntry[];
+  reactions?: TraitEntry[];
+  legendaryActions?: TraitEntry[];
   
   // Lore
   description?: string;
