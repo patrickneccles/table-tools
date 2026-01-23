@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Printer, Scroll } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Home, Printer, Scroll, FileText, Calculator, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   StatBlockView,
   TraitEditor,
@@ -18,8 +20,14 @@ import {
   defaultStatBlock,
   ABILITY_KEYS,
   TRAIT_SECTION_KEYS,
+  STAT_BLOCK_TEMPLATES,
+  getXPForCR,
+  calculateAverageHP,
+  calculateModifier,
+  saveStatBlockToStorage,
+  loadStatBlockFromStorage,
 } from "@/components/stat-block";
-import type { StatBlockData, TraitSectionKey, AbilityKey } from "@/components/stat-block";
+import type { StatBlockData, TraitSectionKey, AbilityKey, StatBlockTemplate } from "@/components/stat-block";
 
 // ============================================================================
 // Custom Hooks
@@ -27,6 +35,43 @@ import type { StatBlockData, TraitSectionKey, AbilityKey } from "@/components/st
 
 function useStatBlockEditor(initialData: StatBlockData) {
   const [statBlock, setStatBlock] = useState<StatBlockData>(initialData);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialMount = useRef(true);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = loadStatBlockFromStorage();
+    if (saved) {
+      setStatBlock(saved);
+    }
+    isInitialMount.current = false;
+  }, []);
+
+  // Auto-save to localStorage with debounce
+  useEffect(() => {
+    if (isInitialMount.current) return;
+    
+    setSaveStatus("saving");
+    
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      saveStatBlockToStorage(statBlock);
+      setSaveStatus("saved");
+      
+      // Reset status after a delay
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }, 500);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [statBlock]);
 
   const updateField = useCallback(<K extends keyof StatBlockData>(
     field: K,
@@ -70,14 +115,130 @@ function useStatBlockEditor(initialData: StatBlockData) {
     });
   }, []);
 
+  const loadTemplate = useCallback((template: StatBlockTemplate) => {
+    setStatBlock({ ...template.data });
+  }, []);
+
+  const resetToDefault = useCallback(() => {
+    setStatBlock({ ...defaultStatBlock });
+  }, []);
+
   return {
     statBlock,
+    saveStatus,
     updateField,
     updateAbility,
     addTrait,
     updateTrait,
     removeTrait,
+    loadTemplate,
+    resetToDefault,
+    setStatBlock,
   };
+}
+
+// ============================================================================
+// Template Selector Component
+// ============================================================================
+
+function TemplateSelector({ onSelect, isLightMode }: { onSelect: (template: StatBlockTemplate) => void; isLightMode: boolean }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="outline" 
+          className={cn(
+            isLightMode
+              ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800"
+              : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+          )}
+        >
+          <FileText className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Templates</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent 
+        className={cn(
+          "w-80 p-0",
+          isLightMode
+            ? "bg-white border-zinc-200"
+            : "bg-zinc-900 border-zinc-700"
+        )} 
+        align="start"
+      >
+        <div className={cn(
+          "p-3 border-b",
+          isLightMode ? "border-zinc-200" : "border-zinc-800"
+        )}>
+          <h3 className={cn(
+            "font-medium text-sm",
+            isLightMode ? "text-zinc-800" : "text-white"
+          )}>Choose a Template</h3>
+          <p className="text-xs text-zinc-500 mt-1">Start with a pre-built creature or blank slate</p>
+        </div>
+        <div className="p-2">
+          {STAT_BLOCK_TEMPLATES.map((template) => (
+            <button
+              key={template.id}
+              onClick={() => {
+                onSelect(template);
+                setOpen(false);
+              }}
+              className={cn(
+                "w-full text-left px-2 py-2 rounded-md transition-colors",
+                isLightMode ? "hover:bg-zinc-100" : "hover:bg-zinc-800"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-sm font-medium",
+                  isLightMode ? "text-zinc-700" : "text-zinc-200"
+                )}>{template.name}</span>
+                {template.isSRD && (
+                  <span className={cn(
+                    "text-[10px] font-medium px-1.5 py-0.5 rounded border",
+                    isLightMode
+                      ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                      : "bg-emerald-900/50 text-emerald-400 border-emerald-800/50"
+                  )}>
+                    SRD
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-zinc-500">{template.description}</div>
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ============================================================================
+// Save Status Indicator
+// ============================================================================
+
+function SaveStatusIndicator({ status }: { status: "idle" | "saving" | "saved" }) {
+  if (status === "idle") return null;
+  
+  return (
+    <div className="flex items-center gap-1.5 text-xs">
+      {status === "saving" && (
+        <>
+          <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-zinc-500">Saving...</span>
+        </>
+      )}
+      {status === "saved" && (
+        <>
+          <Check className="h-3 w-3 text-emerald-500" />
+          <span className="text-zinc-500">Saved</span>
+        </>
+      )}
+    </div>
+  );
 }
 
 // ============================================================================
@@ -87,42 +248,116 @@ function useStatBlockEditor(initialData: StatBlockData) {
 export default function StatBlocksPage() {
   const {
     statBlock,
+    saveStatus,
     updateField,
     updateAbility,
     addTrait,
     updateTrait,
     removeTrait,
+    loadTemplate,
   } = useStatBlockEditor(defaultStatBlock);
+
+  const [isLightMode, setIsLightMode] = useState(false);
+
+  // Check for existing light mode preference on mount and listen for changes
+  useEffect(() => {
+    const isLight = document.documentElement.classList.contains("light");
+    setIsLightMode(isLight);
+    
+    // Listen for theme changes from global toggle
+    const observer = new MutationObserver(() => {
+      setIsLightMode(document.documentElement.classList.contains("light"));
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    
+    return () => observer.disconnect();
+  }, []);
 
   const handlePrint = () => {
     window.print();
   };
 
+  // Auto-calculate XP when CR changes
+  const handleCRChange = (cr: string) => {
+    updateField("challengeRating", cr);
+    const xp = getXPForCR(cr);
+    if (xp !== undefined) {
+      updateField("experiencePoints", xp);
+    }
+  };
+
+  // Calculate HP from hit dice
+  const handleCalculateHP = () => {
+    const hp = calculateAverageHP(statBlock.hitDice);
+    if (hp !== null) {
+      updateField("hitPoints", hp);
+    }
+  };
+
+  // Check if HP matches calculated value
+  const calculatedHP = calculateAverageHP(statBlock.hitDice);
+  const hpMatchesCalculation = calculatedHP !== null && calculatedHP === statBlock.hitPoints;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-zinc-900 to-zinc-950 print:bg-white print:min-h-0">
+    <div className={cn(
+      "transition-colors duration-300 print:bg-white",
+      isLightMode 
+        ? "bg-gradient-to-b from-zinc-50 to-zinc-100" 
+        : "bg-gradient-to-b from-zinc-900 to-zinc-950"
+    )}>
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-50 print:hidden">
+      <header className={cn(
+        "border-b backdrop-blur-sm sticky top-0 z-50 print:hidden transition-colors",
+        isLightMode
+          ? "border-zinc-200 bg-white/80"
+          : "border-zinc-800 bg-zinc-900/80"
+      )}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white hover:bg-zinc-800">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-900/20 text-amber-500">
-                <Scroll className="h-5 w-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">Stat Block Generator</h1>
-                <p className="text-zinc-500 text-sm">Create D&D 5e stat blocks</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "p-2 rounded-lg",
+              isLightMode ? "bg-amber-100 text-amber-600" : "bg-amber-900/20 text-amber-500"
+            )}>
+              <Scroll className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className={cn(
+                "text-xl font-bold transition-colors",
+                isLightMode ? "text-zinc-800" : "text-white"
+              )}>Stat Block Generator</h1>
+              <p className="text-zinc-500 text-sm">Create D&D 5e stat blocks</p>
             </div>
           </div>
-          <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-500 text-white">
-            <Printer className="h-4 w-4 mr-2" />
-            Print / Save PDF
-          </Button>
+          <div className="flex items-center gap-3">
+            {/* Home link */}
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className={cn(
+                "rounded-full text-xs",
+                isLightMode
+                  ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
+                  : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+              )}
+            >
+              <Link href="/">
+                <Home className="h-3 w-3" />
+                <span className="hidden sm:inline ml-1">Home</span>
+              </Link>
+            </Button>
+            <SaveStatusIndicator status={saveStatus} />
+            <TemplateSelector onSelect={loadTemplate} isLightMode={isLightMode} />
+            <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-500 text-white">
+              <Printer className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Print / Save PDF</span>
+              <span className="sm:hidden">Print</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -180,12 +415,33 @@ export default function StatBlocksPage() {
                       onChange={(v) => updateField("armorType", v || undefined)}
                       placeholder="e.g., natural armor"
                     />
-                    <NumberInput
-                      id="hp"
-                      label="Hit Points"
-                      value={statBlock.hitPoints}
-                      onChange={(v) => updateField("hitPoints", v ?? 1)}
-                    />
+                    <div>
+                      <Label htmlFor="hp" className="text-zinc-400 text-xs">Hit Points</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="hp"
+                          type="number"
+                          value={statBlock.hitPoints}
+                          onChange={(e) => updateField("hitPoints", parseInt(e.target.value) || 1)}
+                          className="bg-zinc-800/50 border-zinc-700 text-white flex-1"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleCalculateHP}
+                          disabled={!statBlock.hitDice}
+                          title={calculatedHP !== null ? `Calculate from dice: ${calculatedHP}` : "Enter hit dice first"}
+                          className={`h-9 w-9 ${hpMatchesCalculation ? 'text-emerald-500' : 'text-zinc-400 hover:text-white'}`}
+                        >
+                          <Calculator className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {calculatedHP !== null && !hpMatchesCalculation && (
+                        <p className="text-xs text-amber-500 mt-1">
+                          Calculated: {calculatedHP}
+                        </p>
+                      )}
+                    </div>
                     <TextInput
                       id="hitDice"
                       label="Hit Dice"
@@ -223,6 +479,10 @@ export default function StatBlocksPage() {
                           onChange={(e) => updateAbility(ability, parseInt(e.target.value) || 10)}
                           className="text-center bg-zinc-800/50 border-zinc-700 text-white h-9"
                         />
+                        <div className="text-[10px] text-zinc-500 mt-0.5">
+                          {calculateModifier(statBlock.abilities[ability]) >= 0 ? "+" : ""}
+                          {calculateModifier(statBlock.abilities[ability])}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -260,18 +520,32 @@ export default function StatBlocksPage() {
                   </div>
                   <Separator className="bg-zinc-800" />
                   <div className="grid grid-cols-2 gap-3">
-                    <TextInput
-                      id="cr"
-                      label="Challenge Rating"
-                      value={statBlock.challengeRating}
-                      onChange={(v) => updateField("challengeRating", v)}
-                    />
-                    <NumberInput
-                      id="xp"
-                      label="Experience Points"
-                      value={statBlock.experiencePoints}
-                      onChange={(v) => updateField("experiencePoints", v)}
-                    />
+                    <div>
+                      <Label htmlFor="cr" className="text-zinc-400 text-xs">Challenge Rating</Label>
+                      <Input
+                        id="cr"
+                        value={statBlock.challengeRating}
+                        onChange={(e) => handleCRChange(e.target.value)}
+                        className="bg-zinc-800/50 border-zinc-700 text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="xp" className="text-zinc-400 text-xs">
+                        Experience Points
+                        {getXPForCR(statBlock.challengeRating) !== undefined && (
+                          <span className="text-zinc-600 ml-1">
+                            (CR {statBlock.challengeRating} = {getXPForCR(statBlock.challengeRating)?.toLocaleString()} XP)
+                          </span>
+                        )}
+                      </Label>
+                      <Input
+                        id="xp"
+                        type="number"
+                        value={statBlock.experiencePoints ?? ""}
+                        onChange={(e) => updateField("experiencePoints", parseInt(e.target.value) || undefined)}
+                        className="bg-zinc-800/50 border-zinc-700 text-white"
+                      />
+                    </div>
                   </div>
                 </EditorCard>
 
@@ -288,7 +562,7 @@ export default function StatBlocksPage() {
                 ))}
 
                 {/* Description/Lore */}
-                <EditorCard title="Description / Lore">
+                <EditorCard title="Description / Lore" defaultOpen={!!statBlock.description}>
                   <Textarea
                     value={statBlock.description || ""}
                     onChange={(e) => updateField("description", e.target.value || undefined)}

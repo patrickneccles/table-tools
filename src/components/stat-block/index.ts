@@ -14,6 +14,18 @@ export {
   calculateModifier,
   formatModifier,
 } from "./types";
+export {
+  CR_XP_TABLE,
+  getXPForCR,
+  getCRForXP,
+  parseHitDice,
+  calculateAverageHP,
+  generateHitDice,
+  STAT_BLOCK_TEMPLATES,
+  saveStatBlockToStorage,
+  loadStatBlockFromStorage,
+  clearStatBlockStorage,
+} from "./stat-block-utils";
 export type { 
   StatBlockData,
   AbilityKey,
@@ -21,3 +33,4 @@ export type {
   TraitEntry,
   TraitSectionKey,
 } from "./types";
+export type { StatBlockTemplate } from "./stat-block-utils";

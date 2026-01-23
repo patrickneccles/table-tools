@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Wrench } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -27,22 +27,28 @@ const BoardBuilder = dynamic(
 export default function BuilderPage() {
   const [isLightMode, setIsLightMode] = useState(false);
 
-  // Check for existing light mode preference on mount
+  // Check for existing light mode preference on mount and listen for changes
   useEffect(() => {
     const isLight = document.documentElement.classList.contains("light");
     setIsLightMode(isLight);
+    
+    // Listen for theme changes from global toggle
+    const observer = new MutationObserver(() => {
+      setIsLightMode(document.documentElement.classList.contains("light"));
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    
+    return () => observer.disconnect();
   }, []);
-
-  const toggleTheme = () => {
-    const newIsLight = !isLightMode;
-    setIsLightMode(newIsLight);
-    document.documentElement.classList.toggle("light", newIsLight);
-  };
 
   return (
     <div
       className={cn(
-        "min-h-screen transition-colors duration-300",
+        "transition-colors duration-300",
         isLightMode ? "bg-[#f0f0f2]" : "bg-[#0a0a0b]"
       )}
     >
@@ -50,57 +56,56 @@ export default function BuilderPage() {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
+            {/* Back link - pill button */}
             <Button
               variant="ghost"
               size="sm"
               asChild
               className={cn(
+                "rounded-full text-xs",
                 isLightMode
-                  ? "text-zinc-600 hover:text-zinc-800 hover:bg-zinc-200"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                  ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
+                  : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
               )}
             >
-              <Link href="/">
-                <ArrowLeft className="h-4 w-4" />
-                Back
+              <Link href="/mood-board">
+                <ArrowLeft className="h-3 w-3" />
+                <span className="ml-1">Back</span>
               </Link>
             </Button>
-            <div>
-              <h1
+            <div className="flex items-center gap-3">
+              <div
                 className={cn(
-                  "text-2xl font-bold tracking-tight",
-                  isLightMode ? "text-zinc-800" : "text-white"
+                  "p-2 rounded-xl",
+                  isLightMode ? "bg-violet-100 text-violet-600" : "bg-violet-900/20 text-violet-400"
                 )}
               >
-                Mood Board Builder
-              </h1>
-              <p
-                className={cn(
-                  "text-sm",
-                  isLightMode ? "text-zinc-500" : "text-zinc-400"
-                )}
-              >
-                Create and customize your own soundboard
-              </p>
+                <Wrench className="h-5 w-5" />
+              </div>
+              <div>
+                <h1
+                  className={cn(
+                    "text-xl font-bold tracking-tight",
+                    isLightMode ? "text-zinc-800" : "text-white"
+                  )}
+                >
+                  Mood Board Builder
+                </h1>
+                <p
+                  className={cn(
+                    "text-sm",
+                    isLightMode ? "text-zinc-500" : "text-zinc-400"
+                  )}
+                >
+                  Create and customize your own soundboard
+                </p>
+              </div>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleTheme}
-            className={cn(
-              "rounded-full text-xs",
-              isLightMode
-                ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
-                : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
-            )}
-          >
-            {isLightMode ? "Dark" : "Light"}
-          </Button>
         </div>
 
         {/* Builder */}
-        <div className="min-h-[calc(100vh-12rem)]">
+        <div>
           <BoardBuilder
             isLightMode={isLightMode}
             onSave={(config) => {
