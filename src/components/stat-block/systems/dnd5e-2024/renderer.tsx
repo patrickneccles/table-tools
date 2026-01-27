@@ -201,10 +201,8 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
           </StatLine>
         </div>
 
-        {/* Traits (no heading) */}
-        <TraitSection title="Traits" entries={data.traits} />
-
         {/* Actions sections */}
+        <TraitSection title="Traits" entries={data.traits} />
         <TraitSection title="Actions" entries={data.actions} />
         <TraitSection title="Bonus Actions" entries={data.bonusActions} />
         <TraitSection title="Reactions" entries={data.reactions} />

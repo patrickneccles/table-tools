@@ -51,17 +51,17 @@ type ExtendedStatBlockData = StatBlockData & Partial<{
 // ============================================================================
 
 function useStatBlockEditor(initialData: StatBlockData) {
-  const [statBlock, setStatBlock] = useState<StatBlockData>(initialData);
+  // Load from localStorage on initialization
+  const [statBlock, setStatBlock] = useState<StatBlockData>(() => {
+    const saved = loadStatBlockFromStorage();
+    return saved || initialData;
+  });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
 
-  // Load from localStorage on mount
+  // Mark initial mount as complete
   useEffect(() => {
-    const saved = loadStatBlockFromStorage();
-    if (saved) {
-      setStatBlock(saved);
-    }
     isInitialMount.current = false;
   }, []);
 
@@ -69,6 +69,8 @@ function useStatBlockEditor(initialData: StatBlockData) {
   useEffect(() => {
     if (isInitialMount.current) return;
 
+    // Intentional: update save status when statBlock changes for auto-save feedback
+    // eslint-disable-next-line
     setSaveStatus("saving");
 
     if (saveTimeoutRef.current) {
@@ -213,6 +215,16 @@ function TemplateSelector({ onSelect, isLightMode }: { onSelect: (template: Stat
                   "text-sm font-medium",
                   isLightMode ? "text-zinc-700" : "text-zinc-200"
                 )}>{template.name}</span>
+                <span className={cn(
+                  "text-[10px] font-medium px-1.5 py-0.5 rounded border",
+                  isLightMode
+                    ? "bg-amber-50 text-amber-600 border-amber-200"
+                    : "bg-amber-900/50 text-amber-400 border-amber-800/50"
+                )}>
+                  {template.systemId === "dnd5e-2014" ? "5e 2014" : 
+                   template.systemId === "dnd5e-2024" ? "5e 2024" : 
+                   template.systemId}
+                </span>
                 {template.isSRD && (
                   <span className={cn(
                     "text-[10px] font-medium px-1.5 py-0.5 rounded border",
@@ -276,14 +288,16 @@ export default function StatBlocksPage() {
   } = useStatBlockEditor(defaultStatBlock);
 
   const [systemId, setSystemId] = useState(DEFAULT_SYSTEM_ID);
-  const [isLightMode, setIsLightMode] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    // Initialize from document class on first render
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("light");
+    }
+    return false;
+  });
 
-  // Check for existing light mode preference on mount and listen for changes
+  // Listen for theme changes from global toggle
   useEffect(() => {
-    const isLight = document.documentElement.classList.contains("light");
-    setIsLightMode(isLight);
-
-    // Listen for theme changes from global toggle
     const observer = new MutationObserver(() => {
       setIsLightMode(document.documentElement.classList.contains("light"));
     });
@@ -299,6 +313,12 @@ export default function StatBlocksPage() {
   const handlePrint = () => {
     window.print();
   };
+
+  // Load template and set the appropriate system
+  const handleLoadTemplate = useCallback((template: StatBlockTemplate) => {
+    loadTemplate(template);
+    setSystemId(template.systemId);
+  }, [loadTemplate]);
 
   // Auto-calculate XP when CR changes
   const handleCRChange = (cr: string) => {
@@ -404,7 +424,7 @@ export default function StatBlocksPage() {
               sourceSystemId="dnd5e-2014"
               isLightMode={isLightMode}
             />
-            <TemplateSelector onSelect={loadTemplate} isLightMode={isLightMode} />
+            <TemplateSelector onSelect={handleLoadTemplate} isLightMode={isLightMode} />
             <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-500 text-white">
               <Printer className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Print / Save PDF</span>

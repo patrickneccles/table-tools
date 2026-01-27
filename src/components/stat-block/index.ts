@@ -24,7 +24,6 @@ export {
   parseHitDice,
   calculateAverageHP,
   generateHitDice,
-  STAT_BLOCK_TEMPLATES,
   saveStatBlockToStorage,
   loadStatBlockFromStorage,
   clearStatBlockStorage,
@@ -37,6 +36,13 @@ export type {
   TraitSectionKey,
 } from "./types";
 export type { StatBlockTemplate } from "./stat-block-utils";
+
+// Templates
+export {
+  STAT_BLOCK_TEMPLATES,
+  DND5E_2014_TEMPLATES,
+  DND5E_2024_TEMPLATES,
+} from "./templates";
 
 // New system-based exports
 export { SystemStatBlockView } from "./system-stat-block-view";
