@@ -31,9 +31,9 @@ export type SystemSelectorProps = {
   sourceSystemId?: string;
 };
 
-export function SystemSelector({ 
-  currentSystemId, 
-  onSystemChange, 
+export function SystemSelector({
+  currentSystemId,
+  onSystemChange,
   isLightMode = false,
   sourceSystemId,
 }: SystemSelectorProps) {
@@ -46,8 +46,8 @@ export function SystemSelector({
 
   const handleSystemSelect = (systemId: string) => {
     // Check if transformation is available
-    const canConvert = sourceSystemId 
-      ? canTransform(sourceSystemId, systemId) 
+    const canConvert = sourceSystemId
+      ? canTransform(sourceSystemId, systemId)
       : true;
 
     if (!canConvert && systemId !== currentSystemId) {
@@ -77,88 +77,88 @@ export function SystemSelector({
 
   return (
     <>
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button 
-          variant="outline" 
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            aria-label="Select stat block system"
+            variant="outline"
+            className={cn(
+              "gap-2",
+              isLightMode
+                ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800"
+                : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+            )}
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {currentSystem?.name || "Select System"}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
           className={cn(
-            "gap-2",
+            "w-80 p-0",
             isLightMode
-              ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800"
-              : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+              ? "bg-white border-zinc-200"
+              : "bg-zinc-900 border-zinc-700"
           )}
+          align="start"
         >
-          <BookOpen className="h-4 w-4" />
-          <span className="hidden sm:inline">
-            {currentSystem?.name || "Select System"}
-          </span>
-          <span className="sm:hidden">System</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className={cn(
-          "w-80 p-0",
-          isLightMode
-            ? "bg-white border-zinc-200"
-            : "bg-zinc-900 border-zinc-700"
-        )} 
-        align="start"
-      >
-        <div className={cn(
-          "p-3 border-b",
-          isLightMode ? "border-zinc-200" : "border-zinc-800"
-        )}>
-          <h3 className={cn(
-            "font-medium text-sm",
-            isLightMode ? "text-zinc-800" : "text-white"
-          )}>Choose Stat Block System</h3>
-          <p className="text-xs text-zinc-500 mt-1">
-            Select which TTRPG system or edition to use
-          </p>
-        </div>
-        <div className="p-2">
-          {systems.map((system) => {
-            const isSelected = system.id === currentSystemId;
-            const canConvert = sourceSystemId 
-              ? canTransform(sourceSystemId, system.id) 
-              : true;
+          <div className={cn(
+            "p-3 border-b",
+            isLightMode ? "border-zinc-200" : "border-zinc-800"
+          )}>
+            <h3 className={cn(
+              "font-medium text-sm",
+              isLightMode ? "text-zinc-800" : "text-white"
+            )}>Choose Stat Block System</h3>
+            <p className="text-xs text-zinc-500 mt-1">
+              Select which TTRPG system or edition to use
+            </p>
+          </div>
+          <div className="p-2">
+            {systems.map((system) => {
+              const isSelected = system.id === currentSystemId;
+              const canConvert = sourceSystemId
+                ? canTransform(sourceSystemId, system.id)
+                : true;
 
-            return (
-              <button
-                key={system.id}
-                onClick={() => handleSystemSelect(system.id)}
-                className={cn(
-                  "w-full text-left px-3 py-2 rounded-md transition-colors flex items-start gap-2",
-                  isSelected 
-                    ? isLightMode 
-                      ? "bg-amber-100 text-amber-900"
-                      : "bg-amber-900/30 text-amber-300"
-                    : isLightMode 
-                      ? "hover:bg-zinc-100 text-zinc-700"
-                      : "hover:bg-zinc-800 text-zinc-200"
-                )}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{system.name}</span>
-                    {isSelected && <Check className="h-3 w-3" />}
-                    {!canConvert && !isSelected && <AlertTriangle className="h-3 w-3 text-amber-500" />}
-                  </div>
-                  <div className="text-xs text-zinc-500 mt-0.5">
-                    {system.description} • v{system.version}
-                  </div>
-                  {!canConvert && !isSelected && (
-                    <div className="text-[10px] text-amber-600 mt-1">
-                      ⚠️ No automatic conversion
-                    </div>
+              return (
+                <button
+                  key={system.id}
+                  onClick={() => handleSystemSelect(system.id)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md transition-colors flex items-start gap-2",
+                    isSelected
+                      ? isLightMode
+                        ? "bg-amber-100 text-amber-900"
+                        : "bg-amber-900/30 text-amber-300"
+                      : isLightMode
+                        ? "hover:bg-zinc-100 text-zinc-700"
+                        : "hover:bg-zinc-800 text-zinc-200"
                   )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{system.name}</span>
+                      {isSelected && <Check className="h-3 w-3" />}
+                      {!canConvert && !isSelected && <AlertTriangle className="h-3 w-3 text-amber-500" />}
+                    </div>
+                    <div className="text-xs text-zinc-500 mt-0.5">
+                      {system.description} • v{system.version}
+                    </div>
+                    {!canConvert && !isSelected && (
+                      <div className="text-[10px] text-amber-600 mt-1">
+                        ⚠️ No automatic conversion
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       {/* Confirmation Dialog */}
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
@@ -196,7 +196,7 @@ export function SystemSelector({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
+            <AlertDialogCancel
               onClick={handleCancelSwitch}
               className={cn(
                 isLightMode

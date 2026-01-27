@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Home, Printer, Scroll, FileText, Calculator, Check } from "lucide-react";
+import { Home, Printer, Scroll, FileText, Calculator, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SystemStatBlockView,
@@ -295,6 +295,7 @@ export default function StatBlocksPage() {
     }
     return false;
   });
+  const [isAtPreview, setIsAtPreview] = useState(false);
 
   // Listen for theme changes from global toggle
   useEffect(() => {
@@ -310,8 +311,42 @@ export default function StatBlocksPage() {
     return () => observer.disconnect();
   }, []);
 
+  // Track if user is at or below the preview section
+  useEffect(() => {
+    const previewElement = document.getElementById("stat-block-preview");
+    if (!previewElement) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Set to true when preview is visible (user scrolled to it)
+        setIsAtPreview(entry.isIntersecting);
+      },
+      {
+        threshold: 0.1, // Trigger when at least 10% of preview is visible
+        rootMargin: "-20% 0px -20% 0px", // Trigger when preview enters middle of viewport
+      }
+    );
+
+    observer.observe(previewElement);
+
+    return () => observer.disconnect();
+  }, []);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleScrollToggle = () => {
+    if (isAtPreview) {
+      // Scroll back to top/editor
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      // Scroll to preview
+      const previewElement = document.getElementById("stat-block-preview");
+      if (previewElement) {
+        previewElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
   };
 
   // Load template and set the appropriate system
@@ -383,7 +418,7 @@ export default function StatBlocksPage() {
           ? "border-zinc-200 bg-white/80"
           : "border-zinc-800 bg-zinc-900/80"
       )}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-4 gap-2 flex flex-wrap md:flex-nowrap items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={cn(
               "p-2 rounded-lg",
@@ -747,7 +782,7 @@ export default function StatBlocksPage() {
           </div>
 
           {/* Preview Panel */}
-          <div className="w-full lg:w-[420px] shrink-0 print:w-full">
+          <div id="stat-block-preview" className="w-full lg:w-[420px] shrink-0 print:w-full">
             <div className="lg:sticky lg:top-[88px] print:relative print:top-0">
               <div className="flex items-center justify-between mb-3 print:hidden">
                 <h2 className="text-sm font-medium text-zinc-500">Preview</h2>
@@ -769,6 +804,27 @@ export default function StatBlocksPage() {
           </div>
         </div>
       </main>
+
+      {/* Floating Scroll Toggle Button (Mobile Only) */}
+      <button
+        onClick={handleScrollToggle}
+        className={cn(
+          "fixed bottom-6 right-6 z-50 lg:hidden print:hidden",
+          "w-14 h-14 rounded-full shadow-lg",
+          "flex items-center justify-center",
+          "transition-all duration-200 hover:scale-110 active:scale-95",
+          isLightMode
+            ? "bg-amber-600 hover:bg-amber-500 text-white"
+            : "bg-amber-600 hover:bg-amber-500 text-white"
+        )}
+        aria-label={isAtPreview ? "Scroll to details" : "Scroll to preview"}
+      >
+        {isAtPreview ? (
+          <ChevronUp className="w-6 h-6" />
+        ) : (
+          <ChevronDown className="w-6 h-6" />
+        )}
+      </button>
 
       {/* Print styles */}
       <style jsx global>{`
