@@ -81,7 +81,8 @@ export type DnD5e2024RendererProps = {
 
 export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
   // Calculate initiative if not provided
-  const initiative = data.initiative ?? calculateInitiative(data.abilities.dex).modifier;
+  const dexScore = data.abilities?.dex ?? 10;
+  const initiative = data.initiative ?? calculateInitiative(dexScore).modifier;
   const initiativeScore = 10 + initiative;
 
   // Calculate proficiency bonus if not provided
@@ -136,7 +137,7 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
           {/* Physical Stats: STR | DEX | CON */}
           <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-sm" style={{ color: "#5b160c" }}>
             {ABILITY_KEYS.map((key) => {
-              const value = data.abilities[key];
+              const value = data.abilities?.[key] ?? 10;
               const mod = calculateModifier(value);
               const customSave = data.savingThrows?.find(s => s.toLowerCase().startsWith(key));
               const save = customSave ? customSave.split(/\s+/)[1] : formatModifier(mod);
@@ -182,16 +183,8 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
           {data.immunities && (
             <StatLine label="Immunities">{data.immunities}</StatLine>
           )}
-          {data.gear && data.gear.length > 0 && (
-            <p style={{ color: "#5b160c" }}>
-              <span className="font-bold">Gear</span>{" "}
-              {data.gear.map((item, i) => (
-                <span key={i}>
-                  {i > 0 && ", "}
-                  <span className="underline">{item}</span>
-                </span>
-              ))}
-            </p>
+          {data.gear && (
+            <StatLine label="Gear">{data.gear}</StatLine>
           )}
           {data.senses && <StatLine label="Senses">{data.senses}</StatLine>}
           {data.languages && <StatLine label="Languages">{data.languages}</StatLine>}

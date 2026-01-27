@@ -61,6 +61,50 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
           { key: "abilities.cha", label: "CHA", type: "number" },
         ],
       },
+      {
+        key: "proficiencies",
+        title: "Proficiencies",
+        defaultCollapsed: true,
+        fields: [
+          { key: "savingThrows", label: "Saving Throws", type: "textarea", placeholder: "One per line:\nDex +5\nCon +4" },
+          { key: "skills", label: "Skills", type: "textarea", placeholder: "One per line:\nStealth +6\nPerception +3" },
+        ],
+      },
+      {
+        key: "defenses",
+        title: "Defenses & Resistances",
+        defaultCollapsed: true,
+        fields: [
+          { key: "damageResistances", label: "Damage Resistances", type: "textarea", placeholder: "e.g., cold, fire" },
+          { key: "damageVulnerabilities", label: "Damage Vulnerabilities", type: "textarea", placeholder: "e.g., fire" },
+          { key: "damageImmunities", label: "Damage Immunities", type: "textarea", placeholder: "e.g., poison" },
+          { key: "conditionImmunities", label: "Condition Immunities", type: "textarea", placeholder: "e.g., poisoned" },
+        ],
+      },
+      {
+        key: "senses",
+        title: "Senses & Languages",
+        fields: [
+          { key: "senses", label: "Senses", type: "text", placeholder: "e.g., passive Perception 10" },
+          { key: "languages", label: "Languages", type: "text", placeholder: "e.g., Common" },
+        ],
+      },
+      {
+        key: "challenge",
+        title: "Challenge Rating",
+        fields: [
+          { key: "challengeRating", label: "CR", type: "text" },
+          { key: "experiencePoints", label: "XP", type: "number" },
+        ],
+      },
+      {
+        key: "description",
+        title: "Description",
+        defaultCollapsed: true,
+        fields: [
+          { key: "description", label: "Description", type: "textarea", placeholder: "Lore and background information" },
+        ],
+      },
     ],
   },
   Renderer: DnD5e2014Renderer,

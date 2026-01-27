@@ -55,7 +55,7 @@ export type DnD5e2024Data = {
   immunities?: string; // Damage types AND conditions combined
   
   // Gear (NEW in 2024)
-  gear?: string[];
+  gear?: string; // Comma-separated list of equipment
   
   // Senses & Languages
   senses?: string;

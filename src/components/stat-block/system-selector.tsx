@@ -142,16 +142,16 @@ export function SystemSelector({
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{system.name}</span>
                       {isSelected && <Check className="h-3 w-3" />}
-                      {!canConvert && !isSelected && <AlertTriangle className="h-3 w-3 text-amber-500" />}
+                      {/* {!canConvert && !isSelected && <AlertTriangle className="h-3 w-3 text-amber-500" />} */}
                     </div>
                     <div className="text-xs text-zinc-500 mt-0.5">
                       {system.description} • v{system.version}
                     </div>
-                    {!canConvert && !isSelected && (
+                    {/* {!canConvert && !isSelected && (
                       <div className="text-[10px] text-amber-600 mt-1">
                         ⚠️ No automatic conversion
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </button>
               );
@@ -180,17 +180,17 @@ export function SystemSelector({
             )}>
               {pendingSystem && (
                 <>
-                  <p className="mb-2">
-                    You're switching from <strong>{currentSystem?.name}</strong> to{" "}
+                  <span className="block mb-2">
+                    You&apos;re switching from <strong>{currentSystem?.name}</strong> to{" "}
                     <strong>{pendingSystem.name}</strong>, but automatic conversion is not available.
-                  </p>
-                  <p className="mb-2">
+                  </span>
+                  <span className="block mb-2">
                     Your current stat block data may not be fully compatible with the new system format.
                     Some fields may not display correctly or may be lost.
-                  </p>
-                  <p className="font-medium">
+                  </span>
+                  <span className="block font-medium">
                     Are you sure you want to continue?
-                  </p>
+                  </span>
                 </>
               )}
             </AlertDialogDescription>

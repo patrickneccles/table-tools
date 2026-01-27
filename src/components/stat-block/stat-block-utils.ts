@@ -1,4 +1,3 @@
-import type { StatBlockData } from "./types";
 
 // ============================================================================
 // CR to XP Mapping (D&D 5e)
@@ -118,15 +117,26 @@ export function generateHitDice(hp: number, conMod: number, size: string): strin
 // Templates
 // ============================================================================
 
-export type StatBlockTemplate = {
+/**
+ * Minimal base type for stat block data - all systems must have at least a name
+ */
+export type BaseStatBlockData = {
+  name: string;
+  [key: string]: unknown;
+};
+
+/**
+ * Generic stat block template that can hold any system's data
+ */
+export type StatBlockTemplate<T extends BaseStatBlockData = BaseStatBlockData> = {
   id: string;
   name: string;
-  description: string;
-  /** Whether this creature is part of the D&D 5.1 SRD (System Reference Document) */
-  isSRD: boolean;
+  description?: string;
+  /** Whether this creature is part of a System Reference Document */
+  isSRD?: boolean;
   /** The stat block system this template belongs to */
   systemId: string;
-  data: StatBlockData;
+  data: T;
 };
 
 // ============================================================================
@@ -134,8 +144,9 @@ export type StatBlockTemplate = {
 // ============================================================================
 
 const STORAGE_KEY = "moodie-statblock-draft";
+const SYSTEM_STORAGE_KEY = "moodie-statblock-system";
 
-export function saveStatBlockToStorage(statBlock: StatBlockData): void {
+export function saveStatBlockToStorage(statBlock: BaseStatBlockData): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(statBlock));
@@ -144,12 +155,12 @@ export function saveStatBlockToStorage(statBlock: StatBlockData): void {
   }
 }
 
-export function loadStatBlockFromStorage(): StatBlockData | null {
+export function loadStatBlockFromStorage(): BaseStatBlockData | null {
   if (typeof window === "undefined") return null;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved) as StatBlockData;
+      return JSON.parse(saved) as BaseStatBlockData;
     }
   } catch (e) {
     console.warn("Failed to load stat block from localStorage:", e);
@@ -164,4 +175,23 @@ export function clearStatBlockStorage(): void {
   } catch (e) {
     console.warn("Failed to clear stat block from localStorage:", e);
   }
+}
+
+export function saveSystemToStorage(systemId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(SYSTEM_STORAGE_KEY, systemId);
+  } catch (e) {
+    console.warn("Failed to save system to localStorage:", e);
+  }
+}
+
+export function loadSystemFromStorage(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(SYSTEM_STORAGE_KEY);
+  } catch (e) {
+    console.warn("Failed to load system from localStorage:", e);
+  }
+  return null;
 }

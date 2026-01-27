@@ -3,41 +3,33 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Home, Printer, Scroll, FileText, Calculator, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Home, Printer, Scroll, FileText, Check, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SystemStatBlockView,
   SystemSelector,
   DEFAULT_SYSTEM_ID,
+  getSystem,
   transformBetweenSystems,
   TraitEditor,
-  EditorCard,
-  TextInput,
-  NumberInput,
-  defaultStatBlock,
-  ABILITY_KEYS,
+  DynamicEditor,
   TRAIT_SECTION_KEYS,
   STAT_BLOCK_TEMPLATES,
-  getXPForCR,
-  calculateAverageHP,
-  calculateModifier,
-  formatModifier,
   saveStatBlockToStorage,
   loadStatBlockFromStorage,
-  getInputClassName,
-  getInputWithPlaceholderClassName,
+  saveSystemToStorage,
+  loadSystemFromStorage,
 } from "@/components/stat-block";
-import type { StatBlockData, TraitSectionKey, AbilityKey, StatBlockTemplate, DnD5e2024Data } from "@/components/stat-block";
+import type { TraitSectionKey, AbilityKey, StatBlockTemplate, DnD5e2014Data, DnD5e2024Data, BaseStatBlockData } from "@/components/stat-block";
 import { calculateInitiative, calculateProficiencyBonus } from "@/components/stat-block/systems/dnd5e-2024";
 
-// Extended type that includes both 2014 and 2024 fields
-type ExtendedStatBlockData = StatBlockData & Partial<{
+// Generic stat block data that can be any system's data
+type AnyStatBlockData = BaseStatBlockData & Record<string, unknown>;
+
+// Combined D&D 5e type that includes both 2014 and 2024 fields
+type DnD5eData = (DnD5e2014Data | DnD5e2024Data) & Partial<{
   initiative: number;
   proficiencyBonus: number;
   gear: string[];
@@ -50,18 +42,20 @@ type ExtendedStatBlockData = StatBlockData & Partial<{
 // Custom Hooks
 // ============================================================================
 
-function useStatBlockEditor(initialData: StatBlockData) {
-  // Load from localStorage on initialization
-  const [statBlock, setStatBlock] = useState<StatBlockData>(() => {
-    const saved = loadStatBlockFromStorage();
-    return saved || initialData;
-  });
+function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
+  // Always use initialData for consistent SSR
+  const [statBlock, setStatBlock] = useState<T>(initialData);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
 
-  // Mark initial mount as complete
+  // Load from localStorage on client side only (after hydration)
   useEffect(() => {
+    const saved = loadStatBlockFromStorage();
+    if (saved) {
+      // eslint-disable-next-line -- Intentional: loading from localStorage after hydration to avoid SSR mismatch
+      setStatBlock(saved as unknown as T);
+    }
     isInitialMount.current = false;
   }, []);
 
@@ -92,25 +86,44 @@ function useStatBlockEditor(initialData: StatBlockData) {
     };
   }, [statBlock]);
 
-  const updateField = useCallback(<K extends keyof StatBlockData>(
+  const updateField = useCallback(<K extends keyof T>(
     field: K,
-    value: StatBlockData[K]
+    value: T[K]
   ) => {
     setStatBlock((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   const updateAbility = useCallback((ability: AbilityKey, value: number) => {
-    setStatBlock((prev) => ({
-      ...prev,
-      abilities: { ...prev.abilities, [ability]: value },
-    }));
+    setStatBlock((prev) => {
+      // Type guard for D&D 5e data with abilities field
+      if ('abilities' in prev && typeof prev.abilities === 'object') {
+        return {
+          ...prev,
+          abilities: { ...prev.abilities as Record<string, unknown>, [ability]: value },
+        };
+      }
+      // For non-D&D 5e systems, check for abilityScores (Shadowdark style)
+      if ('abilityScores' in prev && typeof prev.abilityScores === 'object') {
+        return {
+          ...prev,
+          abilityScores: { ...prev.abilityScores as Record<string, unknown>, [ability]: value },
+        };
+      }
+      return prev;
+    });
   }, []);
 
   const addTrait = useCallback((section: TraitSectionKey) => {
-    setStatBlock((prev) => ({
-      ...prev,
-      [section]: [...(prev[section] || []), { name: "New Entry", description: "Description here..." }],
-    }));
+    setStatBlock((prev) => {
+      const sectionData = prev[section as keyof T];
+      if (Array.isArray(sectionData)) {
+        return {
+          ...prev,
+          [section]: [...sectionData, { name: "New Entry", description: "Description here..." }],
+        };
+      }
+      return prev;
+    });
   }, []);
 
   const updateTrait = useCallback((
@@ -120,26 +133,30 @@ function useStatBlockEditor(initialData: StatBlockData) {
     value: string
   ) => {
     setStatBlock((prev) => {
-      const current = [...(prev[section] || [])];
-      current[index] = { ...current[index], [field]: value };
-      return { ...prev, [section]: current };
+      const sectionData = prev[section as keyof T];
+      if (Array.isArray(sectionData)) {
+        const current = [...sectionData];
+        current[index] = { ...current[index], [field]: value };
+        return { ...prev, [section]: current };
+      }
+      return prev;
     });
   }, []);
 
   const removeTrait = useCallback((section: TraitSectionKey, index: number) => {
     setStatBlock((prev) => {
-      const current = [...(prev[section] || [])];
-      current.splice(index, 1);
-      return { ...prev, [section]: current };
+      const sectionData = prev[section as keyof T];
+      if (Array.isArray(sectionData)) {
+        const current = [...sectionData];
+        current.splice(index, 1);
+        return { ...prev, [section]: current };
+      }
+      return prev;
     });
   }, []);
 
   const loadTemplate = useCallback((template: StatBlockTemplate) => {
-    setStatBlock({ ...template.data });
-  }, []);
-
-  const resetToDefault = useCallback(() => {
-    setStatBlock({ ...defaultStatBlock });
+    setStatBlock({ ...template.data } as T);
   }, []);
 
   return {
@@ -151,7 +168,6 @@ function useStatBlockEditor(initialData: StatBlockData) {
     updateTrait,
     removeTrait,
     loadTemplate,
-    resetToDefault,
     setStatBlock,
   };
 }
@@ -160,8 +176,23 @@ function useStatBlockEditor(initialData: StatBlockData) {
 // Template Selector Component
 // ============================================================================
 
-function TemplateSelector({ onSelect, isLightMode }: { onSelect: (template: StatBlockTemplate) => void; isLightMode: boolean }) {
+function TemplateSelector({ 
+  onSelect, 
+  onReset,
+  currentSystemId, 
+  isLightMode 
+}: { 
+  onSelect: (template: StatBlockTemplate) => void;
+  onReset: () => void;
+  currentSystemId: string;
+  isLightMode: boolean;
+}) {
   const [open, setOpen] = useState(false);
+
+  // Filter templates to only show ones for the current system
+  const filteredTemplates = STAT_BLOCK_TEMPLATES.filter(
+    template => template.systemId === currentSystemId
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -191,14 +222,35 @@ function TemplateSelector({ onSelect, isLightMode }: { onSelect: (template: Stat
           "p-3 border-b",
           isLightMode ? "border-zinc-200" : "border-zinc-800"
         )}>
-          <h3 className={cn(
-            "font-medium text-sm",
-            isLightMode ? "text-zinc-800" : "text-white"
-          )}>Choose a Template</h3>
-          <p className="text-xs text-zinc-500 mt-1">Start with a pre-built creature or blank slate</p>
+          <div className="flex items-center justify-between">
+            <h3 className={cn(
+              "font-medium text-sm",
+              isLightMode ? "text-zinc-800" : "text-white"
+            )}>Choose a Template</h3>
+            <button
+              onClick={() => {
+                onReset();
+                setOpen(false);
+              }}
+              className={cn(
+                "p-1.5 rounded-md transition-colors",
+                isLightMode 
+                  ? "hover:bg-zinc-100 text-zinc-600 hover:text-zinc-800"
+                  : "hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+              )}
+              title="Reset to default"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <p className="text-xs text-zinc-500 mt-1">
+            {filteredTemplates.length > 0 
+              ? `${filteredTemplates.length} pre-built creature${filteredTemplates.length !== 1 ? 's' : ''} available`
+              : "No templates available for this system"}
+          </p>
         </div>
         <div className="p-2">
-          {STAT_BLOCK_TEMPLATES.map((template) => (
+          {filteredTemplates.map((template) => (
             <button
               key={template.id}
               onClick={() => {
@@ -215,16 +267,6 @@ function TemplateSelector({ onSelect, isLightMode }: { onSelect: (template: Stat
                   "text-sm font-medium",
                   isLightMode ? "text-zinc-700" : "text-zinc-200"
                 )}>{template.name}</span>
-                <span className={cn(
-                  "text-[10px] font-medium px-1.5 py-0.5 rounded border",
-                  isLightMode
-                    ? "bg-amber-50 text-amber-600 border-amber-200"
-                    : "bg-amber-900/50 text-amber-400 border-amber-800/50"
-                )}>
-                  {template.systemId === "dnd5e-2014" ? "5e 2014" : 
-                   template.systemId === "dnd5e-2024" ? "5e 2024" : 
-                   template.systemId}
-                </span>
                 {template.isSRD && (
                   <span className={cn(
                     "text-[10px] font-medium px-1.5 py-0.5 rounded border",
@@ -275,30 +317,43 @@ function SaveStatusIndicator({ status }: { status: "idle" | "saving" | "saved" }
 // ============================================================================
 
 export default function StatBlocksPage() {
+  // Always start with default system (for consistent SSR)
+  const [systemId, setSystemId] = useState(DEFAULT_SYSTEM_ID);
+  
+  // Load saved system from localStorage on client side only (after hydration)
+  useEffect(() => {
+    const saved = loadSystemFromStorage();
+    if (saved && saved !== DEFAULT_SYSTEM_ID) {
+      // eslint-disable-next-line -- Intentional: loading from localStorage after hydration to avoid SSR mismatch
+      setSystemId(saved);
+    }
+  }, []);
+  
+  // Get current system and its schema
+  const currentSystem = getSystem(systemId);
+  const initialData = currentSystem?.schema.defaultData || { name: "New Creature" };
+  const systemSections = currentSystem?.schema.sections || [];
+
   const {
     statBlock,
     saveStatus,
     updateField,
-    updateAbility,
     addTrait,
     updateTrait,
     removeTrait,
     loadTemplate,
     setStatBlock,
-  } = useStatBlockEditor(defaultStatBlock);
-
-  const [systemId, setSystemId] = useState(DEFAULT_SYSTEM_ID);
-  const [isLightMode, setIsLightMode] = useState(() => {
-    // Initialize from document class on first render
-    if (typeof document !== "undefined") {
-      return document.documentElement.classList.contains("light");
-    }
-    return false;
-  });
+  } = useStatBlockEditor(initialData);
+  const [isLightMode, setIsLightMode] = useState(false);
   const [isAtPreview, setIsAtPreview] = useState(false);
 
-  // Listen for theme changes from global toggle
+  // Initialize theme and listen for changes
   useEffect(() => {
+    // Set initial theme from document (after hydration)
+    // eslint-disable-next-line -- Intentional: reading from document after hydration to avoid SSR mismatch
+    setIsLightMode(document.documentElement.classList.contains("light"));
+
+    // Listen for theme changes from global toggle
     const observer = new MutationObserver(() => {
       setIsLightMode(document.documentElement.classList.contains("light"));
     });
@@ -310,6 +365,11 @@ export default function StatBlocksPage() {
 
     return () => observer.disconnect();
   }, []);
+
+  // Save system selection to localStorage
+  useEffect(() => {
+    saveSystemToStorage(systemId);
+  }, [systemId]);
 
   // Track if user is at or below the preview section
   useEffect(() => {
@@ -355,26 +415,37 @@ export default function StatBlocksPage() {
     setSystemId(template.systemId);
   }, [loadTemplate]);
 
-  // Auto-calculate XP when CR changes
-  const handleCRChange = (cr: string) => {
-    updateField("challengeRating", cr);
-    const xp = getXPForCR(cr);
-    if (xp !== undefined) {
-      updateField("experiencePoints", xp);
+  // Handle reset to default data for current system
+  const handleReset = useCallback(() => {
+    const defaultData = currentSystem?.schema.defaultData;
+    if (defaultData) {
+      setStatBlock(defaultData as AnyStatBlockData);
     }
-  };
+  }, [currentSystem, setStatBlock]);
 
-  // Calculate HP from hit dice
-  const handleCalculateHP = () => {
-    const hp = calculateAverageHP(statBlock.hitDice);
-    if (hp !== null) {
-      updateField("hitPoints", hp);
+  // Handle dynamic field changes (supports nested paths like "abilities.str")
+  const handleDynamicFieldChange = useCallback((path: string, value: unknown) => {
+    const keys = path.split('.');
+    if (keys.length === 1) {
+      updateField(keys[0] as keyof AnyStatBlockData, value);
+    } else {
+      // Handle nested paths
+      setStatBlock((prev: AnyStatBlockData) => {
+        const newData = { ...prev };
+        let current: Record<string, unknown> = newData;
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!current[keys[i]]) {
+            current[keys[i]] = {};
+          }
+          current[keys[i]] = { ...current[keys[i]] as Record<string, unknown> };
+          current = current[keys[i]] as Record<string, unknown>;
+        }
+        current[keys[keys.length - 1]] = value;
+        return newData;
+      });
     }
-  };
+  }, [updateField, setStatBlock]);
 
-  // Check if HP matches calculated value
-  const calculatedHP = calculateAverageHP(statBlock.hitDice);
-  const hpMatchesCalculation = calculatedHP !== null && calculatedHP === statBlock.hitPoints;
 
   // Handle system change with transformation
   const handleSystemChange = (newSystemId: string) => {
@@ -382,7 +453,7 @@ export default function StatBlocksPage() {
     if (newSystemId === "dnd5e-2024" && systemId === "dnd5e-2014") {
       const transformed = transformBetweenSystems("dnd5e-2014", "dnd5e-2024", statBlock);
       if (transformed) {
-        setStatBlock(transformed as StatBlockData);
+        setStatBlock(transformed as AnyStatBlockData);
       }
     }
     // Note: 2024->2014 transformation not implemented (would lose initiative, gear, etc.)
@@ -394,7 +465,7 @@ export default function StatBlocksPage() {
   const currentStatBlock = useMemo((): DnD5e2024Data => {
     if (systemId === "dnd5e-2024") {
       // Ensure 2024-specific fields are calculated if not present
-      const data = statBlock as ExtendedStatBlockData;
+      const data = statBlock as DnD5eData;
       return {
         ...data,
         initiative: data.initiative ?? calculateInitiative(data.abilities.dex).modifier,
@@ -459,7 +530,7 @@ export default function StatBlocksPage() {
               sourceSystemId="dnd5e-2014"
               isLightMode={isLightMode}
             />
-            <TemplateSelector onSelect={handleLoadTemplate} isLightMode={isLightMode} />
+            <TemplateSelector onSelect={handleLoadTemplate} onReset={handleReset} currentSystemId={systemId} isLightMode={isLightMode} />
             <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-500 text-white">
               <Printer className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Print / Save PDF</span>
@@ -475,287 +546,16 @@ export default function StatBlocksPage() {
           <div className="flex-1 print:hidden">
             <ScrollArea className="h-[calc(100vh-140px)] pr-4">
               <div className="space-y-4">
-                {/* Basic Info */}
-                <EditorCard title="Basic Information" isLightMode={isLightMode}>
-                  <div className="grid grid-cols-2 gap-3">
-                    <TextInput
-                      id="name"
-                      label="Name"
-                      value={statBlock.name}
-                      onChange={(v) => updateField("name", v)}
-                      className="col-span-2"
-                      isLightMode={isLightMode}
-                    />
-                    <TextInput
-                      id="size"
-                      label="Size"
-                      value={statBlock.size}
-                      onChange={(v) => updateField("size", v)}
-                      isLightMode={isLightMode}
-                    />
-                    <TextInput
-                      id="type"
-                      label="Type"
-                      value={statBlock.type}
-                      onChange={(v) => updateField("type", v)}
-                      isLightMode={isLightMode}
-                    />
-                    <TextInput
-                      id="alignment"
-                      label="Alignment"
-                      value={statBlock.alignment}
-                      onChange={(v) => updateField("alignment", v)}
-                      className="col-span-2"
-                      isLightMode={isLightMode}
-                    />
-                  </div>
-                </EditorCard>
+                {/* Dynamic Editor based on System Schema */}
+                <DynamicEditor
+                  data={statBlock}
+                  sections={systemSections}
+                  onFieldChange={handleDynamicFieldChange}
+                  isLightMode={isLightMode}
+                />
 
-                {/* Combat Stats */}
-                <EditorCard title="Combat Statistics" isLightMode={isLightMode}>
-                  <div className="grid grid-cols-2 gap-3">
-                    <NumberInput
-                      id="ac"
-                      label="Armor Class"
-                      value={statBlock.armorClass}
-                      onChange={(v) => updateField("armorClass", v ?? 10)}
-                      isLightMode={isLightMode}
-                    />
-                    <TextInput
-                      id="acType"
-                      label="AC Type"
-                      value={statBlock.armorType || ""}
-                      onChange={(v) => updateField("armorType", v || undefined)}
-                      placeholder="e.g., natural armor"
-                      isLightMode={isLightMode}
-                    />
-                    {systemId === "dnd5e-2024" && (
-                      <div className="col-span-2">
-                        <Label htmlFor="initiative" className={cn(
-                          "text-xs transition-colors",
-                          isLightMode ? "text-zinc-600" : "text-zinc-400"
-                        )}>
-                          Initiative
-                          <span className={cn(
-                            "ml-1 text-[10px]",
-                            isLightMode ? "text-zinc-400" : "text-zinc-600"
-                          )}>
-                            (Auto-calculated from DEX: {formatModifier(calculateModifier(statBlock.abilities.dex))})
-                          </span>
-                        </Label>
-                        <Input
-                          id="initiative"
-                          type="number"
-                          value={(statBlock as ExtendedStatBlockData).initiative ?? calculateModifier(statBlock.abilities.dex)}
-                          onChange={(e) => (updateField as (field: string, value: number | undefined) => void)("initiative", parseInt(e.target.value) || undefined)}
-                          className={getInputClassName(isLightMode)}
-                        />
-                      </div>
-                    )}
-                    <div>
-                      <Label htmlFor="hp" className={cn(
-                        "text-xs transition-colors",
-                        isLightMode ? "text-zinc-600" : "text-zinc-400"
-                      )}>Hit Points</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="hp"
-                          type="number"
-                          value={statBlock.hitPoints}
-                          onChange={(e) => updateField("hitPoints", parseInt(e.target.value) || 1)}
-                          className={cn(getInputClassName(isLightMode), "flex-1")}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleCalculateHP}
-                          disabled={!statBlock.hitDice}
-                          title={calculatedHP !== null ? `Calculate from dice: ${calculatedHP}` : "Enter hit dice first"}
-                          className={cn(
-                            "h-9 w-9",
-                            hpMatchesCalculation ? 'text-emerald-500' : isLightMode ? 'text-zinc-400 hover:text-zinc-800' : 'text-zinc-400 hover:text-white'
-                          )}
-                        >
-                          <Calculator className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {calculatedHP !== null && !hpMatchesCalculation && (
-                        <p className="text-xs text-amber-500 mt-1">
-                          Calculated: {calculatedHP}
-                        </p>
-                      )}
-                    </div>
-                    <TextInput
-                      id="hitDice"
-                      label="Hit Dice"
-                      value={statBlock.hitDice}
-                      onChange={(v) => updateField("hitDice", v)}
-                      placeholder="e.g., 4d8 + 4"
-                      isLightMode={isLightMode}
-                    />
-                    <TextInput
-                      id="speed"
-                      label="Speed"
-                      value={statBlock.speed}
-                      onChange={(v) => updateField("speed", v)}
-                      className="col-span-2"
-                      isLightMode={isLightMode}
-                    />
-                  </div>
-                </EditorCard>
-
-                {/* Ability Scores */}
-                <EditorCard title="Ability Scores" isLightMode={isLightMode}>
-                  <div className="grid grid-cols-6 gap-2">
-                    {ABILITY_KEYS.map((ability) => (
-                      <div key={ability} className="text-center">
-                        <Label
-                          htmlFor={`ability-${ability}`}
-                          className={cn(
-                            "text-[10px] uppercase font-semibold transition-colors",
-                            isLightMode ? "text-zinc-600" : "text-zinc-500"
-                          )}
-                        >
-                          {ability}
-                        </Label>
-                        <Input
-                          id={`ability-${ability}`}
-                          type="number"
-                          min={1}
-                          max={30}
-                          value={statBlock.abilities[ability]}
-                          onChange={(e) => updateAbility(ability, parseInt(e.target.value) || 10)}
-                          className={cn("text-center h-9", getInputClassName(isLightMode))}
-                        />
-                        <div className={cn(
-                          "text-[10px] mt-0.5 transition-colors",
-                          isLightMode ? "text-zinc-500" : "text-zinc-500"
-                        )}>
-                          {calculateModifier(statBlock.abilities[ability]) >= 0 ? "+" : ""}
-                          {calculateModifier(statBlock.abilities[ability])}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </EditorCard>
-
-                {/* Proficiencies & Senses */}
-                <EditorCard title="Proficiencies & Senses" isLightMode={isLightMode}>
-                  <TextInput
-                    id="saves"
-                    label="Saving Throws"
-                    value={statBlock.savingThrows?.join(", ") || ""}
-                    onChange={(v) => updateField("savingThrows", v.split(",").map(s => s.trim()).filter(Boolean))}
-                    placeholder="e.g., Int +5, Wis +4"
-                    isLightMode={isLightMode}
-                  />
-                  <TextInput
-                    id="skills"
-                    label="Skills"
-                    value={statBlock.skills?.join(", ") || ""}
-                    onChange={(v) => updateField("skills", v.split(",").map(s => s.trim()).filter(Boolean))}
-                    placeholder="e.g., Arcana +5, Stealth +3"
-                    isLightMode={isLightMode}
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <TextInput
-                      id="senses"
-                      label="Senses"
-                      value={statBlock.senses || ""}
-                      onChange={(v) => updateField("senses", v || undefined)}
-                      isLightMode={isLightMode}
-                    />
-                    <TextInput
-                      id="languages"
-                      label="Languages"
-                      value={statBlock.languages || ""}
-                      onChange={(v) => updateField("languages", v || undefined)}
-                      isLightMode={isLightMode}
-                    />
-                  </div>
-                  <Separator className={cn(
-                    "transition-colors",
-                    isLightMode ? "bg-zinc-200" : "bg-zinc-800"
-                  )} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="cr" className={cn(
-                        "text-xs transition-colors",
-                        isLightMode ? "text-zinc-600" : "text-zinc-400"
-                      )}>Challenge Rating</Label>
-                      <Input
-                        id="cr"
-                        value={statBlock.challengeRating}
-                        onChange={(e) => handleCRChange(e.target.value)}
-                        className={getInputClassName(isLightMode)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="xp" className={cn(
-                        "text-xs transition-colors",
-                        isLightMode ? "text-zinc-600" : "text-zinc-400"
-                      )}>
-                        Experience Points
-                        {getXPForCR(statBlock.challengeRating) !== undefined && (
-                          <span className={cn(
-                            "ml-1",
-                            isLightMode ? "text-zinc-400" : "text-zinc-600"
-                          )}>
-                            (CR {statBlock.challengeRating} = {getXPForCR(statBlock.challengeRating)?.toLocaleString()} XP)
-                          </span>
-                        )}
-                      </Label>
-                      <Input
-                        id="xp"
-                        type="number"
-                        value={statBlock.experiencePoints ?? ""}
-                        onChange={(e) => updateField("experiencePoints", parseInt(e.target.value) || undefined)}
-                        className={getInputClassName(isLightMode)}
-                      />
-                    </div>
-                  </div>
-                  {systemId === "dnd5e-2024" && (
-                    <div>
-                      <Label htmlFor="pb" className={cn(
-                        "text-xs transition-colors",
-                        isLightMode ? "text-zinc-600" : "text-zinc-400"
-                      )}>
-                        Proficiency Bonus
-                        <span className={cn(
-                          "ml-1 text-[10px]",
-                          isLightMode ? "text-zinc-400" : "text-zinc-600"
-                        )}>
-                          (Auto-calculated from CR: {formatModifier(calculateProficiencyBonus(statBlock.challengeRating))})
-                        </span>
-                      </Label>
-                      <Input
-                        id="pb"
-                        type="number"
-                        value={(statBlock as ExtendedStatBlockData).proficiencyBonus ?? calculateProficiencyBonus(statBlock.challengeRating)}
-                        onChange={(e) => (updateField as (field: string, value: number | undefined) => void)("proficiencyBonus", parseInt(e.target.value) || undefined)}
-                        className={getInputClassName(isLightMode)}
-                      />
-                    </div>
-                  )}
-                  {systemId === "dnd5e-2024" && (
-                    <div>
-                      <Label htmlFor="gear" className={cn(
-                        "text-xs transition-colors",
-                        isLightMode ? "text-zinc-600" : "text-zinc-400"
-                      )}>Gear (2024 Edition)</Label>
-                      <Input
-                        id="gear"
-                        value={((statBlock as ExtendedStatBlockData).gear || []).join(", ")}
-                        onChange={(e) => (updateField as (field: string, value: string[]) => void)("gear", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
-                        placeholder="e.g., Daggers (10), Shortsword"
-                        className={getInputWithPlaceholderClassName(isLightMode)}
-                      />
-                    </div>
-                  )}
-                </EditorCard>
-
-                {/* Trait Sections */}
-                {TRAIT_SECTION_KEYS.map((section) => (
+                {/* D&D 5e Trait Sections (only for D&D systems) */}
+                {(systemId === "dnd5e-2014" || systemId === "dnd5e-2024") && TRAIT_SECTION_KEYS.map((section) => (
                   <TraitEditor
                     key={section}
                     section={section}
@@ -767,16 +567,17 @@ export default function StatBlocksPage() {
                   />
                 ))}
 
-                {/* Description/Lore */}
-                <EditorCard title="Description / Lore" defaultOpen={!!statBlock.description} isLightMode={isLightMode}>
-                  <Textarea
-                    value={statBlock.description || ""}
-                    onChange={(e) => updateField("description", e.target.value || undefined)}
-                    placeholder="Background information, lore, or notes about this creature..."
-                    rows={4}
-                    className={cn("resize-none", getInputWithPlaceholderClassName(isLightMode))}
+                {/* Shadowdark Features */}
+                {systemId === "shadowdark" && (
+                  <TraitEditor
+                    section="features"
+                    entries={('features' in statBlock && Array.isArray(statBlock.features)) ? statBlock.features : []}
+                    onAdd={() => addTrait("features")}
+                    onUpdate={(index, field, value) => updateTrait("features", index, field, value)}
+                    onRemove={(index) => removeTrait("features", index)}
+                    isLightMode={isLightMode}
                   />
-                </EditorCard>
+                )}
               </div>
             </ScrollArea>
           </div>
@@ -792,7 +593,7 @@ export default function StatBlocksPage() {
                     ? "bg-amber-100 text-amber-700"
                     : "bg-amber-900/30 text-amber-400"
                 )}>
-                  {systemId === "dnd5e-2024" ? "2024 Edition" : "2014 Edition"}
+                  {currentSystem?.schema.metadata.name || systemId}
                 </span>
               </div>
               <SystemStatBlockView

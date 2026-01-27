@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -134,10 +134,17 @@ type TraitEditorProps = {
   isLightMode?: boolean;
 };
 
-export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defaultOpen, isLightMode = false }: TraitEditorProps) {
+export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defaultOpen = false, isLightMode = false }: TraitEditorProps) {
   const label = TRAIT_SECTION_LABELS[section];
   const hasEntries = entries && entries.length > 0;
-  const [isOpen, setIsOpen] = useState(defaultOpen ?? hasEntries);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  // Auto-open when entries are added (client-side only to avoid hydration issues)
+  useEffect(() => {
+    if (hasEntries && !defaultOpen) {
+      setIsOpen(true);
+    }
+  }, [hasEntries, defaultOpen]);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>

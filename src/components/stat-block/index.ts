@@ -1,5 +1,4 @@
-// Legacy exports (for backwards compatibility with existing code)
-export { StatBlockView } from "./stat-block-view";
+// Legacy exports (D&D 5e-specific helpers still in use)
 export { 
   TraitEditor,
   EditorCard,
@@ -9,8 +8,10 @@ export {
   getInputClassName,
   getInputWithPlaceholderClassName,
 } from "./stat-block-editor";
+
+// Dynamic editor
+export { DynamicEditor } from "./dynamic-editor";
 export { 
-  defaultStatBlock,
   ABILITY_KEYS,
   TRAIT_SECTION_KEYS,
   TRAIT_SECTION_LABELS,
@@ -27,21 +28,23 @@ export {
   saveStatBlockToStorage,
   loadStatBlockFromStorage,
   clearStatBlockStorage,
+  saveSystemToStorage,
+  loadSystemFromStorage,
 } from "./stat-block-utils";
 export type { 
-  StatBlockData,
   AbilityKey,
   AbilityScores,
   TraitEntry,
   TraitSectionKey,
 } from "./types";
-export type { StatBlockTemplate } from "./stat-block-utils";
+export type { StatBlockTemplate, BaseStatBlockData } from "./stat-block-utils";
 
 // Templates
 export {
   STAT_BLOCK_TEMPLATES,
   DND5E_2014_TEMPLATES,
   DND5E_2024_TEMPLATES,
+  SHADOWDARK_TEMPLATES,
 } from "./templates";
 
 // New system-based exports
@@ -68,3 +71,7 @@ export type { DnD5e2014Data } from "./systems/dnd5e-2014";
 export type { DnD5e2024Data } from "./systems/dnd5e-2024";
 export { DnD5e2014Renderer } from "./systems/dnd5e-2014";
 export { DnD5e2024Renderer } from "./systems/dnd5e-2024";
+
+// Shadowdark system
+export type { ShadowdarkData } from "./systems/shadowdark";
+export { ShadowdarkRenderer } from "./systems/shadowdark";

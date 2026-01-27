@@ -8,6 +8,7 @@
 import type { SystemRegistry } from "./base-system";
 import { dnd5e2014System } from "./dnd5e-2014/system";
 import { dnd5e2024System } from "./dnd5e-2024/system";
+import { shadowdarkSystem } from "./shadowdark/system";
 
 /**
  * Registry of all available stat block systems
@@ -15,6 +16,7 @@ import { dnd5e2024System } from "./dnd5e-2024/system";
 export const SYSTEM_REGISTRY: SystemRegistry = {
   "dnd5e-2014": dnd5e2014System,
   "dnd5e-2024": dnd5e2024System,
+  "shadowdark": shadowdarkSystem,
 };
 
 /**

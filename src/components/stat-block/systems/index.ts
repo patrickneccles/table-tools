@@ -35,3 +35,8 @@ export { dnd5e2014System } from "./dnd5e-2014/system";
 export type { DnD5e2024Data } from "./dnd5e-2024/types";
 export { DnD5e2024Renderer } from "./dnd5e-2024/renderer";
 export { dnd5e2024System } from "./dnd5e-2024/system";
+
+// Shadowdark RPG
+export type { ShadowdarkData } from "./shadowdark/types";
+export { ShadowdarkRenderer } from "./shadowdark/renderer";
+export { shadowdarkSystem } from "./shadowdark/system";
