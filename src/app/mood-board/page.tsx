@@ -1,23 +1,30 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { MoodBoard, sampleMoods, Mood, boardTemplates, BoardTemplate } from "@/components/mood-board";
-import { CommandPalette, useCommandPalette } from "@/components/mood-board/command-palette";
+import { useState, useEffect, useMemo } from "react";
+import { MoodBoard, Mood, boardTemplates, BoardTemplate } from "@/components/mood-board";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { Wrench, Loader2, Command, Home, Music } from "lucide-react";
+import { Wrench, Loader2, Home, Music } from "lucide-react";
 import { useAudioPreloader } from "@/lib/audio-manager";
 import { Button } from "@/components/ui/button";
 
 export default function MoodBoardPage() {
-  const [currentMood, setCurrentMood] = useState<Mood>(sampleMoods[0]);
-  const [isLightMode, setIsLightMode] = useState(false);
-  
-  // Command palette
-  const { isOpen: commandOpen, setIsOpen: setCommandOpen } = useCommandPalette();
-  
-  // Refs for triggering sounds from command palette
-  const soundTriggersRef = useRef<Map<string, () => void>>(new Map());
+  // Get the 3 main templates
+  const templates = useMemo(() => {
+    const forest = boardTemplates.find((t) => t.id === "forest");
+    const tavern = boardTemplates.find((t) => t.id === "tavern");
+    const dungeon = boardTemplates.find((t) => t.id === "dungeon");
+    return [forest, tavern, dungeon].filter((t): t is BoardTemplate => t !== undefined);
+  }, []);
+
+  const [currentMood, setCurrentMood] = useState<Mood>(templates[0]?.mood || boardTemplates[0].mood);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    // Initialize from document on first render (only runs client-side)
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("light");
+    }
+    return false;
+  });
 
   // Get all audio URLs for the current mood
   const audioUrls = useMemo(() => {
@@ -30,12 +37,8 @@ export default function MoodBoardPage() {
   // Preload audio files for current mood
   const { progress: preloadProgress, isComplete: isPreloaded } = useAudioPreloader(audioUrls);
 
-  // Check for existing light mode preference on mount and listen for changes
+  // Listen for theme changes from global toggle
   useEffect(() => {
-    const isLight = document.documentElement.classList.contains("light");
-    setIsLightMode(isLight);
-    
-    // Listen for theme changes from global toggle
     const observer = new MutationObserver(() => {
       setIsLightMode(document.documentElement.classList.contains("light"));
     });
@@ -48,28 +51,12 @@ export default function MoodBoardPage() {
     return () => observer.disconnect();
   }, []);
 
-  // Toggle theme (for command palette)
-  const toggleTheme = useCallback(() => {
-    document.documentElement.classList.toggle("light");
-  }, []);
-
   const theme = currentMood.theme;
-  
-  // Handle template selection from command palette
-  const handleSelectTemplate = useCallback((template: BoardTemplate) => {
-    setCurrentMood(template.mood);
-  }, []);
-  
-  // Handle sound trigger from command palette (would need to connect to MoodBoard refs)
-  const handleTriggerSound = useCallback((soundId: string, type: "ambience" | "effect") => {
-    const trigger = soundTriggersRef.current.get(`${type}-${soundId}`);
-    if (trigger) trigger();
-  }, []);
 
   return (
     <div
       className={cn(
-        "transition-colors duration-300",
+        "min-h-full transition-colors duration-300",
         isLightMode ? "bg-[#f0f0f2]" : "bg-[#0a0a0b]"
       )}
     >
@@ -142,24 +129,6 @@ export default function MoodBoardPage() {
                 <span className="hidden sm:inline ml-1">Home</span>
               </Link>
             </Button>
-            {/* Command palette button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCommandOpen(true)}
-              className={cn(
-                "rounded-full text-xs gap-1.5",
-                isLightMode
-                  ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
-                  : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
-              )}
-            >
-              <Command className="h-3 w-3" />
-              <span className="hidden sm:inline">Search</span>
-              <kbd className="hidden sm:inline px-1.5 py-0.5 text-[10px] font-mono bg-black/10 dark:bg-white/10 rounded">
-                ⌘K
-              </kbd>
-            </Button>
             {/* Builder link */}
             <Button
               variant="ghost"
@@ -180,7 +149,7 @@ export default function MoodBoardPage() {
           </div>
         </div>
 
-        {/* Mood Selector - styled like keyboard profile selector */}
+        {/* Template Selector */}
         <div className="mb-8">
           <div
             className={cn(
@@ -190,16 +159,16 @@ export default function MoodBoardPage() {
                 : "bg-black/50 border border-white/5"
             )}
           >
-            {sampleMoods.map((mood) => {
-              const isSelected = currentMood.id === mood.id;
-              const moodColor = mood.theme?.secondary ?? "#3b82f6";
+            {templates.map((template) => {
+              const isSelected = currentMood.id === template.mood.id;
+              const templateColor = template.mood.theme?.secondary ?? "#3b82f6";
 
               return (
                 <Button
-                  key={mood.id}
+                  key={template.id}
                   variant="ghost"
                   size="sm"
-                  onClick={() => setCurrentMood(mood)}
+                  onClick={() => setCurrentMood(template.mood)}
                   className={cn(
                     "rounded-lg",
                     isSelected
@@ -214,14 +183,14 @@ export default function MoodBoardPage() {
                     isSelected
                       ? {
                           background: isLightMode
-                            ? `linear-gradient(135deg, ${moodColor}20 0%, ${moodColor}10 100%)`
-                            : `linear-gradient(135deg, ${moodColor}40 0%, ${moodColor}20 100%)`,
-                          boxShadow: `0 4px 20px ${moodColor}${isLightMode ? "20" : "30"}`,
+                            ? `linear-gradient(135deg, ${templateColor}20 0%, ${templateColor}10 100%)`
+                            : `linear-gradient(135deg, ${templateColor}40 0%, ${templateColor}20 100%)`,
+                          boxShadow: `0 4px 20px ${templateColor}${isLightMode ? "20" : "30"}`,
                         }
                       : undefined
                   }
                 >
-                  {mood.name}
+                  {template.name}
                 </Button>
               );
             })}
@@ -282,32 +251,10 @@ export default function MoodBoardPage() {
               public/audio/
             </code>
             . Ambience sounds loop continuously, effects play once. Use the fade
-            toggle for smooth transitions. Press{" "}
-            <kbd
-              className={cn(
-                "rounded px-1.5 py-0.5 font-mono text-xs transition-colors",
-                isLightMode
-                  ? "bg-zinc-100 text-zinc-600"
-                  : "bg-white/5 text-zinc-400"
-              )}
-            >
-              ⌘K
-            </kbd>{" "}
-            for quick search.
+            toggle for smooth transitions between sounds.
           </p>
         </div>
       </div>
-      
-      {/* Command Palette */}
-      <CommandPalette
-        mood={currentMood}
-        isOpen={commandOpen}
-        onOpenChange={setCommandOpen}
-        onTriggerSound={handleTriggerSound}
-        onSelectTemplate={handleSelectTemplate}
-        onToggleTheme={toggleTheme}
-        isLightMode={isLightMode}
-      />
     </div>
   );
 }

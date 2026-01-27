@@ -142,7 +142,7 @@ export default function HomePage() {
   return (
     <div
       className={cn(
-        "transition-colors duration-300",
+        "min-h-full transition-colors duration-300",
         isLightMode ? "bg-[#f5f5f7]" : "bg-[#0a0a0b]"
       )}
     >

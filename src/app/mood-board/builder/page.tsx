@@ -48,7 +48,7 @@ export default function BuilderPage() {
   return (
     <div
       className={cn(
-        "transition-colors duration-300",
+        "min-h-full transition-colors duration-300",
         isLightMode ? "bg-[#f0f0f2]" : "bg-[#0a0a0b]"
       )}
     >

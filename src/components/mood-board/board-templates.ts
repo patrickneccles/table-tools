@@ -52,12 +52,12 @@ export type BoardTemplate = {
 
 const tavernTemplate: BoardTemplate = {
   id: "tavern",
-  name: "Tavern Night",
+  name: "Tavern",
   description: "Bustling inn with drinks, music, and rowdy patrons",
   category: "fantasy",
   mood: {
     id: "tavern",
-    name: "Tavern Night",
+    name: "Tavern",
     description: "A lively tavern filled with music, laughter, and clinking mugs",
     theme: {
       primary: "#b45309",
@@ -118,12 +118,12 @@ const combatTemplate: BoardTemplate = {
 
 const dungeonTemplate: BoardTemplate = {
   id: "dungeon",
-  name: "Dungeon Crawl",
+  name: "Dungeon",
   description: "Dark underground with dripping water and distant echoes",
   category: "fantasy",
   mood: {
     id: "dungeon",
-    name: "Dungeon Crawl",
+    name: "Dungeon",
     description: "A foreboding underground labyrinth",
     theme: {
       primary: "#4b5563",
@@ -155,12 +155,12 @@ const dungeonTemplate: BoardTemplate = {
 
 const forestTemplate: BoardTemplate = {
   id: "forest",
-  name: "Enchanted Forest",
+  name: "Woodlands",
   description: "Peaceful woodland with birdsong and rustling leaves",
   category: "nature",
   mood: {
     id: "forest",
-    name: "Enchanted Forest",
+    name: "Woodlands",
     description: "A magical forest alive with nature",
     theme: {
       primary: "#059669",

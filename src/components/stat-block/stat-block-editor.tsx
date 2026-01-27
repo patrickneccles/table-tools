@@ -16,8 +16,21 @@ import { TRAIT_SECTION_LABELS } from "./types";
 // Shared Input Styles
 // ============================================================================
 
-const inputClassName = "bg-zinc-800/50 border-zinc-700 text-white";
-const inputWithPlaceholderClassName = `${inputClassName} placeholder:text-zinc-600`;
+export function getInputClassName(isLightMode: boolean): string {
+  return cn(
+    "transition-colors",
+    isLightMode
+      ? "bg-white border-zinc-300 text-zinc-800"
+      : "bg-zinc-800/50 border-zinc-700 text-white"
+  );
+}
+
+export function getInputWithPlaceholderClassName(isLightMode: boolean): string {
+  return cn(
+    getInputClassName(isLightMode),
+    isLightMode ? "placeholder:text-zinc-400" : "placeholder:text-zinc-600"
+  );
+}
 
 // ============================================================================
 // FormField Component
@@ -28,12 +41,16 @@ type FormFieldProps = {
   label: string;
   children: React.ReactNode;
   className?: string;
+  isLightMode?: boolean;
 };
 
-export function FormField({ id, label, children, className }: FormFieldProps) {
+export function FormField({ id, label, children, className, isLightMode = false }: FormFieldProps) {
   return (
     <div className={className}>
-      <Label htmlFor={id} className="text-zinc-400 text-xs">
+      <Label htmlFor={id} className={cn(
+        "text-xs transition-colors",
+        isLightMode ? "text-zinc-600" : "text-zinc-400"
+      )}>
         {label}
       </Label>
       {children}
@@ -52,17 +69,18 @@ type TextInputProps = {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  isLightMode?: boolean;
 };
 
-export function TextInput({ id, label, value, onChange, placeholder, className }: TextInputProps) {
+export function TextInput({ id, label, value, onChange, placeholder, className, isLightMode = false }: TextInputProps) {
   return (
-    <FormField id={id} label={label} className={className}>
+    <FormField id={id} label={label} className={className} isLightMode={isLightMode}>
       <Input
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className={placeholder ? inputWithPlaceholderClassName : inputClassName}
+        className={placeholder ? getInputWithPlaceholderClassName(isLightMode) : getInputClassName(isLightMode)}
       />
     </FormField>
   );
@@ -80,11 +98,12 @@ type NumberInputProps = {
   min?: number;
   max?: number;
   className?: string;
+  isLightMode?: boolean;
 };
 
-export function NumberInput({ id, label, value, onChange, min, max, className }: NumberInputProps) {
+export function NumberInput({ id, label, value, onChange, min, max, className, isLightMode = false }: NumberInputProps) {
   return (
-    <FormField id={id} label={label} className={className}>
+    <FormField id={id} label={label} className={className} isLightMode={isLightMode}>
       <Input
         id={id}
         type="number"
@@ -95,7 +114,7 @@ export function NumberInput({ id, label, value, onChange, min, max, className }:
           const parsed = parseInt(e.target.value);
           onChange(isNaN(parsed) ? undefined : parsed);
         }}
-        className={inputClassName}
+        className={getInputClassName(isLightMode)}
       />
     </FormField>
   );
@@ -112,30 +131,44 @@ type TraitEditorProps = {
   onUpdate: (index: number, field: "name" | "description", value: string) => void;
   onRemove: (index: number) => void;
   defaultOpen?: boolean;
+  isLightMode?: boolean;
 };
 
-export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defaultOpen }: TraitEditorProps) {
+export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defaultOpen, isLightMode = false }: TraitEditorProps) {
   const label = TRAIT_SECTION_LABELS[section];
   const hasEntries = entries && entries.length > 0;
   const [isOpen, setIsOpen] = useState(defaultOpen ?? hasEntries);
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="bg-zinc-900/50 border-zinc-800">
+      <Card className={cn(
+        "transition-colors",
+        isLightMode ? "bg-white border-zinc-200" : "bg-zinc-900/50 border-zinc-800"
+      )}>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
-              <button className="flex items-center gap-2 hover:text-white transition-colors text-left">
+              <button className={cn(
+                "flex items-center gap-2 transition-colors text-left",
+                isLightMode ? "hover:text-zinc-900" : "hover:text-white"
+              )}>
                 <ChevronDown 
                   className={cn(
-                    "h-4 w-4 text-zinc-500 transition-transform duration-200",
-                    isOpen && "rotate-180"
+                    "h-4 w-4 transition-transform duration-200",
+                    isOpen && "rotate-180",
+                    isLightMode ? "text-zinc-400" : "text-zinc-500"
                   )} 
                 />
-                <CardTitle className="text-base font-medium text-zinc-200">
+                <CardTitle className={cn(
+                  "text-base font-medium",
+                  isLightMode ? "text-zinc-800" : "text-zinc-200"
+                )}>
                   {label}
                   {hasEntries && (
-                    <span className="ml-2 text-xs text-zinc-500 font-normal">
+                    <span className={cn(
+                      "ml-2 text-xs font-normal",
+                      isLightMode ? "text-zinc-400" : "text-zinc-500"
+                    )}>
                       ({entries.length})
                     </span>
                   )}
@@ -150,7 +183,12 @@ export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defau
                 onAdd();
                 setIsOpen(true);
               }}
-              className="h-7 text-xs text-zinc-400 hover:text-white hover:bg-zinc-800"
+              className={cn(
+                "h-7 text-xs",
+                isLightMode
+                  ? "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+              )}
             >
               <Plus className="h-3 w-3 mr-1" /> Add
             </Button>
@@ -162,14 +200,22 @@ export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defau
               {entries.map((item, index) => (
                 <div
                   key={index}
-                  className="rounded-lg bg-zinc-800/30 border border-zinc-700/50 p-3 space-y-2"
+                  className={cn(
+                    "rounded-lg p-3 space-y-2 transition-colors",
+                    isLightMode
+                      ? "bg-zinc-50 border border-zinc-200"
+                      : "bg-zinc-800/30 border border-zinc-700/50"
+                  )}
                 >
                   <div className="flex items-center gap-2">
                     <Input
                       value={item.name}
                       onChange={(e) => onUpdate(index, "name", e.target.value)}
                       placeholder="Name"
-                      className="flex-1 h-8 bg-zinc-800/50 border-zinc-700 text-white text-sm"
+                      className={cn(
+                        "flex-1 h-8 text-sm",
+                        getInputWithPlaceholderClassName(isLightMode)
+                      )}
                     />
                     <Button
                       variant="ghost"
@@ -185,7 +231,10 @@ export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defau
                     onChange={(e) => onUpdate(index, "description", e.target.value)}
                     placeholder="Description"
                     rows={2}
-                    className="bg-zinc-800/50 border-zinc-700 text-white text-sm resize-none"
+                    className={cn(
+                      "text-sm resize-none",
+                      getInputWithPlaceholderClassName(isLightMode)
+                    )}
                   />
                 </div>
               ))}
@@ -206,16 +255,23 @@ type EditorCardProps = {
   children: React.ReactNode;
   defaultOpen?: boolean;
   collapsible?: boolean;
+  isLightMode?: boolean;
 };
 
-export function EditorCard({ title, children, defaultOpen = true, collapsible = true }: EditorCardProps) {
+export function EditorCard({ title, children, defaultOpen = true, collapsible = true, isLightMode = false }: EditorCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   if (!collapsible) {
     return (
-      <Card className="bg-zinc-900/50 border-zinc-800">
+      <Card className={cn(
+        "transition-colors",
+        isLightMode ? "bg-white border-zinc-200" : "bg-zinc-900/50 border-zinc-800"
+      )}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-medium text-zinc-200">{title}</CardTitle>
+          <CardTitle className={cn(
+            "text-base font-medium",
+            isLightMode ? "text-zinc-800" : "text-zinc-200"
+          )}>{title}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">{children}</CardContent>
       </Card>
@@ -224,15 +280,25 @@ export function EditorCard({ title, children, defaultOpen = true, collapsible = 
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <Card className="bg-zinc-900/50 border-zinc-800">
+      <Card className={cn(
+        "transition-colors",
+        isLightMode ? "bg-white border-zinc-200" : "bg-zinc-900/50 border-zinc-800"
+      )}>
         <CollapsibleTrigger asChild>
-          <CardHeader className="pb-3 cursor-pointer hover:bg-zinc-800/30 transition-colors rounded-t-lg">
+          <CardHeader className={cn(
+            "pb-3 cursor-pointer transition-colors rounded-t-lg",
+            isLightMode ? "hover:bg-zinc-50" : "hover:bg-zinc-800/30"
+          )}>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-medium text-zinc-200">{title}</CardTitle>
+              <CardTitle className={cn(
+                "text-base font-medium",
+                isLightMode ? "text-zinc-800" : "text-zinc-200"
+              )}>{title}</CardTitle>
               <ChevronDown 
                 className={cn(
-                  "h-4 w-4 text-zinc-500 transition-transform duration-200",
-                  isOpen && "rotate-180"
+                  "h-4 w-4 transition-transform duration-200",
+                  isOpen && "rotate-180",
+                  isLightMode ? "text-zinc-400" : "text-zinc-500"
                 )} 
               />
             </div>
