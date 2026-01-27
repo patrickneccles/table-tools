@@ -13,7 +13,7 @@ import { calculateInitiative, calculateProficiencyBonus } from "./types";
  */
 function transformFrom2014(data: DnD5e2014Data): DnD5e2024Data {
   // Calculate new 2024 fields
-  const initiative = calculateInitiative(data.abilities.dex);
+  const initiative = calculateInitiative(data.abilityScores.dex);
   const proficiencyBonus = calculateProficiencyBonus(data.challengeRating);
 
   // Combine damage resistances/immunities and condition immunities into single immunities field
@@ -37,8 +37,8 @@ function transformFrom2014(data: DnD5e2014Data): DnD5e2024Data {
     hitDice: data.hitDice,
     speed: data.speed,
 
-    // Abilities (unchanged)
-    abilities: { ...data.abilities },
+    // Ability Scores (unchanged)
+    abilityScores: { ...data.abilityScores },
 
     // Proficiencies (unchanged)
     savingThrows: data.savingThrows ? [...data.savingThrows] : undefined,
@@ -91,7 +91,7 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
       hitPoints: 4,
       hitDice: "1d8",
       speed: "30 ft.",
-      abilities: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+      abilityScores: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
       challengeRating: "0",
       experiencePoints: 10,
       proficiencyBonus: 2,
@@ -120,15 +120,15 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
         ],
       },
       {
-        key: "abilities",
+        key: "abilityScores",
         title: "Ability Scores",
         fields: [
-          { key: "abilities.str", label: "STR", type: "number" },
-          { key: "abilities.dex", label: "DEX", type: "number" },
-          { key: "abilities.con", label: "CON", type: "number" },
-          { key: "abilities.int", label: "INT", type: "number" },
-          { key: "abilities.wis", label: "WIS", type: "number" },
-          { key: "abilities.cha", label: "CHA", type: "number" },
+          { key: "abilityScores.str", label: "STR", type: "number" },
+          { key: "abilityScores.dex", label: "DEX", type: "number" },
+          { key: "abilityScores.con", label: "CON", type: "number" },
+          { key: "abilityScores.int", label: "INT", type: "number" },
+          { key: "abilityScores.wis", label: "WIS", type: "number" },
+          { key: "abilityScores.cha", label: "CHA", type: "number" },
         ],
       },
       {

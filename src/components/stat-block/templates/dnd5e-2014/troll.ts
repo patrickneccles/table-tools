@@ -1,6 +1,6 @@
-import type { StatBlockData } from "../../types";
+import type { DnD5e2014Data } from "../../systems/dnd5e-2014/types";
 
-export const trollTemplate: StatBlockData = {
+export const trollTemplate: DnD5e2014Data = {
   name: "Troll",
   size: "Large",
   type: "giant",
@@ -10,7 +10,7 @@ export const trollTemplate: StatBlockData = {
   hitPoints: 84,
   hitDice: "8d10 + 40",
   speed: "30 ft.",
-  abilities: { str: 18, dex: 13, con: 20, int: 7, wis: 9, cha: 7 },
+  abilityScores: { str: 18, dex: 13, con: 20, int: 7, wis: 9, cha: 7 },
   skills: ["Perception +2"],
   senses: "darkvision 60 ft., passive Perception 12",
   languages: "Giant",

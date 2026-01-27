@@ -11,7 +11,7 @@ export const abolethTemplate: DnD5e2024Data = {
   hitPoints: 150,
   hitDice: "20d10 + 40",
   speed: "10 ft., swim 40 ft.",
-  abilities: { str: 21, dex: 9, con: 15, int: 18, wis: 15, cha: 18 },
+  abilityScores: { str: 21, dex: 9, con: 15, int: 18, wis: 15, cha: 18 },
   savingThrows: ["Dex +3", "Con +6", "Int +8", "Wis +6"],
   skills: ["History +12", "Perception +10"],
   senses: "darkvision 120 ft., passive Perception 20",

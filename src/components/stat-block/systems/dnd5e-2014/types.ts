@@ -37,7 +37,7 @@ export type DnD5e2014Data = {
   speed: string;
   
   // Ability Scores
-  abilities: AbilityScores;
+  abilityScores: AbilityScores;
   
   // Proficiencies
   savingThrows?: string[];
@@ -57,7 +57,7 @@ export type DnD5e2014Data = {
   challengeRating: string;
   experiencePoints?: number;
   
-  // Traits & Abilities
+  // Features
   traits?: TraitEntry[];
   actions?: TraitEntry[];
   bonusActions?: TraitEntry[];

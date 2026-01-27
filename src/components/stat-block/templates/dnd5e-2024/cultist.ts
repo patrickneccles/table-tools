@@ -10,7 +10,7 @@ export const cultistTemplate: DnD5e2024Data = {
   hitPoints: 9,
   hitDice: "2d8",
   speed: "30 ft.",
-  abilities: { str: 11, dex: 12, con: 10, int: 10, wis: 11, cha: 10 },
+  abilityScores: { str: 11, dex: 12, con: 10, int: 10, wis: 11, cha: 10 },
   skills: ["Deception +2", "Religion +2"],
   senses: "passive Perception 10",
   languages: "Common",

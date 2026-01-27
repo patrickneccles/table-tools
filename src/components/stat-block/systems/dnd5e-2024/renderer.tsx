@@ -81,7 +81,7 @@ export type DnD5e2024RendererProps = {
 
 export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
   // Calculate initiative if not provided
-  const dexScore = data.abilities?.dex ?? 10;
+  const dexScore = data.abilityScores?.dex ?? 10;
   const initiative = data.initiative ?? calculateInitiative(dexScore).modifier;
   const initiativeScore = 10 + initiative;
 
@@ -137,7 +137,7 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
           {/* Physical Stats: STR | DEX | CON */}
           <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-sm" style={{ color: "#5b160c" }}>
             {ABILITY_KEYS.map((key) => {
-              const value = data.abilities?.[key] ?? 10;
+              const value = data.abilityScores?.[key] ?? 10;
               const mod = calculateModifier(value);
               const customSave = data.savingThrows?.find(s => s.toLowerCase().startsWith(key));
               const save = customSave ? customSave.split(/\s+/)[1] : formatModifier(mod);

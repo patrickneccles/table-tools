@@ -141,7 +141,7 @@ export function DnD5e2014Renderer({
           style={{ color: "#822000" }}
         >
           {ABILITY_KEYS.map((key) => {
-            const value = data.abilities?.[key] ?? 10;
+            const value = data.abilityScores?.[key] ?? 10;
             const mod = calculateModifier(value);
             return (
               <div key={key}>

@@ -43,7 +43,7 @@ export type DnD5e2024Data = {
   speed: string;
   
   // Ability Scores
-  abilities: AbilityScores;
+  abilityScores: AbilityScores;
   
   // Proficiencies
   savingThrows?: string[];
@@ -66,7 +66,7 @@ export type DnD5e2024Data = {
   experiencePoints?: number;
   proficiencyBonus?: number; // NEW in 2024: explicit PB
   
-  // Traits & Abilities
+  // Features
   traits?: TraitEntry[];
   actions?: TraitEntry[];
   bonusActions?: TraitEntry[];

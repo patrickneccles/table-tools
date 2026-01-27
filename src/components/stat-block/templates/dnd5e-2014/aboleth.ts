@@ -1,6 +1,6 @@
-import type { StatBlockData } from "../../types";
+import type { DnD5e2014Data } from "../../systems";
 
-export const abolethTemplate: StatBlockData = {
+export const abolethTemplate: DnD5e2014Data = {
   name: "Aboleth",
   size: "Large",
   type: "aberration",
@@ -10,7 +10,7 @@ export const abolethTemplate: StatBlockData = {
   hitPoints: 135,
   hitDice: "18d10 + 36",
   speed: "10 ft., swim 40 ft.",
-  abilities: { str: 21, dex: 9, con: 15, int: 18, wis: 15, cha: 18 },
+  abilityScores: { str: 21, dex: 9, con: 15, int: 18, wis: 15, cha: 18 },
   savingThrows: ["Con +6", "Int +8", "Wis +6"],
   skills: ["History +12", "Perception +10"],
   senses: "darkvision 120 ft., passive Perception 20",

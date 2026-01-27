@@ -1,6 +1,6 @@
-import type { StatBlockData } from "../../types";
+import type { DnD5e2014Data } from "../../systems";
 
-export const goblinTemplate: StatBlockData = {
+export const goblinTemplate: DnD5e2014Data = {
   name: "Goblin",
   size: "Small",
   type: "humanoid (goblinoid)",
@@ -10,7 +10,7 @@ export const goblinTemplate: StatBlockData = {
   hitPoints: 7,
   hitDice: "2d6",
   speed: "30 ft.",
-  abilities: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 },
+  abilityScores: { str: 8, dex: 14, con: 10, int: 10, wis: 8, cha: 8 },
   skills: ["Stealth +6"],
   senses: "darkvision 60 ft., passive Perception 9",
   languages: "Common, Goblin",

@@ -11,7 +11,7 @@ export const trollTemplate: DnD5e2024Data = {
   hitPoints: 94,
   hitDice: "9d10 + 45",
   speed: "30 ft.",
-  abilities: { str: 18, dex: 13, con: 20, int: 7, wis: 9, cha: 7 },
+  abilityScores: { str: 18, dex: 13, con: 20, int: 7, wis: 9, cha: 7 },
   skills: ["Perception +5"],
   senses: "darkvision 60 ft., passive Perception 15",
   languages: "Giant",

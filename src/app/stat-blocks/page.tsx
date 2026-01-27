@@ -95,14 +95,7 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
 
   const updateAbility = useCallback((ability: AbilityKey, value: number) => {
     setStatBlock((prev) => {
-      // Type guard for D&D 5e data with abilities field
-      if ('abilities' in prev && typeof prev.abilities === 'object') {
-        return {
-          ...prev,
-          abilities: { ...prev.abilities as Record<string, unknown>, [ability]: value },
-        };
-      }
-      // For non-D&D 5e systems, check for abilityScores (Shadowdark style)
+      // Type guard for D&D 5e data with abilityScores field
       if ('abilityScores' in prev && typeof prev.abilityScores === 'object') {
         return {
           ...prev,
@@ -423,7 +416,7 @@ export default function StatBlocksPage() {
     }
   }, [currentSystem, setStatBlock]);
 
-  // Handle dynamic field changes (supports nested paths like "abilities.str")
+  // Handle dynamic field changes (supports nested paths like "abilityScores.str")
   const handleDynamicFieldChange = useCallback((path: string, value: unknown) => {
     const keys = path.split('.');
     if (keys.length === 1) {
@@ -468,7 +461,7 @@ export default function StatBlocksPage() {
       const data = statBlock as DnD5eData;
       return {
         ...data,
-        initiative: data.initiative ?? calculateInitiative(data.abilities.dex).modifier,
+        initiative: data.initiative ?? calculateInitiative(data.abilityScores.dex).modifier,
         proficiencyBonus: data.proficiencyBonus ?? calculateProficiencyBonus(data.challengeRating),
       } as DnD5e2024Data;
     }
@@ -635,9 +628,29 @@ export default function StatBlocksPage() {
             margin: 0.5in;
           }
           
-          body {
+          * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+          }
+          
+          html {
+            background: white !important;
+          }
+          
+          body {
+            background: white !important;
+          }
+          
+          /* Force all container backgrounds to white/transparent */
+          body > div,
+          body > div > div,
+          #__next,
+          #__next > div,
+          main,
+          main > div {
+            background: white !important;
+            background-color: white !important;
+            background-image: none !important;
           }
         }
       `}</style>

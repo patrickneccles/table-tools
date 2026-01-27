@@ -1,5 +1,5 @@
 import type { StatBlockTemplate } from "../../stat-block-utils";
-import type { DnD5e2014Data } from "../../systems/dnd5e-2014/types";
+import type { DnD5e2014Data } from "../../systems";
 import { goblinTemplate } from "./goblin";
 import { cultistTemplate } from "./cultist";
 import { trollTemplate } from "./troll";

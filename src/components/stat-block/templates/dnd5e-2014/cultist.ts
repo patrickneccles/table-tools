@@ -1,4 +1,4 @@
-import type { DnD5e2014Data } from "../../systems/dnd5e-2014/types";
+import type { DnD5e2014Data } from "../../systems";
 
 export const cultistTemplate: DnD5e2014Data = {
   name: "Cultist",
@@ -9,7 +9,7 @@ export const cultistTemplate: DnD5e2014Data = {
   hitPoints: 9,
   hitDice: "2d8",
   speed: "30 ft.",
-  abilities: { str: 11, dex: 12, con: 10, int: 10, wis: 11, cha: 10 },
+  abilityScores: { str: 11, dex: 12, con: 10, int: 10, wis: 11, cha: 10 },
   skills: ["Deception +2", "Religion +2"],
   senses: "passive Perception 10",
   languages: "any one language (usually Common)",

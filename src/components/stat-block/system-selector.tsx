@@ -173,17 +173,13 @@ export function SystemSelector({
               isLightMode ? "text-zinc-800" : "text-white"
             )}>
               <AlertTriangle className="h-5 w-5 text-amber-500" />
-              Switch System Without Conversion?
+              Switch System?
             </AlertDialogTitle>
             <AlertDialogDescription className={cn(
               isLightMode ? "text-zinc-600" : "text-zinc-400"
             )}>
               {pendingSystem && (
                 <>
-                  <span className="block mb-2">
-                    You&apos;re switching from <strong>{currentSystem?.name}</strong> to{" "}
-                    <strong>{pendingSystem.name}</strong>, but automatic conversion is not available.
-                  </span>
                   <span className="block mb-2">
                     Your current stat block data may not be fully compatible with the new system format.
                     Some fields may not display correctly or may be lost.
