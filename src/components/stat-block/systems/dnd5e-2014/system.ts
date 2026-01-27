@@ -106,6 +106,7 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
         ],
       },
     ],
+    traitSections: ["traits", "actions", "bonusActions", "reactions", "legendaryActions"],
   },
   Renderer: DnD5e2014Renderer,
 };

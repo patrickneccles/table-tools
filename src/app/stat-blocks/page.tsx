@@ -4,8 +4,7 @@ import React, { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Home, Printer, Scroll, FileText, Check, ChevronDown, ChevronUp, RotateCcw } from "lucide-react";
+import { Home, Printer, Scroll, Check, ChevronDown, ChevronUp, Download, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   SystemStatBlockView,
@@ -15,13 +14,12 @@ import {
   transformBetweenSystems,
   TraitEditor,
   DynamicEditor,
-  TRAIT_SECTION_KEYS,
-  STAT_BLOCK_TEMPLATES,
   saveStatBlockToStorage,
   loadStatBlockFromStorage,
   saveSystemToStorage,
   loadSystemFromStorage,
 } from "@/components/stat-block";
+import { TemplateSelector } from "@/components/stat-block/template-selector";
 import type { TraitSectionKey, AbilityKey, StatBlockTemplate, DnD5e2014Data, DnD5e2024Data, BaseStatBlockData } from "@/components/stat-block";
 import { calculateInitiative, calculateProficiencyBonus } from "@/components/stat-block/systems/dnd5e-2024";
 
@@ -166,121 +164,6 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
 }
 
 // ============================================================================
-// Template Selector Component
-// ============================================================================
-
-function TemplateSelector({ 
-  onSelect, 
-  onReset,
-  currentSystemId, 
-  isLightMode 
-}: { 
-  onSelect: (template: StatBlockTemplate) => void;
-  onReset: () => void;
-  currentSystemId: string;
-  isLightMode: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-
-  // Filter templates to only show ones for the current system
-  const filteredTemplates = STAT_BLOCK_TEMPLATES.filter(
-    template => template.systemId === currentSystemId
-  );
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            isLightMode
-              ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800"
-              : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-          )}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">Templates</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className={cn(
-          "w-80 p-0",
-          isLightMode
-            ? "bg-white border-zinc-200"
-            : "bg-zinc-900 border-zinc-700"
-        )}
-        align="start"
-      >
-        <div className={cn(
-          "p-3 border-b",
-          isLightMode ? "border-zinc-200" : "border-zinc-800"
-        )}>
-          <div className="flex items-center justify-between">
-            <h3 className={cn(
-              "font-medium text-sm",
-              isLightMode ? "text-zinc-800" : "text-white"
-            )}>Choose a Template</h3>
-            <button
-              onClick={() => {
-                onReset();
-                setOpen(false);
-              }}
-              className={cn(
-                "p-1.5 rounded-md transition-colors",
-                isLightMode 
-                  ? "hover:bg-zinc-100 text-zinc-600 hover:text-zinc-800"
-                  : "hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
-              )}
-              title="Reset to default"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <p className="text-xs text-zinc-500 mt-1">
-            {filteredTemplates.length > 0 
-              ? `${filteredTemplates.length} pre-built creature${filteredTemplates.length !== 1 ? 's' : ''} available`
-              : "No templates available for this system"}
-          </p>
-        </div>
-        <div className="p-2">
-          {filteredTemplates.map((template) => (
-            <button
-              key={template.id}
-              onClick={() => {
-                onSelect(template);
-                setOpen(false);
-              }}
-              className={cn(
-                "w-full text-left px-2 py-2 rounded-md transition-colors",
-                isLightMode ? "hover:bg-zinc-100" : "hover:bg-zinc-800"
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  "text-sm font-medium",
-                  isLightMode ? "text-zinc-700" : "text-zinc-200"
-                )}>{template.name}</span>
-                {template.isSRD && (
-                  <span className={cn(
-                    "text-[10px] font-medium px-1.5 py-0.5 rounded border",
-                    isLightMode
-                      ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                      : "bg-emerald-900/50 text-emerald-400 border-emerald-800/50"
-                  )}>
-                    SRD
-                  </span>
-                )}
-              </div>
-              <div className="text-xs text-zinc-500">{template.description}</div>
-            </button>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// ============================================================================
 // Save Status Indicator
 // ============================================================================
 
@@ -340,50 +223,49 @@ export default function StatBlocksPage() {
   const [isLightMode, setIsLightMode] = useState(false);
   const [isAtPreview, setIsAtPreview] = useState(false);
 
-  // Initialize theme and listen for changes
+  // Client-side initialization: theme, preview scroll tracking (runs once on mount)
   useEffect(() => {
     // Set initial theme from document (after hydration)
     // eslint-disable-next-line -- Intentional: reading from document after hydration to avoid SSR mismatch
     setIsLightMode(document.documentElement.classList.contains("light"));
 
     // Listen for theme changes from global toggle
-    const observer = new MutationObserver(() => {
+    const themeObserver = new MutationObserver(() => {
       setIsLightMode(document.documentElement.classList.contains("light"));
     });
-
-    observer.observe(document.documentElement, {
+    themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class"],
     });
 
-    return () => observer.disconnect();
+    // Track if user is at or below the preview section
+    const previewElement = document.getElementById("stat-block-preview");
+    let previewObserver: IntersectionObserver | null = null;
+    
+    if (previewElement) {
+      previewObserver = new IntersectionObserver(
+        ([entry]) => {
+          // Set to true when preview is visible (user scrolled to it)
+          setIsAtPreview(entry.isIntersecting);
+        },
+        {
+          threshold: 0.1, // Trigger when at least 10% of preview is visible
+          rootMargin: "-20% 0px -20% 0px", // Trigger when preview enters middle of viewport
+        }
+      );
+      previewObserver.observe(previewElement);
+    }
+
+    return () => {
+      themeObserver.disconnect();
+      previewObserver?.disconnect();
+    };
   }, []);
 
-  // Save system selection to localStorage
+  // Save system selection to localStorage (runs when systemId changes)
   useEffect(() => {
     saveSystemToStorage(systemId);
   }, [systemId]);
-
-  // Track if user is at or below the preview section
-  useEffect(() => {
-    const previewElement = document.getElementById("stat-block-preview");
-    if (!previewElement) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // Set to true when preview is visible (user scrolled to it)
-        setIsAtPreview(entry.isIntersecting);
-      },
-      {
-        threshold: 0.1, // Trigger when at least 10% of preview is visible
-        rootMargin: "-20% 0px -20% 0px", // Trigger when preview enters middle of viewport
-      }
-    );
-
-    observer.observe(previewElement);
-
-    return () => observer.disconnect();
-  }, []);
 
   const handlePrint = () => {
     window.print();
@@ -415,6 +297,57 @@ export default function StatBlocksPage() {
       setStatBlock(defaultData as AnyStatBlockData);
     }
   }, [currentSystem, setStatBlock]);
+
+  // Handle export to JSON
+  const handleExport = useCallback(() => {
+    const exportData = {
+      version: "1.0",
+      systemId,
+      data: statBlock,
+      exportedAt: new Date().toISOString(),
+    };
+    
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${statBlock.name || "stat-block"}-${systemId}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [systemId, statBlock]);
+
+  // Handle import from JSON
+  const handleImport = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        
+        // Validate basic structure
+        if (!imported.data || !imported.systemId) {
+          alert("Invalid stat block file format");
+          return;
+        }
+
+        // Set system and data
+        setSystemId(imported.systemId);
+        setStatBlock(imported.data as AnyStatBlockData);
+      } catch (error) {
+        console.error("Failed to import stat block:", error);
+        alert("Failed to import stat block. Please check the file format.");
+      }
+    };
+    input.click();
+  }, [setStatBlock]);
 
   // Handle dynamic field changes (supports nested paths like "abilityScores.str")
   const handleDynamicFieldChange = useCallback((path: string, value: unknown) => {
@@ -524,6 +457,34 @@ export default function StatBlocksPage() {
               isLightMode={isLightMode}
             />
             <TemplateSelector onSelect={handleLoadTemplate} onReset={handleReset} currentSystemId={systemId} isLightMode={isLightMode} />
+            <Button
+              onClick={handleExport}
+              variant="outline"
+              size="sm"
+              className={cn(
+                isLightMode
+                  ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100"
+                  : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
+              )}
+              title="Export to JSON"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Export</span>
+            </Button>
+            <Button
+              onClick={handleImport}
+              variant="outline"
+              size="sm"
+              className={cn(
+                isLightMode
+                  ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100"
+                  : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
+              )}
+              title="Import from JSON"
+            >
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Import</span>
+            </Button>
             <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-500 text-white">
               <Printer className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Print / Save PDF</span>
@@ -547,30 +508,18 @@ export default function StatBlocksPage() {
                   isLightMode={isLightMode}
                 />
 
-                {/* D&D 5e Trait Sections (only for D&D systems) */}
-                {(systemId === "dnd5e-2014" || systemId === "dnd5e-2024") && TRAIT_SECTION_KEYS.map((section) => (
+                {/* Trait/Feature Sections (dynamically loaded from system schema) */}
+                {currentSystem?.schema.traitSections?.map((section) => (
                   <TraitEditor
                     key={section}
-                    section={section}
-                    entries={statBlock[section]}
-                    onAdd={() => addTrait(section)}
-                    onUpdate={(index, field, value) => updateTrait(section, index, field, value)}
-                    onRemove={(index) => removeTrait(section, index)}
+                    section={section as TraitSectionKey}
+                    entries={(section in statBlock && Array.isArray(statBlock[section])) ? statBlock[section] : []}
+                    onAdd={() => addTrait(section as TraitSectionKey)}
+                    onUpdate={(index, field, value) => updateTrait(section as TraitSectionKey, index, field, value)}
+                    onRemove={(index) => removeTrait(section as TraitSectionKey, index)}
                     isLightMode={isLightMode}
                   />
                 ))}
-
-                {/* Shadowdark Features */}
-                {systemId === "shadowdark" && (
-                  <TraitEditor
-                    section="features"
-                    entries={('features' in statBlock && Array.isArray(statBlock.features)) ? statBlock.features : []}
-                    onAdd={() => addTrait("features")}
-                    onUpdate={(index, field, value) => updateTrait("features", index, field, value)}
-                    onRemove={(index) => removeTrait("features", index)}
-                    isLightMode={isLightMode}
-                  />
-                )}
               </div>
             </ScrollArea>
           </div>

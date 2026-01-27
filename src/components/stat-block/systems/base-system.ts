@@ -72,6 +72,8 @@ export type SystemSchema<T = any> = {
   defaultData: T;
   /** Editor sections and fields */
   sections: SectionDefinition[];
+  /** Trait-like sections that this system uses (e.g., ["traits", "actions"], or ["features"]) */
+  traitSections?: string[];
   /** Validation function for the entire stat block */
   validate?: (data: T) => { valid: boolean; errors?: string[] };
   /** Transform function to convert from another system (if applicable) */

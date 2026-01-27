@@ -59,6 +59,7 @@ export const shadowdarkSystem: StatBlockSystem<ShadowdarkData> = {
         ],
       },
     ],
+    traitSections: ["features"],
   },
   Renderer: ShadowdarkRenderer,
 };

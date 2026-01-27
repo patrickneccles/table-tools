@@ -177,6 +177,7 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
         ],
       },
     ],
+    traitSections: ["traits", "actions", "bonusActions", "reactions", "legendaryActions"],
     transformFrom: (sourceSystem: string, sourceData: any) => {
       if (sourceSystem === "dnd5e-2014") {
         return transformFrom2014(sourceData as DnD5e2014Data);
