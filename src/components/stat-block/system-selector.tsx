@@ -8,6 +8,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
@@ -104,10 +105,7 @@ export function SystemSelector({
           )}
           align="start"
         >
-          <div className={cn(
-            "p-3 border-b",
-            isLightMode ? "border-zinc-200" : "border-zinc-800"
-          )}>
+          <div className="p-3">
             <h3 className={cn(
               "font-medium text-sm",
               isLightMode ? "text-zinc-800" : "text-white"
@@ -116,35 +114,31 @@ export function SystemSelector({
               Select which TTRPG system or edition to use
             </p>
           </div>
+          <Separator />
           <div className="p-2">
             {systems.map((system) => {
               const isSelected = system.id === currentSystemId;
-              const canConvert = sourceSystemId
-                ? canTransform(sourceSystemId, system.id)
-                : true;
+              // const canConvert = sourceSystemId
+              //   ? canTransform(sourceSystemId, system.id)
+              //   : true;
 
               return (
-                <button
+                <Button
                   key={system.id}
+                  variant="ghost"
                   onClick={() => handleSystemSelect(system.id)}
                   className={cn(
-                    "w-full text-left px-3 py-2 rounded-md transition-colors flex items-start gap-2",
-                    isSelected
-                      ? isLightMode
-                        ? "bg-amber-100 text-amber-900"
-                        : "bg-amber-900/30 text-amber-300"
-                      : isLightMode
-                        ? "hover:bg-zinc-100 text-zinc-700"
-                        : "hover:bg-zinc-800 text-zinc-200"
+                    "w-full justify-start h-auto py-2 px-3",
+                    isSelected && "bg-accent"
                   )}
                 >
-                  <div className="flex-1">
+                  <div className="flex flex-col items-start gap-1 w-full">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{system.name}</span>
                       {isSelected && <Check className="h-3 w-3" />}
                       {/* {!canConvert && !isSelected && <AlertTriangle className="h-3 w-3 text-amber-500" />} */}
                     </div>
-                    <div className="text-xs text-zinc-500 mt-0.5">
+                    <div className="text-xs text-muted-foreground font-normal">
                       {system.description} • v{system.version}
                     </div>
                     {/* {!canConvert && !isSelected && (
@@ -153,7 +147,7 @@ export function SystemSelector({
                       </div>
                     )} */}
                   </div>
-                </button>
+                </Button>
               );
             })}
           </div>

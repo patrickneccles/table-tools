@@ -9,8 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Plus, Trash2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { TraitEntry, TraitSectionKey } from "./types";
-import { TRAIT_SECTION_LABELS } from "./types";
+import type { FeatureEntry, FeatureSectionKey } from "./types";
+import { FEATURE_SECTION_LABELS } from "./types";
 
 // ============================================================================
 // Shared Input Styles
@@ -124,9 +124,9 @@ export function NumberInput({ id, label, value, onChange, min, max, className, i
 // TraitEditor Component - Collapsible trait/action section editor
 // ============================================================================
 
-type TraitEditorProps = {
-  section: TraitSectionKey;
-  entries: TraitEntry[] | undefined;
+type FeatureEditorProps = {
+  section: FeatureSectionKey;
+  entries: FeatureEntry[] | undefined;
   onAdd: () => void;
   onUpdate: (index: number, field: "name" | "description", value: string) => void;
   onRemove: (index: number) => void;
@@ -134,8 +134,8 @@ type TraitEditorProps = {
   isLightMode?: boolean;
 };
 
-export function TraitEditor({ section, entries, onAdd, onUpdate, onRemove, defaultOpen = false, isLightMode = false }: TraitEditorProps) {
-  const label = TRAIT_SECTION_LABELS[section];
+export function FeatureEditor({ section, entries, onAdd, onUpdate, onRemove, defaultOpen = false, isLightMode = false }: FeatureEditorProps) {
+  const label = FEATURE_SECTION_LABELS[section];
   const hasEntries = entries && entries.length > 0;
   const [isOpen, setIsOpen] = useState(defaultOpen);
 

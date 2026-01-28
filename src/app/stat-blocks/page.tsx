@@ -195,7 +195,7 @@ function SaveStatusIndicator({ status }: { status: "idle" | "saving" | "saved" }
 export default function StatBlocksPage() {
   // Always start with default system (for consistent SSR)
   const [systemId, setSystemId] = useState(DEFAULT_SYSTEM_ID);
-  
+
   // Load saved system from localStorage on client side only (after hydration)
   useEffect(() => {
     const saved = loadSystemFromStorage();
@@ -204,7 +204,7 @@ export default function StatBlocksPage() {
       setSystemId(saved);
     }
   }, []);
-  
+
   // Get current system and its schema
   const currentSystem = getSystem(systemId);
   const initialData = currentSystem?.schema.defaultData || { name: "New Creature" };
@@ -241,7 +241,7 @@ export default function StatBlocksPage() {
     // Track if user is at or below the preview section
     const previewElement = document.getElementById("stat-block-preview");
     let previewObserver: IntersectionObserver | null = null;
-    
+
     if (previewElement) {
       previewObserver = new IntersectionObserver(
         ([entry]) => {
@@ -306,7 +306,7 @@ export default function StatBlocksPage() {
       data: statBlock,
       exportedAt: new Date().toISOString(),
     };
-    
+
     const jsonString = JSON.stringify(exportData, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -331,7 +331,7 @@ export default function StatBlocksPage() {
       try {
         const text = await file.text();
         const imported = JSON.parse(text);
-        
+
         // Validate basic structure
         if (!imported.data || !imported.systemId) {
           alert("Invalid stat block file format");
@@ -415,7 +415,7 @@ export default function StatBlocksPage() {
           ? "border-zinc-200 bg-white/80"
           : "border-zinc-800 bg-zinc-900/80"
       )}>
-        <div className="max-w-7xl mx-auto px-6 py-4 gap-2 flex flex-wrap md:flex-nowrap items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-4 gap-2 flex flex-wrap lg:flex-nowrap items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={cn(
               "p-2 rounded-lg",
@@ -446,7 +446,7 @@ export default function StatBlocksPage() {
             >
               <Link href="/">
                 <Home className="h-3 w-3" />
-                <span className="hidden sm:inline ml-1">Home</span>
+                <span className="hidden md:inline ml-1">Home</span>
               </Link>
             </Button>
             <SaveStatusIndicator status={saveStatus} />
@@ -456,7 +456,13 @@ export default function StatBlocksPage() {
               sourceSystemId="dnd5e-2014"
               isLightMode={isLightMode}
             />
-            <TemplateSelector onSelect={handleLoadTemplate} onReset={handleReset} currentSystemId={systemId} isLightMode={isLightMode} />
+            <TemplateSelector
+              onSelect={handleLoadTemplate}
+              onReset={handleReset}
+              currentSystemId={systemId}
+              currentSystemName={getSystem(systemId)?.schema.metadata.name}
+              isLightMode={isLightMode}
+            />
             <Button
               onClick={handleExport}
               variant="outline"
@@ -469,7 +475,7 @@ export default function StatBlocksPage() {
               title="Export to JSON"
             >
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline ml-1">Export</span>
+              <span className="hidden md:inline ml-1">Export</span>
             </Button>
             <Button
               onClick={handleImport}
@@ -483,11 +489,11 @@ export default function StatBlocksPage() {
               title="Import from JSON"
             >
               <Upload className="h-4 w-4" />
-              <span className="hidden sm:inline ml-1">Import</span>
+              <span className="hidden md:inline ml-1">Import</span>
             </Button>
             <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-500 text-white">
               <Printer className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Print / Save PDF</span>
+              <span className="hidden md:inline">Print / Save PDF</span>
               <span className="sm:hidden">Print</span>
             </Button>
           </div>

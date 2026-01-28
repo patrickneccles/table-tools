@@ -1,6 +1,6 @@
 // Legacy exports (D&D 5e-specific helpers still in use)
 export { 
-  TraitEditor,
+  FeatureEditor as TraitEditor,
   EditorCard,
   TextInput,
   NumberInput,
@@ -13,8 +13,8 @@ export {
 export { DynamicEditor } from "./dynamic-editor";
 export { 
   ABILITY_KEYS,
-  TRAIT_SECTION_KEYS,
-  TRAIT_SECTION_LABELS,
+  FEATURE_SECTION_KEYS as TRAIT_SECTION_KEYS,
+  FEATURE_SECTION_LABELS as TRAIT_SECTION_LABELS,
   calculateModifier,
   formatModifier,
 } from "./types";
@@ -34,8 +34,8 @@ export {
 export type { 
   AbilityKey,
   AbilityScores,
-  TraitEntry,
-  TraitSectionKey,
+  FeatureEntry as TraitEntry,
+  FeatureSectionKey as TraitSectionKey,
 } from "./types";
 export type { StatBlockTemplate, BaseStatBlockData } from "./stat-block-utils";
 

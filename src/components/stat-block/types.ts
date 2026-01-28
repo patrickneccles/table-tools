@@ -4,17 +4,17 @@ export type AbilityKey = "str" | "dex" | "con" | "int" | "wis" | "cha";
 /** Ability scores mapped by key */
 export type AbilityScores = Record<AbilityKey, number>;
 
-/** A trait/action entry with name and description */
-export type TraitEntry = {
+/** A feature entry with name and description */
+export type FeatureEntry = {
   name: string;
   description: string;
 };
 
-/** Keys for sections that contain trait entries */
-export type TraitSectionKey = "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions" | "features";
+/** Keys for sections that contain feature entries */
+export type FeatureSectionKey = "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions" | "features";
 
-/** Display names for trait sections */
-export const TRAIT_SECTION_LABELS: Record<TraitSectionKey, string> = {
+/** Display names for feature sections */
+export const FEATURE_SECTION_LABELS: Record<FeatureSectionKey, string> = {
   traits: "Traits",
   actions: "Actions",
   bonusActions: "Bonus Actions",
@@ -26,8 +26,8 @@ export const TRAIT_SECTION_LABELS: Record<TraitSectionKey, string> = {
 /** Ordered list of ability keys for consistent rendering */
 export const ABILITY_KEYS: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
 
-/** All trait section keys for iteration */
-export const TRAIT_SECTION_KEYS: TraitSectionKey[] = [
+/** All feature section keys for iteration */
+export const FEATURE_SECTION_KEYS: FeatureSectionKey[] = [
   "traits",
   "actions",
   "bonusActions",
