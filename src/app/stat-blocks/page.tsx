@@ -1,27 +1,30 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Home, Printer, Scroll, Check, ChevronDown, ChevronUp, Download, Upload } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "@/components/error-boundary";
+import type { AbilityKey, BaseStatBlockData, DnD5e2014Data, DnD5e2024Data, StatBlockTemplate, TraitSectionKey } from "@/components/stat-block";
 import {
-  SystemStatBlockView,
-  SystemSelector,
   DEFAULT_SYSTEM_ID,
-  getSystem,
-  transformBetweenSystems,
-  TraitEditor,
   DynamicEditor,
-  saveStatBlockToStorage,
+  getSystem,
   loadStatBlockFromStorage,
-  saveSystemToStorage,
   loadSystemFromStorage,
+  saveStatBlockToStorage,
+  saveSystemToStorage,
+  SystemSelector,
+  SystemStatBlockView,
+  TraitEditor,
+  transformBetweenSystems,
 } from "@/components/stat-block";
-import { TemplateSelector } from "@/components/stat-block/template-selector";
-import type { TraitSectionKey, AbilityKey, StatBlockTemplate, DnD5e2014Data, DnD5e2024Data, BaseStatBlockData } from "@/components/stat-block";
 import { calculateInitiative, calculateProficiencyBonus } from "@/components/stat-block/systems/dnd5e-2024";
+import { TemplateSelector } from "@/components/stat-block/template-selector";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useHistory } from "@/hooks/use-history";
+import { cn } from "@/lib/utils";
+import { Check, ChevronDown, ChevronUp, Download, Home, MoreHorizontal, Printer, Redo2, Scroll, Undo2, Upload } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Generic stat block data that can be any system's data
 type AnyStatBlockData = BaseStatBlockData & Record<string, unknown>;
@@ -41,8 +44,11 @@ type DnD5eData = (DnD5e2014Data | DnD5e2024Data) & Partial<{
 // ============================================================================
 
 function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
-  // Always use initialData for consistent SSR
-  const [statBlock, setStatBlock] = useState<T>(initialData);
+  // Use history management for undo/redo
+  const history = useHistory<T>(initialData, 50);
+  const statBlock = history.state;
+  const setStatBlock = history.setState;
+  
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
@@ -51,11 +57,10 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
   useEffect(() => {
     const saved = loadStatBlockFromStorage();
     if (saved) {
-      // eslint-disable-next-line -- Intentional: loading from localStorage after hydration to avoid SSR mismatch
       setStatBlock(saved as unknown as T);
     }
     isInitialMount.current = false;
-  }, []);
+  }, [setStatBlock]);
 
   // Auto-save to localStorage with debounce
   useEffect(() => {
@@ -89,7 +94,7 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
     value: T[K]
   ) => {
     setStatBlock((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  }, [setStatBlock]);
 
   const updateAbility = useCallback((ability: AbilityKey, value: number) => {
     setStatBlock((prev) => {
@@ -102,7 +107,7 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
       }
       return prev;
     });
-  }, []);
+  }, [setStatBlock]);
 
   const addTrait = useCallback((section: TraitSectionKey) => {
     setStatBlock((prev) => {
@@ -115,7 +120,7 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
       }
       return prev;
     });
-  }, []);
+  }, [setStatBlock]);
 
   const updateTrait = useCallback((
     section: TraitSectionKey,
@@ -132,7 +137,7 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
       }
       return prev;
     });
-  }, []);
+  }, [setStatBlock]);
 
   const removeTrait = useCallback((section: TraitSectionKey, index: number) => {
     setStatBlock((prev) => {
@@ -144,11 +149,11 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
       }
       return prev;
     });
-  }, []);
+  }, [setStatBlock]);
 
   const loadTemplate = useCallback((template: StatBlockTemplate) => {
     setStatBlock({ ...template.data } as T);
-  }, []);
+  }, [setStatBlock]);
 
   return {
     statBlock,
@@ -160,6 +165,12 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
     removeTrait,
     loadTemplate,
     setStatBlock,
+    // History management
+    undo: history.undo,
+    redo: history.redo,
+    canUndo: history.canUndo,
+    canRedo: history.canRedo,
+    captureSnapshot: history.captureSnapshot,
   };
 }
 
@@ -219,6 +230,11 @@ export default function StatBlocksPage() {
     removeTrait,
     loadTemplate,
     setStatBlock,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    captureSnapshot,
   } = useStatBlockEditor(initialData);
   const [isLightMode, setIsLightMode] = useState(false);
   const [isAtPreview, setIsAtPreview] = useState(false);
@@ -267,9 +283,107 @@ export default function StatBlocksPage() {
     saveSystemToStorage(systemId);
   }, [systemId]);
 
-  const handlePrint = () => {
+  // Handlers for keyboard shortcuts and UI actions
+  const handlePrint = useCallback(() => {
     window.print();
-  };
+  }, []);
+
+  const handleExport = useCallback(() => {
+    const exportData = {
+      version: "1.0",
+      systemId,
+      data: statBlock,
+      exportedAt: new Date().toISOString(),
+    };
+    
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${statBlock.name || "stat-block"}-${systemId}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, [systemId, statBlock]);
+
+  const handleImport = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const imported = JSON.parse(text);
+        
+        // Validate basic structure
+        if (!imported.data || !imported.systemId) {
+          alert("Invalid stat block file format");
+          return;
+        }
+
+        // Set system and data
+        setSystemId(imported.systemId);
+        setStatBlock(imported.data as AnyStatBlockData);
+      } catch (error) {
+        console.error("Failed to import stat block:", error);
+        alert("Failed to import stat block. Please check the file format.");
+      }
+    };
+    input.click();
+  }, [setStatBlock]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const modifier = isMac ? e.metaKey : e.ctrlKey;
+
+      // Prevent default for our shortcuts
+      if (modifier) {
+        switch (e.key.toLowerCase()) {
+          case 'z':
+            if (e.shiftKey) {
+              // Redo: Ctrl/Cmd+Shift+Z
+              e.preventDefault();
+              redo();
+            } else {
+              // Undo: Ctrl/Cmd+Z
+              e.preventDefault();
+              undo();
+            }
+            break;
+          case 'y':
+            // Redo: Ctrl/Cmd+Y
+            e.preventDefault();
+            redo();
+            break;
+          case 'p':
+            // Print: Ctrl/Cmd+P (browser default, but we capture for consistency)
+            e.preventDefault();
+            handlePrint();
+            break;
+          case 'e':
+            // Export: Ctrl/Cmd+E
+            e.preventDefault();
+            handleExport();
+            break;
+          case 'i':
+            // Import: Ctrl/Cmd+I
+            e.preventDefault();
+            handleImport();
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo, handlePrint, handleExport, handleImport]);
 
   const handleScrollToggle = () => {
     if (isAtPreview) {
@@ -297,57 +411,6 @@ export default function StatBlocksPage() {
       setStatBlock(defaultData as AnyStatBlockData);
     }
   }, [currentSystem, setStatBlock]);
-
-  // Handle export to JSON
-  const handleExport = useCallback(() => {
-    const exportData = {
-      version: "1.0",
-      systemId,
-      data: statBlock,
-      exportedAt: new Date().toISOString(),
-    };
-
-    const jsonString = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${statBlock.name || "stat-block"}-${systemId}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [systemId, statBlock]);
-
-  // Handle import from JSON
-  const handleImport = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const imported = JSON.parse(text);
-
-        // Validate basic structure
-        if (!imported.data || !imported.systemId) {
-          alert("Invalid stat block file format");
-          return;
-        }
-
-        // Set system and data
-        setSystemId(imported.systemId);
-        setStatBlock(imported.data as AnyStatBlockData);
-      } catch (error) {
-        console.error("Failed to import stat block:", error);
-        alert("Failed to import stat block. Please check the file format.");
-      }
-    };
-    input.click();
-  }, [setStatBlock]);
 
   // Handle dynamic field changes (supports nested paths like "abilityScores.str")
   const handleDynamicFieldChange = useCallback((path: string, value: unknown) => {
@@ -428,7 +491,7 @@ export default function StatBlocksPage() {
                 "text-xl font-bold transition-colors",
                 isLightMode ? "text-zinc-800" : "text-white"
               )}>Stat Block Generator</h1>
-              <p className="text-zinc-500 text-sm">Create D&D 5e stat blocks (2014 & 2024 editions)</p>
+              <p className="text-zinc-500 text-sm">Create stat blocks (D&D 5e and other TTRPG systems)</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -453,7 +516,6 @@ export default function StatBlocksPage() {
             <SystemSelector
               currentSystemId={systemId}
               onSystemChange={handleSystemChange}
-              sourceSystemId="dnd5e-2014"
               isLightMode={isLightMode}
             />
             <TemplateSelector
@@ -463,38 +525,50 @@ export default function StatBlocksPage() {
               currentSystemName={getSystem(systemId)?.schema.metadata.name}
               isLightMode={isLightMode}
             />
-            <Button
-              onClick={handleExport}
-              variant="outline"
-              size="sm"
-              className={cn(
-                isLightMode
-                  ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100"
-                  : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
-              )}
-              title="Export to JSON"
-            >
-              <Download className="h-4 w-4" />
-              <span className="hidden md:inline ml-1">Export</span>
-            </Button>
-            <Button
-              onClick={handleImport}
-              variant="outline"
-              size="sm"
-              className={cn(
-                isLightMode
-                  ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100"
-                  : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
-              )}
-              title="Import from JSON"
-            >
-              <Upload className="h-4 w-4" />
-              <span className="hidden md:inline ml-1">Import</span>
-            </Button>
-            <Button onClick={handlePrint} className="bg-amber-600 hover:bg-amber-500 text-white">
-              <Printer className="h-4 w-4 mr-2" />
-              <span className="hidden md:inline">Print / Save PDF</span>
-              <span className="sm:hidden">Print</span>
+            {/* Actions Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    isLightMode
+                      ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100"
+                      : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
+                  )}
+                  title="More actions"
+                >
+                  <MoreHorizontal className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">Actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={undo} disabled={!canUndo}>
+                  <Undo2 className="h-4 w-4 mr-2" />
+                  Undo
+                  <span className="ml-auto text-xs text-muted-foreground">⌘Z</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={redo} disabled={!canRedo}>
+                  <Redo2 className="h-4 w-4 mr-2" />
+                  Redo
+                  <span className="ml-auto text-xs text-muted-foreground">⌘⇧Z</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export JSON
+                  <span className="ml-auto text-xs text-muted-foreground">⌘E</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleImport}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import JSON
+                  <span className="ml-auto text-xs text-muted-foreground">⌘I</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={handlePrint} size="sm" className="bg-amber-600 hover:bg-amber-500 text-white">
+              <Printer className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Print</span>
             </Button>
           </div>
         </div>
@@ -503,54 +577,59 @@ export default function StatBlocksPage() {
       <main className="max-w-7xl mx-auto py-8 px-6 print:p-0 print:max-w-none">
         <div className="flex flex-col lg:flex-row gap-8 print:block">
           {/* Editor Panel */}
-          <div className="flex-1 print:hidden">
-            <ScrollArea className="h-[calc(100vh-140px)] pr-4">
-              <div className="space-y-4">
-                {/* Dynamic Editor based on System Schema */}
-                <DynamicEditor
-                  data={statBlock}
-                  sections={systemSections}
-                  onFieldChange={handleDynamicFieldChange}
-                  isLightMode={isLightMode}
-                />
-
-                {/* Trait/Feature Sections (dynamically loaded from system schema) */}
-                {currentSystem?.schema.traitSections?.map((section) => (
-                  <TraitEditor
-                    key={section}
-                    section={section as TraitSectionKey}
-                    entries={(section in statBlock && Array.isArray(statBlock[section])) ? statBlock[section] : []}
-                    onAdd={() => addTrait(section as TraitSectionKey)}
-                    onUpdate={(index, field, value) => updateTrait(section as TraitSectionKey, index, field, value)}
-                    onRemove={(index) => removeTrait(section as TraitSectionKey, index)}
+          <ErrorBoundary>
+            <div className="flex-1 print:hidden">
+              <ScrollArea className="h-[calc(100vh-140px)] pr-4">
+                <div className="space-y-4">
+                  {/* Dynamic Editor based on System Schema */}
+                  <DynamicEditor
+                    data={statBlock}
+                    sections={systemSections}
+                    onFieldChange={handleDynamicFieldChange}
+                    onBlur={captureSnapshot}
                     isLightMode={isLightMode}
                   />
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
+
+                  {/* Trait/Feature Sections (dynamically loaded from system schema) */}
+                  {currentSystem?.schema.traitSections?.map((section) => (
+                    <TraitEditor
+                      key={section}
+                      section={section as TraitSectionKey}
+                      entries={(section in statBlock && Array.isArray(statBlock[section])) ? statBlock[section] : []}
+                      onAdd={() => addTrait(section as TraitSectionKey)}
+                      onUpdate={(index, field, value) => updateTrait(section as TraitSectionKey, index, field, value)}
+                      onRemove={(index) => removeTrait(section as TraitSectionKey, index)}
+                      isLightMode={isLightMode}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          </ErrorBoundary>
 
           {/* Preview Panel */}
-          <div id="stat-block-preview" className="w-full lg:w-[420px] shrink-0 print:w-full">
-            <div className="lg:sticky lg:top-[88px] print:relative print:top-0">
-              <div className="flex items-center justify-between mb-3 print:hidden">
-                <h2 className="text-sm font-medium text-zinc-500">Preview</h2>
-                <span className={cn(
-                  "text-xs px-2 py-0.5 rounded-full",
-                  isLightMode
-                    ? "bg-amber-100 text-amber-700"
-                    : "bg-amber-900/30 text-amber-400"
-                )}>
-                  {currentSystem?.schema.metadata.name || systemId}
-                </span>
+          <ErrorBoundary>
+            <div id="stat-block-preview" className="w-full lg:w-[420px] shrink-0 print:w-full">
+              <div className="lg:sticky lg:top-[88px] print:relative print:top-0">
+                <div className="flex items-center justify-between mb-3 print:hidden">
+                  <h2 className="text-sm font-medium text-zinc-500">Preview</h2>
+                  <span className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    isLightMode
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-amber-900/30 text-amber-400"
+                  )}>
+                    {currentSystem?.schema.metadata.name || systemId}
+                  </span>
+                </div>
+                <SystemStatBlockView
+                  systemId={systemId}
+                  data={currentStatBlock}
+                  className="print:shadow-none print:max-w-none"
+                />
               </div>
-              <SystemStatBlockView
-                systemId={systemId}
-                data={currentStatBlock}
-                className="print:shadow-none print:max-w-none"
-              />
             </div>
-          </div>
+          </ErrorBoundary>
         </div>
       </main>
 
@@ -575,11 +654,39 @@ export default function StatBlocksPage() {
         )}
       </button>
 
-      {/* Print styles */}
+      {/* Global styles */}
       <style jsx global>{`
+        /* Browser autofill styling for light and dark themes */
+        html.light input:-webkit-autofill,
+        html.light input:-webkit-autofill:hover,
+        html.light input:-webkit-autofill:focus,
+        html.light textarea:-webkit-autofill,
+        html.light textarea:-webkit-autofill:hover,
+        html.light textarea:-webkit-autofill:focus {
+          -webkit-text-fill-color: rgb(39 39 42) !important;
+          -webkit-box-shadow: 0 0 0 1000px rgb(255 255 255) inset !important;
+          box-shadow: 0 0 0 1000px rgb(255 255 255) inset !important;
+          background-color: rgb(255 255 255) !important;
+          border-color: rgb(212 212 216) !important;
+        }
+
+        /* Dark mode is default, so we target both explicit .dark and no class */
+        html:not(.light) input:-webkit-autofill,
+        html:not(.light) input:-webkit-autofill:hover,
+        html:not(.light) input:-webkit-autofill:focus,
+        html:not(.light) textarea:-webkit-autofill,
+        html:not(.light) textarea:-webkit-autofill:hover,
+        html:not(.light) textarea:-webkit-autofill:focus {
+          -webkit-text-fill-color: rgb(255 255 255) !important;
+          -webkit-box-shadow: 0 0 0 1000px rgba(39 39 42 / 0.5) inset !important;
+          box-shadow: 0 0 0 1000px rgba(39 39 42 / 0.5) inset !important;
+          background-color: rgba(39 39 42 / 0.5) !important;
+          border-color: rgb(63 63 70) !important;
+        }
+
         @media print {
           @page {
-            size: auto;
+            size: portrait;
             margin: 0.5in;
           }
           

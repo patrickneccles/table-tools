@@ -12,14 +12,19 @@ export function ThemeToggle() {
   // Check for existing light mode preference on mount
   useEffect(() => {
     setMounted(true);
-    const isLight = document.documentElement.classList.contains("light");
+    // Check localStorage first, fallback to class if not set
+    const savedTheme = localStorage.getItem("theme");
+    const isLight = savedTheme ? savedTheme === "light" : document.documentElement.classList.contains("light");
     setIsLightMode(isLight);
+    document.documentElement.classList.toggle("light", isLight);
   }, []);
 
   const toggleTheme = () => {
     const newIsLight = !isLightMode;
     setIsLightMode(newIsLight);
     document.documentElement.classList.toggle("light", newIsLight);
+    // Persist to localStorage
+    localStorage.setItem("theme", newIsLight ? "light" : "dark");
   };
 
   // Avoid hydration mismatch
@@ -60,8 +65,11 @@ export function AppFooter() {
 
   useEffect(() => {
     setMounted(true);
-    const isLight = document.documentElement.classList.contains("light");
+    // Load theme from localStorage on mount
+    const savedTheme = localStorage.getItem("theme");
+    const isLight = savedTheme ? savedTheme === "light" : document.documentElement.classList.contains("light");
     setIsLightMode(isLight);
+    document.documentElement.classList.toggle("light", isLight);
     
     // Listen for class changes on documentElement
     const observer = new MutationObserver(() => {

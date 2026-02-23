@@ -1,0 +1,19 @@
+{
+  "id": "shadowdark-troll",
+  "systemId": "shadowdark",
+  "name": "Troll",
+  "data": {
+    "name": "Troll",
+    "description": "Green, lanky giants with warty skin and territorial rage. Lair in deep forests and swamps.",
+    "armorClass": 12,
+    "hitPoints": 24,
+    "attack": "2 claw +4 (1d6) and 1 bite +4 (1d10)",
+    "movement": "near",
+    "abilityScores": { "str": 3, "dex": 2, "con": 2, "int": -1, "wis": 0, "cha": -1 },
+    "alignment": "C",
+    "level": 5,
+    "features": [
+      { "name": "Regenerate", "description": "Regains 2d6 HP on its turn unless its wounds are cauterized with fire or acid." }
+    ]
+  }
+}

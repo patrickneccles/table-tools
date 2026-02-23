@@ -22,6 +22,7 @@ type DynamicEditorProps<T extends BaseStatBlockData> = {
   data: T;
   sections: SectionDefinition[];
   onFieldChange: (path: string, value: any) => void;
+  onBlur?: () => void;
   isLightMode: boolean;
 };
 
@@ -42,15 +43,26 @@ function setNestedValue(obj: any, path: string, value: any): any {
   return obj;
 }
 
+function FieldHelp({ helpText, isLightMode }: { helpText?: string; isLightMode: boolean }) {
+  if (!helpText) return null;
+  return (
+    <p className={cn("text-[10px] mt-1", isLightMode ? "text-zinc-500" : "text-zinc-600")}>
+      {helpText}
+    </p>
+  );
+}
+
 function DynamicField<T extends BaseStatBlockData>({
   field,
   data,
   onFieldChange,
+  onBlur,
   isLightMode,
 }: {
   field: FieldDefinition;
   data: T;
   onFieldChange: (path: string, value: any) => void;
+  onBlur?: () => void;
   isLightMode: boolean;
 }) {
   const value = getNestedValue(data, field.key);
@@ -58,14 +70,18 @@ function DynamicField<T extends BaseStatBlockData>({
   switch (field.type) {
     case "text":
       return (
-        <TextInput
-          id={field.key}
-          label={field.label}
-          value={value || ""}
-          onChange={(v) => onFieldChange(field.key, v)}
-          placeholder={field.placeholder}
-          isLightMode={isLightMode}
-        />
+        <div>
+          <TextInput
+            id={field.key}
+            label={field.label}
+            value={value || ""}
+            onChange={(v) => onFieldChange(field.key, v)}
+            onBlur={onBlur}
+            placeholder={field.placeholder}
+            isLightMode={isLightMode}
+          />
+          <FieldHelp helpText={field.helpText} isLightMode={isLightMode} />
+        </div>
       );
 
     case "textarea": {
@@ -95,6 +111,7 @@ function DynamicField<T extends BaseStatBlockData>({
                 : newValue;
               onFieldChange(field.key, finalValue);
             }}
+            onBlur={onBlur}
             placeholder={field.placeholder}
             rows={3}
             className={cn(
@@ -102,53 +119,52 @@ function DynamicField<T extends BaseStatBlockData>({
               "resize-none"
             )}
           />
-          {field.helpText && (
-            <p className={cn(
-              "text-[10px] mt-1",
-              isLightMode ? "text-zinc-500" : "text-zinc-600"
-            )}>
-              {field.helpText}
-            </p>
-          )}
+          <FieldHelp helpText={field.helpText} isLightMode={isLightMode} />
         </div>
       );
     }
 
     case "number":
       return (
-        <NumberInput
-          id={field.key}
-          label={field.label}
-          value={value ?? 0}
-          onChange={(v) => onFieldChange(field.key, v ?? 0)}
-          isLightMode={isLightMode}
-        />
+        <div>
+          <NumberInput
+            id={field.key}
+            label={field.label}
+            value={value ?? 0}
+            onChange={(v) => onFieldChange(field.key, v ?? 0)}
+            isLightMode={isLightMode}
+          />
+          <FieldHelp helpText={field.helpText} isLightMode={isLightMode} />
+        </div>
       );
 
     case "checkbox":
       return (
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id={field.key}
-            checked={value || false}
-            onChange={(e) => onFieldChange(field.key, e.target.checked)}
-            className={cn(
-              "w-4 h-4 rounded transition-colors",
-              isLightMode
-                ? "border-zinc-300 text-amber-600 focus:ring-amber-500"
-                : "border-zinc-700 text-amber-600 focus:ring-amber-500"
-            )}
-          />
-          <Label
-            htmlFor={field.key}
-            className={cn(
-              "text-xs transition-colors cursor-pointer",
-              isLightMode ? "text-zinc-600" : "text-zinc-400"
-            )}
-          >
-            {field.label}
-          </Label>
+        <div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id={field.key}
+              checked={value || false}
+              onChange={(e) => onFieldChange(field.key, e.target.checked)}
+              className={cn(
+                "w-4 h-4 rounded transition-colors",
+                isLightMode
+                  ? "border-zinc-300 text-amber-600 focus:ring-amber-500"
+                  : "border-zinc-700 text-amber-600 focus:ring-amber-500"
+              )}
+            />
+            <Label
+              htmlFor={field.key}
+              className={cn(
+                "text-xs transition-colors cursor-pointer",
+                isLightMode ? "text-zinc-600" : "text-zinc-400"
+              )}
+            >
+              {field.label}
+            </Label>
+          </div>
+          <FieldHelp helpText={field.helpText} isLightMode={isLightMode} />
         </div>
       );
 
@@ -176,6 +192,7 @@ function DynamicField<T extends BaseStatBlockData>({
               </option>
             ))}
           </select>
+          <FieldHelp helpText={field.helpText} isLightMode={isLightMode} />
         </div>
       );
 
@@ -188,6 +205,7 @@ export function DynamicEditor<T extends BaseStatBlockData>({
   data,
   sections,
   onFieldChange,
+  onBlur,
   isLightMode,
 }: DynamicEditorProps<T>) {
   return (
@@ -214,6 +232,7 @@ export function DynamicEditor<T extends BaseStatBlockData>({
                   field={field}
                   data={data}
                   onFieldChange={onFieldChange}
+                  onBlur={onBlur}
                   isLightMode={isLightMode}
                 />
               </div>

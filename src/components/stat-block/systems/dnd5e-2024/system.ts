@@ -163,7 +163,7 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
         key: "challenge",
         title: "Challenge Rating",
         fields: [
-          { key: "challengeRating", label: "CR", type: "text" },
+          { key: "challengeRating", label: "CR", type: "text", helpText: "e.g. 1/8, 1/4, 1/2, 1, 2" },
           { key: "experiencePoints", label: "XP", type: "number" },
           { key: "proficiencyBonus", label: "Proficiency Bonus", type: "number", helpText: "Auto-calculated from CR if empty" },
         ],

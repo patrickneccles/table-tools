@@ -41,7 +41,7 @@ export const shadowdarkSystem: StatBlockSystem<ShadowdarkData> = {
           { key: "armorClass", label: "Armor Class", type: "number" },
           { key: "hitPoints", label: "Hit Points", type: "number" },
           { key: "attack", label: "Attack", type: "text", placeholder: "e.g., 2 claw +2 (1d4)" },
-          { key: "movement", label: "Movement", type: "text", placeholder: "e.g., near, far, close" },
+          { key: "movement", label: "Movement", type: "text", placeholder: "e.g., near, far, close", helpText: "Distance bands: near, close, far" },
           { key: "alignment", label: "Alignment", type: "text", placeholder: "L, N, C" },
           { key: "level", label: "Level", type: "number" },
         ],
@@ -50,7 +50,7 @@ export const shadowdarkSystem: StatBlockSystem<ShadowdarkData> = {
         key: "abilityScores",
         title: "Ability Modifiers",
         fields: [
-          { key: "abilityScores.str", label: "STR", type: "number" },
+          { key: "abilityScores.str", label: "STR", type: "number", helpText: "Modifier (e.g. +2 or –1), not raw score" },
           { key: "abilityScores.dex", label: "DEX", type: "number" },
           { key: "abilityScores.con", label: "CON", type: "number" },
           { key: "abilityScores.int", label: "INT", type: "number" },

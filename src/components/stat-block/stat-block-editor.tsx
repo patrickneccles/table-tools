@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Trash2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import type { FeatureEntry, FeatureSectionKey } from "./types";
 import { FEATURE_SECTION_LABELS } from "./types";
 
@@ -20,8 +20,8 @@ export function getInputClassName(isLightMode: boolean): string {
   return cn(
     "transition-colors",
     isLightMode
-      ? "bg-white border-zinc-300 text-zinc-800"
-      : "bg-zinc-800/50 border-zinc-700 text-white"
+      ? "bg-white border-zinc-300 text-zinc-800 autofill:bg-white autofill:text-zinc-800"
+      : "bg-zinc-800/50 border-zinc-700 text-white autofill:bg-zinc-800/50 autofill:text-white"
   );
 }
 
@@ -67,18 +67,20 @@ type TextInputProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   className?: string;
   isLightMode?: boolean;
 };
 
-export function TextInput({ id, label, value, onChange, placeholder, className, isLightMode = false }: TextInputProps) {
+export function TextInput({ id, label, value, onChange, onBlur, placeholder, className, isLightMode = false }: TextInputProps) {
   return (
     <FormField id={id} label={label} className={className} isLightMode={isLightMode}>
       <Input
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         placeholder={placeholder}
         className={placeholder ? getInputWithPlaceholderClassName(isLightMode) : getInputClassName(isLightMode)}
       />
@@ -95,13 +97,14 @@ type NumberInputProps = {
   label: string;
   value: number | undefined;
   onChange: (value: number | undefined) => void;
+  onBlur?: () => void;
   min?: number;
   max?: number;
   className?: string;
   isLightMode?: boolean;
 };
 
-export function NumberInput({ id, label, value, onChange, min, max, className, isLightMode = false }: NumberInputProps) {
+export function NumberInput({ id, label, value, onChange, onBlur, min, max, className, isLightMode = false }: NumberInputProps) {
   return (
     <FormField id={id} label={label} className={className} isLightMode={isLightMode}>
       <Input
@@ -114,6 +117,7 @@ export function NumberInput({ id, label, value, onChange, min, max, className, i
           const parsed = parseInt(e.target.value);
           onChange(isNaN(parsed) ? undefined : parsed);
         }}
+        onBlur={onBlur}
         className={getInputClassName(isLightMode)}
       />
     </FormField>
@@ -142,6 +146,7 @@ export function FeatureEditor({ section, entries, onAdd, onUpdate, onRemove, def
   // Auto-open when entries are added (client-side only to avoid hydration issues)
   useEffect(() => {
     if (hasEntries && !defaultOpen) {
+      // eslint-disable-next-line -- Intentional: open collapsible when entries are added for better UX
       setIsOpen(true);
     }
   }, [hasEntries, defaultOpen]);

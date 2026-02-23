@@ -22,21 +22,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Check, BookOpen, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getAllSystemMetadata, canTransform } from "./systems";
+import { getAllSystemMetadata } from "./systems";
 
 export type SystemSelectorProps = {
   currentSystemId: string;
   onSystemChange: (systemId: string) => void;
   isLightMode?: boolean;
-  /** Optional: source system for showing transformation availability */
-  sourceSystemId?: string;
 };
 
 export function SystemSelector({
   currentSystemId,
   onSystemChange,
   isLightMode = false,
-  sourceSystemId,
 }: SystemSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const [alertOpen, setAlertOpen] = React.useState(false);
@@ -46,21 +43,13 @@ export function SystemSelector({
   const pendingSystem = systems.find(s => s.id === pendingSystemId);
 
   const handleSystemSelect = (systemId: string) => {
-    // Check if transformation is available
-    const canConvert = sourceSystemId
-      ? canTransform(sourceSystemId, systemId)
-      : true;
-
-    if (!canConvert && systemId !== currentSystemId) {
-      // Show confirmation dialog
-      setPendingSystemId(systemId);
+    if (systemId === currentSystemId) {
       setOpen(false);
-      setAlertOpen(true);
-    } else {
-      // Direct switch
-      onSystemChange(systemId);
-      setOpen(false);
+      return;
     }
+    setPendingSystemId(systemId);
+    setOpen(false);
+    setAlertOpen(true);
   };
 
   const handleConfirmSwitch = () => {
@@ -83,14 +72,14 @@ export function SystemSelector({
           <Button
             aria-label="Select stat block system"
             variant="outline"
+            size="sm"
             className={cn(
-              "gap-2",
               isLightMode
                 ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800"
                 : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white"
             )}
           >
-            <BookOpen className="h-4 w-4" />
+            <BookOpen className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">
               {currentSystem?.name || "Select System"}
             </span>
@@ -118,10 +107,6 @@ export function SystemSelector({
           <div className="p-2">
             {systems.map((system) => {
               const isSelected = system.id === currentSystemId;
-              // const canConvert = sourceSystemId
-              //   ? canTransform(sourceSystemId, system.id)
-              //   : true;
-
               return (
                 <Button
                   key={system.id}
@@ -136,16 +121,10 @@ export function SystemSelector({
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{system.name}</span>
                       {isSelected && <Check className="h-3 w-3" />}
-                      {/* {!canConvert && !isSelected && <AlertTriangle className="h-3 w-3 text-amber-500" />} */}
                     </div>
                     <div className="text-xs text-muted-foreground font-normal">
                       {system.description} • v{system.version}
                     </div>
-                    {/* {!canConvert && !isSelected && (
-                      <div className="text-[10px] text-amber-600 mt-1">
-                        ⚠️ No automatic conversion
-                      </div>
-                    )} */}
                   </div>
                 </Button>
               );

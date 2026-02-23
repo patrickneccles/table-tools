@@ -139,6 +139,42 @@ export type StatBlockTemplate<T extends BaseStatBlockData = BaseStatBlockData> =
   data: T;
 };
 
+/**
+ * Template as stored in a JSON file or exported from a module.
+ * Includes name so templates are self-describing.
+ */
+export type StatBlockTemplateExport<T extends BaseStatBlockData = BaseStatBlockData> = {
+  id: string;
+  systemId: string;
+  name: string;
+  data: T;
+  description?: string;
+  isSRD?: boolean;
+};
+
+/** Type for webpack require.context result (loads a directory of modules) */
+type RequireContext = {
+  keys: () => string[];
+  (key: string): unknown;
+};
+
+/**
+ * Load StatBlockTemplate[] from a webpack require.context (e.g. directory of JSON files).
+ * Keys are relative paths like "./goblin.json"; each module is the parsed template object.
+ */
+export function loadTemplatesFromContext<T extends BaseStatBlockData>(
+  context: RequireContext
+): StatBlockTemplate<T>[] {
+  const templates = context
+    .keys()
+    .map((key) => {
+      const m = context(key) as StatBlockTemplate<T> | { default: StatBlockTemplate<T> };
+      return (m && "default" in m ? m.default : m) as StatBlockTemplate<T>;
+    })
+    .filter((t): t is StatBlockTemplate<T> => t != null && typeof t.id === "string" && typeof t.name === "string");
+  return templates.sort((a, b) => a.name.localeCompare(b.name));
+}
+
 // ============================================================================
 // Local Storage Persistence
 // ============================================================================

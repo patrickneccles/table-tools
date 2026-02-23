@@ -9,7 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { FileText, RotateCcw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { FileText, RotateCcw, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StatBlockTemplate } from "./stat-block-utils";
 import { STAT_BLOCK_TEMPLATES } from "./templates";
@@ -30,24 +40,48 @@ export function TemplateSelector({
   isLightMode
 }: TemplateSelectorProps) {
   const [open, setOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<StatBlockTemplate | null>(null);
 
   // Filter templates to only show ones for the current system
   const filteredTemplates = STAT_BLOCK_TEMPLATES.filter(
     template => template.systemId === currentSystemId
   );
 
+  const handleTemplateClick = (template: StatBlockTemplate) => {
+    setPendingTemplate(template);
+    setOpen(false);
+    // Defer opening alert so popover can close first (avoids focus/portal issues)
+    setTimeout(() => setAlertOpen(true), 0);
+  };
+
+  const handleConfirmSelect = () => {
+    if (pendingTemplate) {
+      onSelect(pendingTemplate);
+      setPendingTemplate(null);
+    }
+    setAlertOpen(false);
+  };
+
+  const handleCancelSelect = () => {
+    setPendingTemplate(null);
+    setAlertOpen(false);
+  };
+
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          size="sm"
           className={cn(
             isLightMode
               ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-800"
               : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800 hover:text-white"
           )}
         >
-          <FileText className="h-4 w-4 mr-2" />
+          <FileText className="h-4 w-4 sm:mr-2" />
           <span className="hidden sm:inline">Templates</span>
         </Button>
       </PopoverTrigger>
@@ -92,10 +126,7 @@ export function TemplateSelector({
             <Button
               key={template.id}
               variant="ghost"
-              onClick={() => {
-                onSelect(template);
-                setOpen(false);
-              }}
+              onClick={() => handleTemplateClick(template)}
               className="w-full justify-start h-auto py-2 px-2"
             >
               <div className="flex flex-col items-start gap-1 w-full">
@@ -116,5 +147,58 @@ export function TemplateSelector({
         </div>
       </PopoverContent>
     </Popover>
+
+    {/* Confirmation Dialog */}
+    <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+      <AlertDialogContent className={cn(
+        isLightMode
+          ? "bg-white border-zinc-200"
+          : "bg-zinc-900 border-zinc-700"
+      )}>
+        <AlertDialogHeader>
+          <AlertDialogTitle className={cn(
+            "flex items-center gap-2",
+            isLightMode ? "text-zinc-800" : "text-white"
+          )}>
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Load Template?
+          </AlertDialogTitle>
+          <AlertDialogDescription className={cn(
+            isLightMode ? "text-zinc-600" : "text-zinc-400"
+          )}>
+            {pendingTemplate && (
+              <>
+                <span className="block mb-2">
+                  Selecting &quot;{pendingTemplate.name}&quot; will overwrite your current stat block.
+                  Any unsaved changes will be lost.
+                </span>
+                <span className="block font-medium">
+                  Are you sure you want to continue?
+                </span>
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            onClick={handleCancelSelect}
+            className={cn(
+              isLightMode
+                ? "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
+                : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+            )}
+          >
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleConfirmSelect}
+            className="bg-amber-600 text-white hover:bg-amber-500"
+          >
+            Load Template
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -53,7 +53,7 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
         key: "abilityScores",
         title: "Ability Scores",
         fields: [
-          { key: "abilityScores.str", label: "STR", type: "number" },
+          { key: "abilityScores.str", label: "STR", type: "number", helpText: "Raw score (3–20), not modifier" },
           { key: "abilityScores.dex", label: "DEX", type: "number" },
           { key: "abilityScores.con", label: "CON", type: "number" },
           { key: "abilityScores.int", label: "INT", type: "number" },
@@ -93,7 +93,7 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
         key: "challenge",
         title: "Challenge Rating",
         fields: [
-          { key: "challengeRating", label: "CR", type: "text" },
+          { key: "challengeRating", label: "CR", type: "text", helpText: "e.g. 1/8, 1/4, 1/2, 1, 2" },
           { key: "experiencePoints", label: "XP", type: "number" },
         ],
       },
