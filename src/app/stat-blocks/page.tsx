@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useHistory } from "@/hooks/use-history";
+import { useIsLightMode } from "@/hooks/use-is-light-mode";
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown, ChevronUp, Download, Home, MoreHorizontal, Printer, Redo2, Scroll, Undo2, Upload } from "lucide-react";
 import Link from "next/link";
@@ -236,44 +237,28 @@ export default function StatBlocksPage() {
     canRedo,
     captureSnapshot,
   } = useStatBlockEditor(initialData);
-  const [isLightMode, setIsLightMode] = useState(false);
+  const isLightMode = useIsLightMode();
   const [isAtPreview, setIsAtPreview] = useState(false);
 
-  // Client-side initialization: theme, preview scroll tracking (runs once on mount)
+  // Track if user is at or below the preview section
   useEffect(() => {
-    // Set initial theme from document (after hydration)
-    // eslint-disable-next-line -- Intentional: reading from document after hydration to avoid SSR mismatch
-    setIsLightMode(document.documentElement.classList.contains("light"));
-
-    // Listen for theme changes from global toggle
-    const themeObserver = new MutationObserver(() => {
-      setIsLightMode(document.documentElement.classList.contains("light"));
-    });
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    // Track if user is at or below the preview section
     const previewElement = document.getElementById("stat-block-preview");
     let previewObserver: IntersectionObserver | null = null;
 
     if (previewElement) {
       previewObserver = new IntersectionObserver(
         ([entry]) => {
-          // Set to true when preview is visible (user scrolled to it)
           setIsAtPreview(entry.isIntersecting);
         },
         {
-          threshold: 0.1, // Trigger when at least 10% of preview is visible
-          rootMargin: "-20% 0px -20% 0px", // Trigger when preview enters middle of viewport
+          threshold: 0.1,
+          rootMargin: "-20% 0px -20% 0px",
         }
       );
       previewObserver.observe(previewElement);
     }
 
     return () => {
-      themeObserver.disconnect();
       previewObserver?.disconnect();
     };
   }, []);
@@ -586,7 +571,7 @@ export default function StatBlocksPage() {
                     data={statBlock}
                     sections={systemSections}
                     onFieldChange={handleDynamicFieldChange}
-                    onBlur={captureSnapshot}
+                    onBlur={() => setTimeout(() => captureSnapshot(), 0)}
                     isLightMode={isLightMode}
                   />
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useIsLightMode } from "@/hooks/use-is-light-mode";
 import { cn } from "@/lib/utils";
-import { Music, Scroll, Wrench, ArrowRight, Sparkles } from "lucide-react";
+import { Music, Scroll, Wrench, ArrowRight, Sparkles, Mail, Hexagon } from "lucide-react";
 
 interface ToolCardProps {
   title: string;
@@ -99,24 +99,7 @@ function ToolCard({ title, description, href, icon, color, isLightMode, badge }:
 }
 
 export default function HomePage() {
-  const [isLightMode, setIsLightMode] = useState(false);
-
-  useEffect(() => {
-    const isLight = document.documentElement.classList.contains("light");
-    setIsLightMode(isLight);
-    
-    // Listen for theme changes from global toggle
-    const observer = new MutationObserver(() => {
-      setIsLightMode(document.documentElement.classList.contains("light"));
-    });
-    
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    
-    return () => observer.disconnect();
-  }, []);
+  const isLightMode = useIsLightMode();
 
   const tools = [
     {
@@ -135,7 +118,16 @@ export default function HomePage() {
       href: "/stat-blocks",
       icon: <Scroll className="h-6 w-6" />,
       color: "#f59e0b",
-      badge: "D&D 5e",
+      badge: "Print",
+    },
+    {
+      title: "Hex map",
+      description:
+        "Draw overland or battle hex grids with colors, Lucide stamps, and JSON export.",
+      href: "/hex-map",
+      icon: <Hexagon className="h-6 w-6" />,
+      color: "#8b5cf6",
+      badge: "Maps",
     },
   ];
 
@@ -213,7 +205,7 @@ export default function HomePage() {
         </div>
 
         {/* Tool Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 mb-16">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-16">
           {tools.map((tool) => (
             <ToolCard key={tool.href} {...tool} isLightMode={isLightMode} />
           ))}
@@ -222,7 +214,7 @@ export default function HomePage() {
         {/* Coming Soon / Builder teaser */}
         <div
           className={cn(
-            "rounded-2xl p-6 text-center border",
+            "rounded-2xl p-6 text-center border flex flex-col items-center gap-4",
             isLightMode
               ? "bg-white/50 border-zinc-200"
               : "bg-zinc-900/30 border-zinc-800"
@@ -250,8 +242,9 @@ export default function HomePage() {
               isLightMode ? "text-zinc-400" : "text-zinc-500"
             )}
           >
-            Initiative trackers, encounter builders, and more.
+            Reach out with requests or suggestions!
           </p>
+          <div className="flex items-center gap-2"><Mail className="h-4 w-4" /><a className="text-sm" href="mailto:patrick@penpyre.com">patrick@penpyre.com</a></div>
         </div>
 
       </div>

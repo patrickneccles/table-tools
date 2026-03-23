@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useIsLightMode } from "@/hooks/use-is-light-mode";
 import { cn } from "@/lib/utils";
 import { Moon, Sun } from "lucide-react";
 
@@ -60,28 +61,16 @@ export function ThemeToggle() {
 }
 
 export function AppFooter() {
-  const [isLightMode, setIsLightMode] = useState(false);
+  const isLightMode = useIsLightMode();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Load theme from localStorage on mount
     const savedTheme = localStorage.getItem("theme");
-    const isLight = savedTheme ? savedTheme === "light" : document.documentElement.classList.contains("light");
-    setIsLightMode(isLight);
+    const isLight = savedTheme
+      ? savedTheme === "light"
+      : document.documentElement.classList.contains("light");
     document.documentElement.classList.toggle("light", isLight);
-    
-    // Listen for class changes on documentElement
-    const observer = new MutationObserver(() => {
-      setIsLightMode(document.documentElement.classList.contains("light"));
-    });
-    
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    
-    return () => observer.disconnect();
   }, []);
 
   if (!mounted) {

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import { useIsLightMode } from "@/hooks/use-is-light-mode";
 import { ArrowLeft, Loader2, Wrench } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -25,25 +25,7 @@ const BoardBuilder = dynamic(
 );
 
 export default function BuilderPage() {
-  const [isLightMode, setIsLightMode] = useState(false);
-
-  // Check for existing light mode preference on mount and listen for changes
-  useEffect(() => {
-    const isLight = document.documentElement.classList.contains("light");
-    setIsLightMode(isLight);
-    
-    // Listen for theme changes from global toggle
-    const observer = new MutationObserver(() => {
-      setIsLightMode(document.documentElement.classList.contains("light"));
-    });
-    
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    
-    return () => observer.disconnect();
-  }, []);
+  const isLightMode = useIsLightMode();
 
   return (
     <div

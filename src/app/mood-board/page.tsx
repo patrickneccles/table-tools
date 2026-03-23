@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { MoodBoard, Mood, boardTemplates, BoardTemplate } from "@/components/mood-board";
+import { useIsLightMode } from "@/hooks/use-is-light-mode";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Wrench, Loader2, Home, Music } from "lucide-react";
@@ -18,13 +19,7 @@ export default function MoodBoardPage() {
   }, []);
 
   const [currentMood, setCurrentMood] = useState<Mood>(templates[0]?.mood || boardTemplates[0].mood);
-  const [isLightMode, setIsLightMode] = useState(() => {
-    // Initialize from document on first render (only runs client-side)
-    if (typeof document !== "undefined") {
-      return document.documentElement.classList.contains("light");
-    }
-    return false;
-  });
+  const isLightMode = useIsLightMode();
 
   // Get all audio URLs for the current mood
   const audioUrls = useMemo(() => {
@@ -36,20 +31,6 @@ export default function MoodBoardPage() {
 
   // Preload audio files for current mood
   const { progress: preloadProgress, isComplete: isPreloaded } = useAudioPreloader(audioUrls);
-
-  // Listen for theme changes from global toggle
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsLightMode(document.documentElement.classList.contains("light"));
-    });
-    
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    
-    return () => observer.disconnect();
-  }, []);
 
   const theme = currentMood.theme;
 

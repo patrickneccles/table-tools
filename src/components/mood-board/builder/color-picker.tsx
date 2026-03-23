@@ -89,7 +89,6 @@ export function ColorPicker({ label, value, onChange, isLightMode = false }: Col
             )}
             style={{
               backgroundColor: color,
-              ringColor: color,
             }}
           />
         ))}
