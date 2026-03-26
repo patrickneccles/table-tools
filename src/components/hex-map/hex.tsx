@@ -45,7 +45,7 @@ export const Hex: React.FC<HexProps> = (props) => {
     color,
     centerX,
     centerY,
-    strokeWidth = 2,
+    strokeWidth: hexStrokeWidth = 2,
     stroke,
     onClick,
     onMouseDown,
@@ -57,7 +57,7 @@ export const Hex: React.FC<HexProps> = (props) => {
     <g>
       <polygon
         points={hexagonPoints(centerX, centerY, size, orientation)}
-        strokeWidth={strokeWidth}
+        strokeWidth={hexStrokeWidth}
         style={{ fill: color, ...customStyle }}
         stroke={stroke}
         onClick={onClick}
@@ -73,12 +73,11 @@ export const Hex: React.FC<HexProps> = (props) => {
             height={size}
           >
             <div
+              className="flex items-center justify-center"
               style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 width: "100%",
                 height: "100%",
+                color: stroke ?? "#333333",
               }}
             >
               <StampIcon size={size * 0.7} />

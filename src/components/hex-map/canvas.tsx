@@ -9,12 +9,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  SquareArrowDown,
+  SquareArrowLeft,
+  SquareArrowRight,
+  SquareArrowUp,
+} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { HexMapBrushProvider, useHexMapBrush } from "./brush-context";
 import { STAMP_ICONS } from "./constants/stamps";
 import { exportHexGridV1, importHexGrid } from "./hex-map-file";
 import { HexGrid } from "./hex-grid";
 import { HexMapSettingsProvider, useHexMapSettings } from "./settings-context";
+import { ExpandMapEdge, MAX_GRID_DIMENSION } from "./expand-map";
 import { HexMapToolbar } from "./toolbar";
 
 function generateHexes(
@@ -362,6 +370,34 @@ const HexMapCanvasInner: React.FC = () => {
     setHexes(generateHexes(width, height, baseFill, orientation));
   };
 
+  const handleExpandEdge = (edge: ExpandMapEdge) => {
+    if (edge === "left" || edge === "right") {
+      if (width >= MAX_GRID_DIMENSION) return;
+    } else {
+      if (height >= MAX_GRID_DIMENSION) return;
+    }
+
+    setHistory((h) => [...h, hexes]);
+    setRedoStack([]);
+
+    if (edge === "right") {
+      setWidth(width + 1);
+      return;
+    }
+    if (edge === "bottom") {
+      setHeight(height + 1);
+      return;
+    }
+    if (edge === "left") {
+      setHexes((prev) => prev.map((h) => ({ ...h, q: h.q + 1 })));
+      setWidth(width + 1);
+      return;
+    }
+    // top
+    setHexes((prev) => prev.map((h) => ({ ...h, r: h.r + 1 })));
+    setHeight(height + 1);
+  };
+
   useEffect(() => {
     setHexes((prev) => {
       const prevMap = new Map(prev.map((hex) => [`${hex.q},${hex.r}`, hex]));
@@ -374,7 +410,7 @@ const HexMapCanvasInner: React.FC = () => {
             const key = `${q},${r}`;
             const prevHex = prevMap.get(key);
             newHexes.push(
-              prevHex ? { ...prevHex } : { q, r, color: "#e0e0e0" }
+              prevHex ? { ...prevHex } : { q, r, color: baseFill }
             );
           }
         }
@@ -386,14 +422,14 @@ const HexMapCanvasInner: React.FC = () => {
             const key = `${q},${r}`;
             const prevHex = prevMap.get(key);
             newHexes.push(
-              prevHex ? { ...prevHex } : { q, r, color: "#e0e0e0" }
+              prevHex ? { ...prevHex } : { q, r, color: baseFill }
             );
           }
         }
       }
       return newHexes;
     });
-  }, [width, height, orientation]);
+  }, [width, height, orientation, baseFill]);
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col gap-2">
@@ -417,6 +453,7 @@ const HexMapCanvasInner: React.FC = () => {
           handleExport={handleExport}
           handleImportClick={handleImportClick}
           handleClear={handleClear}
+          onExpandEdge={handleExpandEdge}
           zoom={zoom}
           handleZoomIn={handleZoomIn}
           handleZoomOut={handleZoomOut}
@@ -435,7 +472,7 @@ const HexMapCanvasInner: React.FC = () => {
         onChange={handleImport}
       />
       <div
-        className="bg-card flex min-h-0 flex-1 rounded-lg border"
+        className="group/map-canvas bg-card relative flex min-h-0 flex-1 rounded-lg border"
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
@@ -451,6 +488,68 @@ const HexMapCanvasInner: React.FC = () => {
           onHexMouseEnter={handleHexMouseEnter}
           stampIcons={STAMP_ICONS}
         />
+        <div className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-200 group-hover/map-canvas:opacity-100 group-focus-within/map-canvas:opacity-100">
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            disabled={width >= MAX_GRID_DIMENSION}
+            className="pointer-events-auto absolute left-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/85 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
+            title="Add column on the left"
+            aria-label="Add column on the left"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExpandEdge("left");
+            }}
+          >
+            <SquareArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            disabled={width >= MAX_GRID_DIMENSION}
+            className="pointer-events-auto absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full border bg-background/85 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
+            title="Add column on the right"
+            aria-label="Add column on the right"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExpandEdge("right");
+            }}
+          >
+            <SquareArrowRight className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            disabled={height >= MAX_GRID_DIMENSION}
+            className="pointer-events-auto absolute left-1/2 top-1 h-8 w-8 -translate-x-1/2 rounded-full border bg-background/85 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
+            title="Add row on the top"
+            aria-label="Add row on the top"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExpandEdge("top");
+            }}
+          >
+            <SquareArrowUp className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            disabled={height >= MAX_GRID_DIMENSION}
+            className="pointer-events-auto absolute bottom-1 left-1/2 h-8 w-8 -translate-x-1/2 rounded-full border bg-background/85 text-foreground shadow-sm backdrop-blur-sm hover:bg-background"
+            title="Add row on the bottom"
+            aria-label="Add row on the bottom"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExpandEdge("bottom");
+            }}
+          >
+            <SquareArrowDown className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export function HexMapBrushProvider({ children }: { children: React.ReactNode })
   const [activeTool, setActiveTool] = useState<HexMapTool>("paint");
   const [brushColor, setBrushColor] = useState("#eab308");
   const [brushStroke, setBrushStroke] = useState("#000000");
-  const [brushStrokeWidth, setBrushStrokeWidth] = useState(2);
+  const [brushStrokeWidth, setBrushStrokeWidth] = useState(0);
   const [selectedStamp, setSelectedStamp] = useState("No Stamp");
 
   return (

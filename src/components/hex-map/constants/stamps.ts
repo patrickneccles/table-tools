@@ -59,9 +59,11 @@ import {
   Worm,
 } from "lucide-react";
 
+export type StampIconProps = { size?: number };
+
 export type Stamp = {
   name: string;
-  icon: ComponentType<{ size?: number }>;
+  icon: ComponentType<StampIconProps>;
 };
 export type StampGroup = Stamp[];
 export type Stamps = {
@@ -156,4 +158,14 @@ export const STAMP_GROUP_ORDER = [
   "critters",
   "objects",
   "symbols",
-];
+] as const;
+
+export const STAMP_GROUP_LABELS: Record<(typeof STAMP_GROUP_ORDER)[number], string> =
+  {
+    noStamp: "None",
+    natural: "Natural",
+    structures: "Structures",
+    critters: "Critters",
+    objects: "Objects",
+    symbols: "Symbols",
+  };

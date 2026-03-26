@@ -19,14 +19,15 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { NEUTRAL_COLORS, PALETTES } from "./constants/palette";
 import {
   Stamp,
+  STAMP_GROUP_LABELS,
   STAMP_GROUP_ORDER,
   STAMP_ICONS,
   STAMPS,
   Stamps,
+  type StampIconProps,
 } from "./constants/stamps";
 import { cn } from "@/lib/utils";
 import {
-  CircleDashed,
   Ellipsis,
   Eraser,
   Paintbrush,
@@ -36,13 +37,63 @@ import {
   Settings,
 } from "lucide-react";
 import { useHexMapBrush, type HexMapTool } from "./brush-context";
+import type { ExpandMapEdge } from "./expand-map";
 import { HexMapGridSettingsDialog } from "./grid-settings-dialog";
 import { useHexMapSettings } from "./settings-context";
+
+type StampLucideIcon = React.ComponentType<StampIconProps>;
+
+/** Border width for small on-screen swatches (matches map tile feel without overwhelming tiny circles). */
+function swatchBorderPx(strokeWidth: number, diameterPx: number): number {
+  if (strokeWidth <= 0) return 1;
+  const capped = Math.min(strokeWidth, 8);
+  return Math.min(capped, Math.max(1, Math.round(diameterPx / 11)));
+}
+
+function StampTileSwatch({
+  icon: Icon,
+  fillColor,
+  strokeColor,
+  strokeWidth,
+  diameterPx,
+  selected,
+  className,
+}: {
+  icon: StampLucideIcon | null | undefined;
+  fillColor: string;
+  strokeColor: string;
+  strokeWidth: number;
+  diameterPx: number;
+  selected?: boolean;
+  className?: string;
+}) {
+  const bw = swatchBorderPx(strokeWidth, diameterPx);
+  const iconSize = Math.max(10, Math.round(diameterPx * 0.5));
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center rounded-full box-border",
+        selected && "z-[1] outline outline-2 outline-offset-2 outline-primary",
+        className
+      )}
+      style={{
+        width: diameterPx,
+        height: diameterPx,
+        backgroundColor: fillColor,
+        border: `${bw}px solid ${strokeColor}`,
+        color: strokeColor,
+      }}
+    >
+      {Icon ? <Icon size={iconSize} /> : null}
+    </span>
+  );
+}
 
 export interface HexMapToolbarProps {
   handleExport: () => void;
   handleImportClick: () => void;
   handleClear: () => void;
+  onExpandEdge: (edge: ExpandMapEdge) => void;
   zoom: number;
   handleZoomIn: () => void;
   handleZoomOut: () => void;
@@ -58,6 +109,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
     handleExport,
     handleImportClick,
     handleClear,
+    onExpandEdge,
     zoom,
     handleZoomIn,
     handleZoomOut,
@@ -181,23 +233,21 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-9 w-9 shrink-0 rounded-full p-0"
+              className="h-9 w-9 shrink-0 rounded-full border-0 bg-transparent p-0 shadow-none hover:bg-transparent"
               aria-label="Fill, stroke, and stamp"
-              style={{
-                backgroundColor: brushColor,
-                borderColor: brushStroke,
-                borderWidth: brushStrokeWidth,
-              }}
             >
-              {(() => {
-                const Icon = STAMP_ICONS.find((i) => i.name === selectedStamp)
-                  ?.icon;
-                return Icon && Icon !== CircleDashed ? (
-                  <Icon size={16} />
-                ) : null;
-              })()}
+              <StampTileSwatch
+                icon={
+                  STAMP_ICONS.find((i) => i.name === selectedStamp)?.icon ??
+                  undefined
+                }
+                fillColor={brushColor}
+                strokeColor={brushStroke}
+                strokeWidth={brushStrokeWidth}
+                diameterPx={36}
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-64 p-3" align="start">
@@ -265,38 +315,50 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
               />
             </div>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="flex items-center gap-2">
-                <span>Stamp</span>
-                {(() => {
-                  const Icon = STAMP_ICONS.find((i) => i.name === selectedStamp)
-                    ?.icon;
-                  return Icon ? <Icon size={16} /> : null;
-                })()}
+              <DropdownMenuSubTrigger className="flex w-full items-center gap-2">
+                <span className="flex-1 text-left">Stamp</span>
+                <StampTileSwatch
+                  icon={
+                    STAMP_ICONS.find((i) => i.name === selectedStamp)?.icon
+                  }
+                  fillColor={brushColor}
+                  strokeColor={brushStroke}
+                  strokeWidth={brushStrokeWidth}
+                  diameterPx={30}
+                />
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="max-h-72 overflow-y-auto p-2">
-                {STAMP_GROUP_ORDER.map((groupKey, groupIdx) => (
-                  <React.Fragment key={groupKey}>
-                    {groupIdx > 0 && <DropdownMenuSeparator />}
-                    <div className="mb-1 flex flex-row flex-wrap gap-2">
-                      {(STAMPS as Stamps)[groupKey].map(
-                        ({ name, icon }: Stamp) => (
-                          <Button
-                            key={name}
-                            type="button"
-                            variant={
-                              selectedStamp === name ? "default" : "outline"
-                            }
-                            size="icon"
-                            className="flex h-10 w-10 items-center justify-center rounded-full p-0"
-                            aria-label={`Select stamp ${name}`}
-                            onClick={() => setSelectedStamp(name)}
-                          >
-                            {React.createElement(icon, { size: 20 })}
-                          </Button>
-                        )
-                      )}
+              <DropdownMenuSubContent
+                sideOffset={4}
+                className="max-h-[min(70vh,24rem)] w-[min(100vw-1rem,22rem)] max-w-[calc(100vw-1rem)] space-y-3 overflow-x-hidden !overflow-y-auto p-2"
+              >
+                {STAMP_GROUP_ORDER.map((groupKey) => (
+                  <div key={groupKey} className="min-w-0">
+                    <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                      {STAMP_GROUP_LABELS[groupKey]}
                     </div>
-                  </React.Fragment>
+                    <div className="flex flex-wrap gap-2">
+                      {(STAMPS as Stamps)[groupKey].map(({ name, icon }: Stamp) => (
+                        <Button
+                          key={name}
+                          type="button"
+                          variant="ghost"
+                          className="h-11 w-11 shrink-0 rounded-full p-0 hover:bg-transparent focus-visible:bg-accent/50"
+                          aria-label={`Select stamp ${name}`}
+                          aria-pressed={selectedStamp === name}
+                          onClick={() => setSelectedStamp(name)}
+                        >
+                          <StampTileSwatch
+                            icon={icon}
+                            fillColor={brushColor}
+                            strokeColor={brushStroke}
+                            strokeWidth={brushStrokeWidth}
+                            diameterPx={40}
+                            selected={selectedStamp === name}
+                          />
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
@@ -348,6 +410,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         onSaveComplete={handleZoomReset}
+        onExpandEdge={onExpandEdge}
       />
     </>
   );
