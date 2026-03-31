@@ -31,10 +31,10 @@ export function HexMapSettingsProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [width, setWidth] = useState(7);
-  const [height, setHeight] = useState(7);
+  const [width, setWidth] = useState(12);
+  const [height, setHeight] = useState(12);
   const [stroke, setStroke] = useState("#888888");
-  const [strokeWidth, setStrokeWidth] = useState(2);
+  const [strokeWidth, setStrokeWidth] = useState(0);
   const [spacing, setSpacing] = useState(2);
   const [orientation, setOrientation] = useState<"flat" | "pointy">("flat");
   const [baseFill, setBaseFill] = useState("#e0e0e0");

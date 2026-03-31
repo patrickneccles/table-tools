@@ -23,7 +23,10 @@ interface HexGridProps {
   onHexClick?: (q: number, r: number) => void;
   onHexMouseDown?: (q: number, r: number) => void;
   onHexMouseEnter?: (q: number, r: number) => void;
-  stampIcons?: { name: string; icon: React.ComponentType<{ size?: number }> }[];
+  stampIcons?: {
+    name: string;
+    icon: React.ComponentType<{ size?: number }>;
+  }[];
 }
 
 function hexToPixel(

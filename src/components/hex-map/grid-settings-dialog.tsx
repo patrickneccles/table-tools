@@ -12,7 +12,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  SquareArrowDown,
+  SquareArrowLeft,
+  SquareArrowRight,
+  SquareArrowUp,
+} from "lucide-react";
 import { NEUTRAL_COLORS, PALETTES } from "./constants/palette";
+import type { ExpandMapEdge } from "./expand-map";
+import { MAX_GRID_DIMENSION } from "./expand-map";
 import { useHexMapSettings } from "./settings-context";
 
 type Orientation = "flat" | "pointy";
@@ -21,10 +29,12 @@ export function HexMapGridSettingsDialog({
   open,
   onOpenChange,
   onSaveComplete,
+  onExpandEdge,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveComplete: () => void;
+  onExpandEdge: (edge: ExpandMapEdge) => void;
 }) {
   const {
     width,
@@ -106,7 +116,7 @@ export function HexMapGridSettingsDialog({
               id="settings-width"
               type="number"
               min={1}
-              max={30}
+              max={MAX_GRID_DIMENSION}
               value={pendingWidth}
               onChange={(e) => setPendingWidth(Number(e.target.value))}
               className="w-24"
@@ -118,11 +128,63 @@ export function HexMapGridSettingsDialog({
               id="settings-height"
               type="number"
               min={1}
-              max={30}
+              max={MAX_GRID_DIMENSION}
               value={pendingHeight}
               onChange={(e) => setPendingHeight(Number(e.target.value))}
               className="w-24"
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Expand map</Label>
+            <p className="text-muted-foreground text-xs">
+              Add one column or row on a side. Applies immediately; undo with ⌘Z.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                disabled={width >= MAX_GRID_DIMENSION}
+                onClick={() => onExpandEdge("left")}
+              >
+                <SquareArrowLeft className="h-3.5 w-3.5" />
+                Column left
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                disabled={width >= MAX_GRID_DIMENSION}
+                onClick={() => onExpandEdge("right")}
+              >
+                Column right
+                <SquareArrowRight className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                disabled={height >= MAX_GRID_DIMENSION}
+                onClick={() => onExpandEdge("top")}
+              >
+                <SquareArrowUp className="h-3.5 w-3.5" />
+                Row top
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                disabled={height >= MAX_GRID_DIMENSION}
+                onClick={() => onExpandEdge("bottom")}
+              >
+                <SquareArrowDown className="h-3.5 w-3.5" />
+                Row bottom
+              </Button>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Orientation</Label>
