@@ -13,9 +13,6 @@ export type DnD5e2024SpellData = {
   description: string;
   atHigherLevels: string;
   source: string;
-  attackType: string;
-  saveType: string;
-  damageType: string;
 };
 
 // ─── Select options ────────────────────────────────────────────────────────
@@ -43,22 +40,6 @@ export const SPELL_SCHOOL_OPTIONS = [
   'Necromancy',
   'Transmutation',
 ].map((s) => ({ value: s, label: s }));
-
-export const ATTACK_TYPE_OPTIONS = [
-  { value: '', label: '—' },
-  { value: 'Melee Spell Attack', label: 'Melee Spell Attack' },
-  { value: 'Ranged Spell Attack', label: 'Ranged Spell Attack' },
-];
-
-export const SAVE_TYPE_OPTIONS = [
-  { value: '', label: '—' },
-  { value: 'Strength', label: 'Strength' },
-  { value: 'Dexterity', label: 'Dexterity' },
-  { value: 'Constitution', label: 'Constitution' },
-  { value: 'Intelligence', label: 'Intelligence' },
-  { value: 'Wisdom', label: 'Wisdom' },
-  { value: 'Charisma', label: 'Charisma' },
-];
 
 // ─── Utilities ─────────────────────────────────────────────────────────────
 

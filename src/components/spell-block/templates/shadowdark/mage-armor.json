@@ -1,0 +1,14 @@
+{
+  "id": "mage-armor-shadowdark",
+  "systemId": "shadowdark",
+  "name": "Mage Armor",
+  "description": "Tier 1 Wizard",
+  "data": {
+    "name": "Mage Armor",
+    "tier": "1",
+    "classes": "Wizard",
+    "duration": "10 rounds",
+    "range": "Self",
+    "description": "An invisible layer of magical force protects your vitals. Your armor class becomes 14 (18 on a critical spellcasting check) for the spell's duration."
+  }
+}

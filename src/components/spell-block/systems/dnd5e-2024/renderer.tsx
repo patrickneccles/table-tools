@@ -35,20 +35,11 @@ export function DnD5e2024SpellRenderer({
     description,
     atHigherLevels,
     source,
-    attackType,
-    saveType,
-    damageType,
   } = data;
 
   const levelLabel = spellLevelLabel(level, school);
 
-  const tags = [
-    attackType || null,
-    saveType ? `${saveType} Save` : null,
-    damageType || null,
-  ].filter((t): t is string => Boolean(t));
-
-  const hasFooter = tags.length > 0 || classes || source;
+  const hasFooter = Boolean(classes || source);
 
   return (
     <div
@@ -91,11 +82,6 @@ export function DnD5e2024SpellRenderer({
         <>
           <Divider />
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-            {tags.map((tag) => (
-              <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-foreground/70">
-                {tag}
-              </span>
-            ))}
             {classes && <span>{classes}</span>}
             {source && <span className="ml-auto italic">{source}</span>}
           </div>

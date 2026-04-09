@@ -7,6 +7,7 @@ import { loadTemplatesFromContext } from '@/components/stat-block/stat-block-uti
 import type { StatBlockTemplate } from '@/components/stat-block/stat-block-utils';
 import type { BaseStatBlockData } from '@/components/stat-block/stat-block-utils';
 import type { DnD5e2024SpellData } from '../systems/dnd5e-2024/types';
+import type { ShadowdarkSpellData } from '../systems/shadowdark/types';
 
 type RequireContext = {
   keys: () => string[];
@@ -23,7 +24,11 @@ const DND5E_2024_SPELL_TEMPLATES: StatBlockTemplate<DnD5e2024SpellData>[] = allT
   .filter((t): t is StatBlockTemplate<DnD5e2024SpellData> => t.systemId === 'dnd5e-2024')
   .sort((a, b) => a.name.localeCompare(b.name));
 
-export const SPELL_BLOCK_TEMPLATES = [...DND5E_2024_SPELL_TEMPLATES];
+const SHADOWDARK_SPELL_TEMPLATES: StatBlockTemplate<ShadowdarkSpellData>[] = allTemplates
+  .filter((t): t is StatBlockTemplate<ShadowdarkSpellData> => t.systemId === 'shadowdark')
+  .sort((a, b) => a.name.localeCompare(b.name));
 
-export { DND5E_2024_SPELL_TEMPLATES };
+export const SPELL_BLOCK_TEMPLATES = [...DND5E_2024_SPELL_TEMPLATES, ...SHADOWDARK_SPELL_TEMPLATES];
+
+export { DND5E_2024_SPELL_TEMPLATES, SHADOWDARK_SPELL_TEMPLATES };
 export type { StatBlockTemplate };

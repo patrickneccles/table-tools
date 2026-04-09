@@ -10,13 +10,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Check,
-  SquareArrowDown,
-  SquareArrowLeft,
-  SquareArrowRight,
-  SquareArrowUp,
-} from 'lucide-react';
+import { SaveStatusIndicator } from '@/components/save-status-indicator';
+import { SquareArrowDown, SquareArrowLeft, SquareArrowRight, SquareArrowUp } from 'lucide-react';
 import {
   createFile,
   downloadFile,
@@ -458,16 +453,7 @@ const HexMapCanvasInner: React.FC = () => {
           onEditingConfirm={handleEditingConfirm}
           onEditingCancel={handleEditingCancel}
         />
-        {saveStatus !== 'idle' && (
-          <div className="pointer-events-none absolute right-2 top-2 z-20 flex items-center gap-1 rounded-md bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm">
-            {saveStatus === 'saving' ? (
-              <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-            ) : (
-              <Check className="h-3 w-3 text-emerald-500" />
-            )}
-            {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
-          </div>
-        )}
+        <SaveStatusIndicator status={saveStatus} />
         <div className="pointer-events-none absolute inset-0 z-10">
           <Button
             type="button"

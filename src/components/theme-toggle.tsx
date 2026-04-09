@@ -4,31 +4,15 @@ import { useLayoutEffect, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
 import { cn } from '@/lib/utils';
+import {
+  emitThemeChange,
+  subscribeTheme,
+  getThemeSnapshot,
+  getThemeServerSnapshot,
+} from '@/lib/theme-store';
 import { Moon, Sun } from 'lucide-react';
 
 const emptySubscribe = () => () => {};
-
-const themeListeners = new Set<() => void>();
-
-function emitThemeChange() {
-  themeListeners.forEach((cb) => cb());
-}
-
-function subscribeTheme(onStoreChange: () => void) {
-  themeListeners.add(onStoreChange);
-  return () => {
-    themeListeners.delete(onStoreChange);
-  };
-}
-
-function getThemeIsLightClientSnapshot(): boolean {
-  const savedTheme = localStorage.getItem('theme');
-  return savedTheme ? savedTheme === 'light' : document.documentElement.classList.contains('light');
-}
-
-function getThemeServerSnapshot(): boolean {
-  return false;
-}
 
 export function ThemeToggle() {
   const isClient = useSyncExternalStore(
@@ -38,7 +22,7 @@ export function ThemeToggle() {
   );
   const isLightMode = useSyncExternalStore(
     subscribeTheme,
-    getThemeIsLightClientSnapshot,
+    getThemeSnapshot,
     getThemeServerSnapshot
   );
 

@@ -7,6 +7,13 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { EditorCard, TextInput, NumberInput, getInputClassName } from './stat-block-editor';
 import type { SectionDefinition, FieldDefinition } from './systems/base-system';
@@ -158,11 +165,14 @@ function DynamicField<T extends BaseStatBlockData>({
         </div>
       );
 
-    case 'select':
+    case 'select': {
+      // shadcn Select forbids empty-string values; use a sentinel for the "none" option
+      const NONE = '__none__';
+      const raw = typeof value === 'string' ? value : String(value ?? '');
+      const selectValue = raw === '' ? NONE : raw;
       return (
         <div>
           <Label
-            htmlFor={field.key}
             className={cn(
               'text-xs transition-colors',
               isLightMode ? 'text-zinc-600' : 'text-zinc-400'
@@ -170,21 +180,25 @@ function DynamicField<T extends BaseStatBlockData>({
           >
             {field.label}
           </Label>
-          <select
-            id={field.key}
-            value={typeof value === 'string' ? value : String(value ?? '')}
-            onChange={(e) => onFieldChange(field.key, e.target.value)}
-            className={getInputClassName(isLightMode)}
+          <Select
+            value={selectValue}
+            onValueChange={(v) => onFieldChange(field.key, v === NONE ? '' : v)}
           >
-            {field.options?.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className={cn('mt-1', getInputClassName(isLightMode))}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {field.options?.map((option) => (
+                <SelectItem key={option.value || NONE} value={option.value || NONE}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <FieldHelp helpText={field.helpText} isLightMode={isLightMode} />
         </div>
       );
+    }
 
     default:
       return null;
@@ -199,7 +213,7 @@ export function DynamicEditor<T extends BaseStatBlockData>({
   isLightMode,
 }: DynamicEditorProps<T>) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {sections.map((section) => (
         <EditorCard
           key={section.key}
@@ -207,7 +221,7 @@ export function DynamicEditor<T extends BaseStatBlockData>({
           isLightMode={isLightMode}
           defaultOpen={!section.defaultCollapsed}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {section.fields.map((field) => (
               <div
                 key={field.key}

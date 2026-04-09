@@ -1,0 +1,14 @@
+{
+  "id": "charm-person-shadowdark",
+  "systemId": "shadowdark",
+  "name": "Charm Person",
+  "description": "Tier 1 Wizard",
+  "data": {
+    "name": "Charm Person",
+    "tier": "1",
+    "classes": "Wizard",
+    "duration": "1d8 days",
+    "range": "Near",
+    "description": "You magically beguile one humanoid of level 2 or less within near range, who regards you as a friend for the duration. The spell ends if you or your allies do anything to hurt it that it notices.\n\nThe target knows you magically enchanted it after the spell ends."
+  }
+}

@@ -2,6 +2,7 @@
 
 import { ErrorBoundary } from '@/components/error-boundary';
 import { DynamicEditor } from '@/components/stat-block';
+import { SaveStatusIndicator } from '@/components/save-status-indicator';
 import {
   DEFAULT_SPELL_SYSTEM_ID,
   getAllSpellSystemMetadata,
@@ -34,16 +35,7 @@ import {
   uploadFile,
 } from '@/lib/file-system';
 import { cn } from '@/lib/utils';
-import {
-  Check,
-  Download,
-  Home,
-  MoreHorizontal,
-  Redo2,
-  Sparkles,
-  Undo2,
-  Upload,
-} from 'lucide-react';
+import { Download, Home, MoreHorizontal, Redo2, Sparkles, Undo2, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
@@ -55,28 +47,6 @@ type SpellFileData = {
   systemId: string;
   spell: AnySpellData;
 };
-
-// ─── Save status indicator ───────────────────────────────────────────────────
-
-function SaveStatusIndicator({ status }: { status: 'idle' | 'saving' | 'saved' }) {
-  if (status === 'idle') return null;
-  return (
-    <div className="flex items-center gap-1.5 text-xs">
-      {status === 'saving' && (
-        <>
-          <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-zinc-500">Saving…</span>
-        </>
-      )}
-      {status === 'saved' && (
-        <>
-          <Check className="h-3 w-3 text-emerald-500" />
-          <span className="text-zinc-500">Saved</span>
-        </>
-      )}
-    </div>
-  );
-}
 
 // ─── Editor hook ─────────────────────────────────────────────────────────────
 
@@ -316,8 +286,6 @@ export default function SpellBlocksPage() {
               </Link>
             </Button>
 
-            <SaveStatusIndicator status={saveStatus} />
-
             {/* System selector */}
             {allSystems.length > 1 && (
               <DropdownMenu>
@@ -433,6 +401,7 @@ export default function SpellBlocksPage() {
           </ErrorBoundary>
         </div>
       </main>
+      <SaveStatusIndicator status={saveStatus} />
     </div>
   );
 }

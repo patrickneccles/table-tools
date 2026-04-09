@@ -26,6 +26,7 @@ import {
   calculateProficiencyBonus,
 } from '@/components/stat-block/systems/dnd5e-2024';
 import { TemplateSelector } from '@/components/stat-block/template-selector';
+import { SaveStatusIndicator } from '@/components/save-status-indicator';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -34,7 +35,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useHistory } from '@/hooks/use-history';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
 import {
@@ -46,7 +46,6 @@ import {
 } from '@/lib/file-system';
 import { cn } from '@/lib/utils';
 import {
-  Check,
   ChevronDown,
   ChevronUp,
   Download,
@@ -227,30 +226,6 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
 }
 
 // ============================================================================
-// Save Status Indicator
-// ============================================================================
-
-function SaveStatusIndicator({ status }: { status: 'idle' | 'saving' | 'saved' }) {
-  if (status === 'idle') return null;
-
-  return (
-    <div className="flex items-center gap-1.5 text-xs">
-      {status === 'saving' && (
-        <>
-          <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-zinc-500">Saving...</span>
-        </>
-      )}
-      {status === 'saved' && (
-        <>
-          <Check className="h-3 w-3 text-emerald-500" />
-          <span className="text-zinc-500">Saved</span>
-        </>
-      )}
-    </div>
-  );
-}
-
 // ============================================================================
 // Page Component
 // ============================================================================
@@ -535,7 +510,6 @@ export default function StatBlocksPage() {
                 <span className="hidden md:inline ml-1">Home</span>
               </Link>
             </Button>
-            <SaveStatusIndicator status={saveStatus} />
             <SystemSelector
               currentSystemId={systemId}
               onSystemChange={handleSystemChange}
@@ -605,38 +579,36 @@ export default function StatBlocksPage() {
         <div className="flex flex-col lg:flex-row gap-8 print:block">
           {/* Editor Panel */}
           <ErrorBoundary>
-            <div className="flex-1 print:hidden">
-              <ScrollArea className="h-[calc(100vh-140px)] pr-4">
-                <div className="space-y-4">
-                  {/* Dynamic Editor based on System Schema */}
-                  <DynamicEditor
-                    data={statBlock}
-                    sections={systemSections}
-                    onFieldChange={handleDynamicFieldChange}
-                    onBlur={() => setTimeout(() => captureSnapshot(), 0)}
+            <div className="flex-1 pr-4 print:hidden">
+              <div className="space-y-4">
+                {/* Dynamic Editor based on System Schema */}
+                <DynamicEditor
+                  data={statBlock}
+                  sections={systemSections}
+                  onFieldChange={handleDynamicFieldChange}
+                  onBlur={() => setTimeout(() => captureSnapshot(), 0)}
+                  isLightMode={isLightMode}
+                />
+
+                {/* Trait/Feature Sections (dynamically loaded from system schema) */}
+                {currentSystem?.schema.traitSections?.map((section) => (
+                  <TraitEditor
+                    key={section}
+                    section={section as TraitSectionKey}
+                    entries={
+                      section in statBlock && Array.isArray(statBlock[section])
+                        ? statBlock[section]
+                        : []
+                    }
+                    onAdd={() => addTrait(section as TraitSectionKey)}
+                    onUpdate={(index, field, value) =>
+                      updateTrait(section as TraitSectionKey, index, field, value)
+                    }
+                    onRemove={(index) => removeTrait(section as TraitSectionKey, index)}
                     isLightMode={isLightMode}
                   />
-
-                  {/* Trait/Feature Sections (dynamically loaded from system schema) */}
-                  {currentSystem?.schema.traitSections?.map((section) => (
-                    <TraitEditor
-                      key={section}
-                      section={section as TraitSectionKey}
-                      entries={
-                        section in statBlock && Array.isArray(statBlock[section])
-                          ? statBlock[section]
-                          : []
-                      }
-                      onAdd={() => addTrait(section as TraitSectionKey)}
-                      onUpdate={(index, field, value) =>
-                        updateTrait(section as TraitSectionKey, index, field, value)
-                      }
-                      onRemove={(index) => removeTrait(section as TraitSectionKey, index)}
-                      isLightMode={isLightMode}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
+                ))}
+              </div>
             </div>
           </ErrorBoundary>
 
@@ -745,6 +717,7 @@ export default function StatBlocksPage() {
           }
         }
       `}</style>
+      <SaveStatusIndicator status={saveStatus} />
     </div>
   );
 }

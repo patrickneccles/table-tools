@@ -1,12 +1,7 @@
 import type { StatBlockSystem } from '@/components/stat-block/systems/base-system';
 import { DnD5e2024SpellRenderer } from './renderer';
 import type { DnD5e2024SpellData } from './types';
-import {
-  ATTACK_TYPE_OPTIONS,
-  SAVE_TYPE_OPTIONS,
-  SPELL_LEVEL_OPTIONS,
-  SPELL_SCHOOL_OPTIONS,
-} from './types';
+import { SPELL_LEVEL_OPTIONS, SPELL_SCHOOL_OPTIONS } from './types';
 
 const DEFAULT_SPELL: DnD5e2024SpellData = {
   name: 'New Spell',
@@ -20,9 +15,6 @@ const DEFAULT_SPELL: DnD5e2024SpellData = {
   description: '',
   atHigherLevels: '',
   source: '',
-  attackType: '',
-  saveType: '',
-  damageType: '',
 };
 
 export const dnd5e2024SpellSystem: StatBlockSystem<DnD5e2024SpellData> = {
@@ -37,11 +29,12 @@ export const dnd5e2024SpellSystem: StatBlockSystem<DnD5e2024SpellData> = {
     sections: [
       {
         key: 'identity',
-        title: 'Identity',
+        title: 'Basic Information',
         fields: [
           { key: 'name', label: 'Name', type: 'text' },
           { key: 'level', label: 'Level', type: 'select', options: [...SPELL_LEVEL_OPTIONS] },
           { key: 'school', label: 'School', type: 'select', options: SPELL_SCHOOL_OPTIONS },
+          { key: 'classes', label: 'Classes', type: 'text', placeholder: 'e.g. Sorcerer, Wizard' },
           {
             key: 'source',
             label: 'Source',
@@ -72,31 +65,6 @@ export const dnd5e2024SpellSystem: StatBlockSystem<DnD5e2024SpellData> = {
             label: 'Duration',
             type: 'text',
             placeholder: 'e.g. Instantaneous, or Concentration, up to 1 minute',
-          },
-        ],
-      },
-      {
-        key: 'details',
-        title: 'Details',
-        fields: [
-          {
-            key: 'classes',
-            label: 'Classes',
-            type: 'text',
-            placeholder: 'e.g. Sorcerer, Wizard',
-          },
-          {
-            key: 'attackType',
-            label: 'Attack Type',
-            type: 'select',
-            options: ATTACK_TYPE_OPTIONS,
-          },
-          { key: 'saveType', label: 'Save Type', type: 'select', options: SAVE_TYPE_OPTIONS },
-          {
-            key: 'damageType',
-            label: 'Damage Type',
-            type: 'text',
-            placeholder: 'e.g. Fire, or Acid / Cold / Fire',
           },
         ],
       },
