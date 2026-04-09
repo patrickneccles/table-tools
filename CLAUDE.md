@@ -6,7 +6,8 @@ Table Tools is a TTRPG toolkit web app — a growing collection of tools for tab
 
 - **Mood Board** — Web Audio API soundboard with looping ambience, one-shot effects, ducking, presets, and a drag-and-drop board builder
 - **Stat Block Generator** — Multi-system (D&D 5e 2014/2024, Shadowdark) stat block editor with live preview, undo/redo, and import/export
-- **Hex Map** — Hex grid canvas painter with stamps, flood fill, undo/redo, and import/export
+- **Hex Map** — Hex grid canvas painter with stamps, flood fill, text labels, undo/redo, and import/export
+- **Spell Block Generator** — Multi-system spell block editor (D&D 5e 2024 so far) with live preview, SRD templates, undo/redo, and import/export
 
 New tools will be added over time. Each tool gets its own route under `src/app/` and its own component directory under `src/components/`.
 
@@ -24,7 +25,7 @@ New tools will be added over time. Each tool gets its own route under `src/app/`
 - **@dnd-kit** for drag-and-drop
 - **Lucide React** for all icons
 - **Web Audio API** for mood board (custom manager, no library)
-- No test framework configured
+- **Vitest** — unit test framework (Node 22 required; see `.nvmrc`)
 
 ## Dev Commands
 
@@ -91,20 +92,27 @@ Git commits automatically run prettier + eslint --fix via lint-staged (pre-commi
 - To add a new system: create `systems/<id>/` with `types.ts`, `renderer.tsx`, `system.ts`, `index.ts`, then register in `systems/registry.ts`
 - `DynamicEditor` is schema-driven — field UI is defined by the `sections[]` array in each system definition
 - Legacy `StatBlockView` export still works — it wraps the 2014 system internally
-- Spell Blocks editor is planned as a parallel system following the same architecture
 
 ### Hex Map
 
 - State is split: `BrushContext` (active tool/color) + `SettingsContext` (grid dimensions/style)
 - Supports flat-top and pointy-top hex orientations
-- Tools: paint, flood fill, stamp placement
+- Tools: paint, flood fill, stamp placement, text labels (inline SVG `<foreignObject>` editor)
 - Undo/redo via `useHistory` hook
+
+### Spell Block Generator
+
+- Parallel architecture to Stat Block Generator — same `StatBlockSystem<T>`, `DynamicEditor`, and file-system patterns
+- System modules live under `src/components/spell-block/systems/<id>/`
+- Templates live under `src/components/spell-block/templates/<system-id>/` as JSON files, loaded via `require.context`
+- `SpellTemplateSelector` mirrors `TemplateSelector` from stat blocks
+- To add a new system: follow the same pattern as `dnd5e-2024` — `types.ts`, `renderer.tsx`, `system.ts`, `index.ts`, register in `systems/registry.ts`
 
 ## Active Work Areas
 
 1. **Mood Board** — replacing `public/audio/` files with open-source audio; fixing broken playback
 2. **Hex Map** — visual polish and UX refinement pass
-3. **Spell Block Editor** — new feature, parallel to stat blocks; follow the same multi-system architecture
+3. **Spell Block Generator** — renderer polish pass; additional TTRPG systems beyond D&D 5e 2024
 
 ## File Persistence
 

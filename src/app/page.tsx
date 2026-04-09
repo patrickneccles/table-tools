@@ -121,6 +121,15 @@ export default function HomePage() {
       color: '#8b5cf6',
       badge: 'Maps',
     },
+    {
+      title: 'Spell Block Generator',
+      description:
+        'Create and export D&D 5e 2024 spell blocks with live preview and JSON import/export.',
+      href: '/spell-blocks',
+      icon: <Sparkles className="h-6 w-6" />,
+      color: '#3b82f6',
+      badge: 'Spells',
+    },
   ];
 
   return (

@@ -1,0 +1,23 @@
+{
+  "id": "acid-arrow-dnd5e-2024",
+  "systemId": "dnd5e-2024",
+  "name": "Acid Arrow",
+  "description": "2nd-Level Evocation",
+  "isSRD": true,
+  "data": {
+    "name": "Acid Arrow",
+    "level": "2",
+    "school": "Evocation",
+    "castingTime": "Action",
+    "range": "90 feet",
+    "components": "V, S, M (powdered rhubarb leaf)",
+    "duration": "Instantaneous",
+    "classes": "Wizard",
+    "description": "A shimmering green arrow streaks toward a target within range and bursts in a spray of acid. Make a ranged spell attack against the target. On a hit, the target takes 4d4 Acid damage and 2d4 Acid damage at the end of its next turn. On a miss, the arrow splashes the target with acid for half as much of the initial damage only.",
+    "atHigherLevels": "The damage (both initial and later) increases by 1d4 for each spell slot level above 2nd.",
+    "source": "SRD 5.2.1",
+    "attackType": "Ranged Spell Attack",
+    "saveType": "",
+    "damageType": "Acid"
+  }
+}

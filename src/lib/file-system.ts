@@ -11,7 +11,7 @@
 
 export const FILE_VERSION = '1' as const;
 
-export type FileType = 'stat-block' | 'hex-map' | 'mood-board-preset' | 'gm-screen';
+export type FileType = 'stat-block' | 'hex-map' | 'mood-board-preset' | 'gm-screen' | 'spell-block';
 
 export const VALID_FILE_TYPES: readonly FileType[] = [
   'stat-block',
