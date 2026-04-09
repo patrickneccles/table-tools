@@ -1,7 +1,14 @@
-"use client";
+'use client';
 
-import { ErrorBoundary } from "@/components/error-boundary";
-import type { AbilityKey, BaseStatBlockData, DnD5e2014Data, DnD5e2024Data, StatBlockTemplate, TraitSectionKey } from "@/components/stat-block";
+import { ErrorBoundary } from '@/components/error-boundary';
+import type {
+  AbilityKey,
+  BaseStatBlockData,
+  DnD5e2014Data,
+  DnD5e2024Data,
+  StatBlockTemplate,
+  TraitSectionKey,
+} from '@/components/stat-block';
 import {
   DEFAULT_SYSTEM_ID,
   DynamicEditor,
@@ -13,32 +20,66 @@ import {
   SystemSelector,
   SystemStatBlockView,
   TraitEditor,
-  transformBetweenSystems,
-} from "@/components/stat-block";
-import { calculateInitiative, calculateProficiencyBonus } from "@/components/stat-block/systems/dnd5e-2024";
-import { TemplateSelector } from "@/components/stat-block/template-selector";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useHistory } from "@/hooks/use-history";
-import { useIsLightMode } from "@/hooks/use-is-light-mode";
-import { cn } from "@/lib/utils";
-import { Check, ChevronDown, ChevronUp, Download, Home, MoreHorizontal, Printer, Redo2, Scroll, Undo2, Upload } from "lucide-react";
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+} from '@/components/stat-block';
+import {
+  calculateInitiative,
+  calculateProficiencyBonus,
+} from '@/components/stat-block/systems/dnd5e-2024';
+import { TemplateSelector } from '@/components/stat-block/template-selector';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useHistory } from '@/hooks/use-history';
+import { useIsLightMode } from '@/hooks/use-is-light-mode';
+import {
+  createFile,
+  downloadFile,
+  type TableToolsFile,
+  updateFile,
+  uploadFile,
+} from '@/lib/file-system';
+import { cn } from '@/lib/utils';
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  Home,
+  MoreHorizontal,
+  Printer,
+  Redo2,
+  Scroll,
+  Undo2,
+  Upload,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Generic stat block data that can be any system's data
 type AnyStatBlockData = BaseStatBlockData & Record<string, unknown>;
 
+// Payload stored inside a TableToolsFile for stat blocks
+type StatBlockFileData = {
+  systemId: string;
+  statBlock: AnyStatBlockData;
+};
+
 // Combined D&D 5e type that includes both 2014 and 2024 fields
-type DnD5eData = (DnD5e2014Data | DnD5e2024Data) & Partial<{
-  initiative: number;
-  proficiencyBonus: number;
-  gear: string[];
-  resistances: string;
-  vulnerabilities: string;
-  immunities: string;
-}>;
+type DnD5eData = (DnD5e2014Data | DnD5e2024Data) &
+  Partial<{
+    initiative: number;
+    proficiencyBonus: number;
+    gear: string[];
+    resistances: string;
+    vulnerabilities: string;
+    immunities: string;
+  }>;
 
 // ============================================================================
 // Custom Hooks
@@ -49,8 +90,8 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
   const history = useHistory<T>(initialData, 50);
   const statBlock = history.state;
   const setStatBlock = history.setState;
-  
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
 
@@ -58,18 +99,18 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
   useEffect(() => {
     const saved = loadStatBlockFromStorage();
     if (saved) {
-      setStatBlock(saved as unknown as T);
+      history.reset(saved as unknown as T);
     }
     isInitialMount.current = false;
-  }, [setStatBlock]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-save to localStorage with debounce
   useEffect(() => {
     if (isInitialMount.current) return;
 
     // Intentional: update save status when statBlock changes for auto-save feedback
-    // eslint-disable-next-line
-    setSaveStatus("saving");
+    setSaveStatus('saving');
 
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -77,10 +118,10 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
 
     saveTimeoutRef.current = setTimeout(() => {
       saveStatBlockToStorage(statBlock);
-      setSaveStatus("saved");
+      setSaveStatus('saved');
 
       // Reset status after a delay
-      setTimeout(() => setSaveStatus("idle"), 2000);
+      setTimeout(() => setSaveStatus('idle'), 2000);
     }, 500);
 
     return () => {
@@ -90,71 +131,81 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
     };
   }, [statBlock]);
 
-  const updateField = useCallback(<K extends keyof T>(
-    field: K,
-    value: T[K]
-  ) => {
-    setStatBlock((prev) => ({ ...prev, [field]: value }));
-  }, [setStatBlock]);
+  const updateField = useCallback(
+    <K extends keyof T>(field: K, value: T[K]) => {
+      setStatBlock((prev) => ({ ...prev, [field]: value }));
+    },
+    [setStatBlock]
+  );
 
-  const updateAbility = useCallback((ability: AbilityKey, value: number) => {
-    setStatBlock((prev) => {
-      // Type guard for D&D 5e data with abilityScores field
-      if ('abilityScores' in prev && typeof prev.abilityScores === 'object') {
-        return {
-          ...prev,
-          abilityScores: { ...prev.abilityScores as Record<string, unknown>, [ability]: value },
-        };
-      }
-      return prev;
-    });
-  }, [setStatBlock]);
+  const updateAbility = useCallback(
+    (ability: AbilityKey, value: number) => {
+      setStatBlock((prev) => {
+        // Type guard for D&D 5e data with abilityScores field
+        if ('abilityScores' in prev && typeof prev.abilityScores === 'object') {
+          return {
+            ...prev,
+            abilityScores: { ...(prev.abilityScores as Record<string, unknown>), [ability]: value },
+          };
+        }
+        return prev;
+      });
+    },
+    [setStatBlock]
+  );
 
-  const addTrait = useCallback((section: TraitSectionKey) => {
-    setStatBlock((prev) => {
-      const sectionData = prev[section as keyof T];
-      if (Array.isArray(sectionData)) {
-        return {
-          ...prev,
-          [section]: [...sectionData, { name: "New Entry", description: "Description here..." }],
-        };
-      }
-      return prev;
-    });
-  }, [setStatBlock]);
+  const addTrait = useCallback(
+    (section: TraitSectionKey) => {
+      setStatBlock((prev) => {
+        const sectionData = prev[section as keyof T];
+        if (Array.isArray(sectionData)) {
+          return {
+            ...prev,
+            [section]: [...sectionData, { name: 'New Entry', description: 'Description here...' }],
+          };
+        }
+        return prev;
+      });
+    },
+    [setStatBlock]
+  );
 
-  const updateTrait = useCallback((
-    section: TraitSectionKey,
-    index: number,
-    field: "name" | "description",
-    value: string
-  ) => {
-    setStatBlock((prev) => {
-      const sectionData = prev[section as keyof T];
-      if (Array.isArray(sectionData)) {
-        const current = [...sectionData];
-        current[index] = { ...current[index], [field]: value };
-        return { ...prev, [section]: current };
-      }
-      return prev;
-    });
-  }, [setStatBlock]);
+  const updateTrait = useCallback(
+    (section: TraitSectionKey, index: number, field: 'name' | 'description', value: string) => {
+      setStatBlock((prev) => {
+        const sectionData = prev[section as keyof T];
+        if (Array.isArray(sectionData)) {
+          const current = [...sectionData];
+          current[index] = { ...current[index], [field]: value };
+          return { ...prev, [section]: current };
+        }
+        return prev;
+      });
+    },
+    [setStatBlock]
+  );
 
-  const removeTrait = useCallback((section: TraitSectionKey, index: number) => {
-    setStatBlock((prev) => {
-      const sectionData = prev[section as keyof T];
-      if (Array.isArray(sectionData)) {
-        const current = [...sectionData];
-        current.splice(index, 1);
-        return { ...prev, [section]: current };
-      }
-      return prev;
-    });
-  }, [setStatBlock]);
+  const removeTrait = useCallback(
+    (section: TraitSectionKey, index: number) => {
+      setStatBlock((prev) => {
+        const sectionData = prev[section as keyof T];
+        if (Array.isArray(sectionData)) {
+          const current = [...sectionData];
+          current.splice(index, 1);
+          return { ...prev, [section]: current };
+        }
+        return prev;
+      });
+    },
+    [setStatBlock]
+  );
 
-  const loadTemplate = useCallback((template: StatBlockTemplate) => {
-    setStatBlock({ ...template.data } as T);
-  }, [setStatBlock]);
+  const loadTemplate = useCallback(
+    (template: StatBlockTemplate) => {
+      setStatBlock({ ...template.data } as T);
+    },
+    [setStatBlock]
+  );
 
   return {
     statBlock,
@@ -179,18 +230,18 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
 // Save Status Indicator
 // ============================================================================
 
-function SaveStatusIndicator({ status }: { status: "idle" | "saving" | "saved" }) {
-  if (status === "idle") return null;
+function SaveStatusIndicator({ status }: { status: 'idle' | 'saving' | 'saved' }) {
+  if (status === 'idle') return null;
 
   return (
     <div className="flex items-center gap-1.5 text-xs">
-      {status === "saving" && (
+      {status === 'saving' && (
         <>
           <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
           <span className="text-zinc-500">Saving...</span>
         </>
       )}
-      {status === "saved" && (
+      {status === 'saved' && (
         <>
           <Check className="h-3 w-3 text-emerald-500" />
           <span className="text-zinc-500">Saved</span>
@@ -219,7 +270,9 @@ export default function StatBlocksPage() {
 
   // Get current system and its schema
   const currentSystem = getSystem(systemId);
-  const initialData = currentSystem?.schema.defaultData || { name: "New Creature" };
+  const initialData = (currentSystem?.schema.defaultData ?? {
+    name: 'New Creature',
+  }) as AnyStatBlockData;
   const systemSections = currentSystem?.schema.sections || [];
 
   const {
@@ -239,10 +292,13 @@ export default function StatBlocksPage() {
   } = useStatBlockEditor(initialData);
   const isLightMode = useIsLightMode();
   const [isAtPreview, setIsAtPreview] = useState(false);
+  // Tracks the identity of the current file — set on import, preserved on export so repeated
+  // saves update the same file (same id / createdAt) rather than minting a new one each time.
+  const [currentFile, setCurrentFile] = useState<TableToolsFile<StatBlockFileData> | null>(null);
 
   // Track if user is at or below the preview section
   useEffect(() => {
-    const previewElement = document.getElementById("stat-block-preview");
+    const previewElement = document.getElementById('stat-block-preview');
     let previewObserver: IntersectionObserver | null = null;
 
     if (previewElement) {
@@ -252,7 +308,7 @@ export default function StatBlocksPage() {
         },
         {
           threshold: 0.1,
-          rootMargin: "-20% 0px -20% 0px",
+          rootMargin: '-20% 0px -20% 0px',
         }
       );
       previewObserver.observe(previewElement);
@@ -274,52 +330,26 @@ export default function StatBlocksPage() {
   }, []);
 
   const handleExport = useCallback(() => {
-    const exportData = {
-      version: "1.0",
-      systemId,
-      data: statBlock,
-      exportedAt: new Date().toISOString(),
-    };
-    
-    const jsonString = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${statBlock.name || "stat-block"}-${systemId}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [systemId, statBlock]);
+    const payload: StatBlockFileData = { systemId, statBlock };
+    const file = currentFile
+      ? updateFile(currentFile, payload)
+      : createFile('stat-block', statBlock.name || 'Untitled', payload);
+    setCurrentFile(file);
+    downloadFile(file);
+  }, [currentFile, systemId, statBlock]);
 
-  const handleImport = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const imported = JSON.parse(text);
-        
-        // Validate basic structure
-        if (!imported.data || !imported.systemId) {
-          alert("Invalid stat block file format");
-          return;
-        }
-
-        // Set system and data
-        setSystemId(imported.systemId);
-        setStatBlock(imported.data as AnyStatBlockData);
-      } catch (error) {
-        console.error("Failed to import stat block:", error);
-        alert("Failed to import stat block. Please check the file format.");
+  const handleImport = useCallback(async () => {
+    try {
+      const file = await uploadFile<StatBlockFileData>('stat-block');
+      setCurrentFile(file);
+      setSystemId(file.data.systemId);
+      setStatBlock(file.data.statBlock as AnyStatBlockData);
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'File selection cancelled.') {
+        console.error('Failed to import stat block:', err);
+        alert(err.message); // TODO: replace with toast once a toast system is in place
       }
-    };
-    input.click();
+    }
   }, [setStatBlock]);
 
   // Keyboard shortcuts
@@ -360,7 +390,7 @@ export default function StatBlocksPage() {
           case 'i':
             // Import: Ctrl/Cmd+I
             e.preventDefault();
-            handleImport();
+            void handleImport();
             break;
         }
       }
@@ -373,71 +403,69 @@ export default function StatBlocksPage() {
   const handleScrollToggle = () => {
     if (isAtPreview) {
       // Scroll back to top/editor
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // Scroll to preview
-      const previewElement = document.getElementById("stat-block-preview");
+      const previewElement = document.getElementById('stat-block-preview');
       if (previewElement) {
-        previewElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        previewElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
   };
 
   // Load template and set the appropriate system
-  const handleLoadTemplate = useCallback((template: StatBlockTemplate) => {
-    loadTemplate(template);
-    setSystemId(template.systemId);
-  }, [loadTemplate]);
+  const handleLoadTemplate = useCallback(
+    (template: StatBlockTemplate) => {
+      loadTemplate(template);
+      setSystemId(template.systemId);
+      setCurrentFile(null);
+    },
+    [loadTemplate]
+  );
 
   // Handle reset to default data for current system
   const handleReset = useCallback(() => {
     const defaultData = currentSystem?.schema.defaultData;
     if (defaultData) {
       setStatBlock(defaultData as AnyStatBlockData);
+      setCurrentFile(null);
     }
   }, [currentSystem, setStatBlock]);
 
   // Handle dynamic field changes (supports nested paths like "abilityScores.str")
-  const handleDynamicFieldChange = useCallback((path: string, value: unknown) => {
-    const keys = path.split('.');
-    if (keys.length === 1) {
-      updateField(keys[0] as keyof AnyStatBlockData, value);
-    } else {
-      // Handle nested paths
-      setStatBlock((prev: AnyStatBlockData) => {
-        const newData = { ...prev };
-        let current: Record<string, unknown> = newData;
-        for (let i = 0; i < keys.length - 1; i++) {
-          if (!current[keys[i]]) {
-            current[keys[i]] = {};
+  const handleDynamicFieldChange = useCallback(
+    (path: string, value: unknown) => {
+      const keys = path.split('.');
+      if (keys.length === 1) {
+        updateField(keys[0] as keyof AnyStatBlockData, value);
+      } else {
+        // Handle nested paths
+        setStatBlock((prev: AnyStatBlockData) => {
+          const newData = { ...prev };
+          let current: Record<string, unknown> = newData;
+          for (let i = 0; i < keys.length - 1; i++) {
+            if (!current[keys[i]]) {
+              current[keys[i]] = {};
+            }
+            current[keys[i]] = { ...(current[keys[i]] as Record<string, unknown>) };
+            current = current[keys[i]] as Record<string, unknown>;
           }
-          current[keys[i]] = { ...current[keys[i]] as Record<string, unknown> };
-          current = current[keys[i]] as Record<string, unknown>;
-        }
-        current[keys[keys.length - 1]] = value;
-        return newData;
-      });
-    }
-  }, [updateField, setStatBlock]);
-
-
-  // Handle system change with transformation
-  const handleSystemChange = (newSystemId: string) => {
-    // If switching from 2014 to 2024, transform the data
-    if (newSystemId === "dnd5e-2024" && systemId === "dnd5e-2014") {
-      const transformed = transformBetweenSystems("dnd5e-2014", "dnd5e-2024", statBlock);
-      if (transformed) {
-        setStatBlock(transformed as AnyStatBlockData);
+          current[keys[keys.length - 1]] = value;
+          return newData;
+        });
       }
-    }
-    // Note: 2024->2014 transformation not implemented (would lose initiative, gear, etc.)
-    // In that case, we just render the existing data in 2014 style
+    },
+    [updateField, setStatBlock]
+  );
+
+  // Handle system change — data is kept as-is, renderer adapts
+  const handleSystemChange = (newSystemId: string) => {
     setSystemId(newSystemId);
   };
 
   // Get current stat block data with 2024 fields if in 2024 mode
   const currentStatBlock = useMemo((): DnD5e2024Data => {
-    if (systemId === "dnd5e-2024") {
+    if (systemId === 'dnd5e-2024') {
       // Ensure 2024-specific fields are calculated if not present
       const data = statBlock as DnD5eData;
       return {
@@ -450,33 +478,43 @@ export default function StatBlocksPage() {
   }, [statBlock, systemId]);
 
   return (
-    <div className={cn(
-      "min-h-full transition-colors duration-300 print:bg-white",
-      isLightMode
-        ? "bg-gradient-to-b from-zinc-50 to-zinc-100"
-        : "bg-gradient-to-b from-zinc-900 to-zinc-950"
-    )}>
-      {/* Header */}
-      <header className={cn(
-        "border-b backdrop-blur-sm sticky top-0 z-50 print:hidden transition-colors",
+    <div
+      className={cn(
+        'min-h-full transition-colors duration-300 print:bg-white',
         isLightMode
-          ? "border-zinc-200 bg-white/80"
-          : "border-zinc-800 bg-zinc-900/80"
-      )}>
+          ? 'bg-gradient-to-b from-zinc-50 to-zinc-100'
+          : 'bg-gradient-to-b from-zinc-900 to-zinc-950'
+      )}
+    >
+      {/* Header */}
+      <header
+        className={cn(
+          'border-b backdrop-blur-sm sticky top-0 z-50 print:hidden transition-colors',
+          isLightMode ? 'border-zinc-200 bg-white/80' : 'border-zinc-800 bg-zinc-900/80'
+        )}
+      >
         <div className="max-w-7xl mx-auto px-6 py-4 gap-2 flex flex-wrap lg:flex-nowrap items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={cn(
-              "p-2 rounded-lg",
-              isLightMode ? "bg-amber-100 text-amber-600" : "bg-amber-900/20 text-amber-500"
-            )}>
+            <div
+              className={cn(
+                'p-2 rounded-lg',
+                isLightMode ? 'bg-amber-100 text-amber-600' : 'bg-amber-900/20 text-amber-500'
+              )}
+            >
               <Scroll className="h-5 w-5" />
             </div>
             <div>
-              <h1 className={cn(
-                "text-xl font-bold transition-colors",
-                isLightMode ? "text-zinc-800" : "text-white"
-              )}>Stat Block Generator</h1>
-              <p className="text-zinc-500 text-sm">Create stat blocks (D&D 5e and other TTRPG systems)</p>
+              <h1
+                className={cn(
+                  'text-xl font-bold transition-colors',
+                  isLightMode ? 'text-zinc-800' : 'text-white'
+                )}
+              >
+                Stat Block Generator
+              </h1>
+              <p className="text-zinc-500 text-sm">
+                Create stat blocks (D&D 5e and other TTRPG systems)
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -486,10 +524,10 @@ export default function StatBlocksPage() {
               size="sm"
               asChild
               className={cn(
-                "rounded-full text-xs",
+                'rounded-full text-xs',
                 isLightMode
-                  ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
-                  : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+                  ? 'bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800'
+                  : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200'
               )}
             >
               <Link href="/">
@@ -518,8 +556,8 @@ export default function StatBlocksPage() {
                   size="sm"
                   className={cn(
                     isLightMode
-                      ? "border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100"
-                      : "border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800"
+                      ? 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100'
+                      : 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800'
                   )}
                   title="More actions"
                 >
@@ -551,7 +589,11 @@ export default function StatBlocksPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button onClick={handlePrint} size="sm" className="bg-amber-600 hover:bg-amber-500 text-white">
+            <Button
+              onClick={handlePrint}
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-500 text-white"
+            >
               <Printer className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Print</span>
             </Button>
@@ -580,9 +622,15 @@ export default function StatBlocksPage() {
                     <TraitEditor
                       key={section}
                       section={section as TraitSectionKey}
-                      entries={(section in statBlock && Array.isArray(statBlock[section])) ? statBlock[section] : []}
+                      entries={
+                        section in statBlock && Array.isArray(statBlock[section])
+                          ? statBlock[section]
+                          : []
+                      }
                       onAdd={() => addTrait(section as TraitSectionKey)}
-                      onUpdate={(index, field, value) => updateTrait(section as TraitSectionKey, index, field, value)}
+                      onUpdate={(index, field, value) =>
+                        updateTrait(section as TraitSectionKey, index, field, value)
+                      }
                       onRemove={(index) => removeTrait(section as TraitSectionKey, index)}
                       isLightMode={isLightMode}
                     />
@@ -598,12 +646,12 @@ export default function StatBlocksPage() {
               <div className="lg:sticky lg:top-[88px] print:relative print:top-0">
                 <div className="flex items-center justify-between mb-3 print:hidden">
                   <h2 className="text-sm font-medium text-zinc-500">Preview</h2>
-                  <span className={cn(
-                    "text-xs px-2 py-0.5 rounded-full",
-                    isLightMode
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-amber-900/30 text-amber-400"
-                  )}>
+                  <span
+                    className={cn(
+                      'text-xs px-2 py-0.5 rounded-full',
+                      isLightMode ? 'bg-amber-100 text-amber-700' : 'bg-amber-900/30 text-amber-400'
+                    )}
+                  >
                     {currentSystem?.schema.metadata.name || systemId}
                   </span>
                 </div>
@@ -622,21 +670,17 @@ export default function StatBlocksPage() {
       <button
         onClick={handleScrollToggle}
         className={cn(
-          "fixed bottom-6 right-6 z-50 lg:hidden print:hidden",
-          "w-14 h-14 rounded-full shadow-lg",
-          "flex items-center justify-center",
-          "transition-all duration-200 hover:scale-110 active:scale-95",
+          'fixed bottom-6 right-6 z-50 lg:hidden print:hidden',
+          'w-14 h-14 rounded-full shadow-lg',
+          'flex items-center justify-center',
+          'transition-all duration-200 hover:scale-110 active:scale-95',
           isLightMode
-            ? "bg-amber-600 hover:bg-amber-500 text-white"
-            : "bg-amber-600 hover:bg-amber-500 text-white"
+            ? 'bg-amber-600 hover:bg-amber-500 text-white'
+            : 'bg-amber-600 hover:bg-amber-500 text-white'
         )}
-        aria-label={isAtPreview ? "Scroll to details" : "Scroll to preview"}
+        aria-label={isAtPreview ? 'Scroll to details' : 'Scroll to preview'}
       >
-        {isAtPreview ? (
-          <ChevronUp className="w-6 h-6" />
-        ) : (
-          <ChevronDown className="w-6 h-6" />
-        )}
+        {isAtPreview ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
       </button>
 
       {/* Global styles */}
@@ -674,20 +718,20 @@ export default function StatBlocksPage() {
             size: portrait;
             margin: 0.5in;
           }
-          
+
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          
+
           html {
             background: white !important;
           }
-          
+
           body {
             background: white !important;
           }
-          
+
           /* Force all container backgrounds to white/transparent */
           body > div,
           body > div > div,

@@ -1,51 +1,39 @@
 /**
  * Dynamic Stat Block Editor
- * 
+ *
  * Renders editor fields dynamically based on the active system's schema.
  */
 
-import React from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import {
-  EditorCard,
-  TextInput,
-  NumberInput,
-  getInputClassName,
-} from "./stat-block-editor";
-import type { SectionDefinition, FieldDefinition } from "./systems/base-system";
-import type { BaseStatBlockData } from "./stat-block-utils";
+import React from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { EditorCard, TextInput, NumberInput, getInputClassName } from './stat-block-editor';
+import type { SectionDefinition, FieldDefinition } from './systems/base-system';
+import type { BaseStatBlockData } from './stat-block-utils';
 
 type DynamicEditorProps<T extends BaseStatBlockData> = {
   data: T;
   sections: SectionDefinition[];
-  onFieldChange: (path: string, value: any) => void;
+  onFieldChange: (path: string, value: unknown) => void;
   onBlur?: () => void;
   isLightMode: boolean;
 };
 
 // Helper to get nested value from object using dot notation
-function getNestedValue(obj: any, path: string): any {
-  return path.split('.').reduce((current, key) => current?.[key], obj);
-}
-
-// Helper to set nested value in object using dot notation
-function setNestedValue(obj: any, path: string, value: any): any {
-  const keys = path.split('.');
-  const lastKey = keys.pop()!;
-  const target = keys.reduce((current, key) => {
-    if (!current[key]) current[key] = {};
-    return current[key];
+function getNestedValue(obj: unknown, path: string): unknown {
+  return path.split('.').reduce<unknown>((current, key) => {
+    if (current !== null && typeof current === 'object' && key in current) {
+      return (current as Record<string, unknown>)[key];
+    }
+    return undefined;
   }, obj);
-  target[lastKey] = value;
-  return obj;
 }
 
 function FieldHelp({ helpText, isLightMode }: { helpText?: string; isLightMode: boolean }) {
   if (!helpText) return null;
   return (
-    <p className={cn("text-[10px] mt-1", isLightMode ? "text-zinc-500" : "text-zinc-600")}>
+    <p className={cn('text-[10px] mt-1', isLightMode ? 'text-zinc-500' : 'text-zinc-600')}>
       {helpText}
     </p>
   );
@@ -60,20 +48,20 @@ function DynamicField<T extends BaseStatBlockData>({
 }: {
   field: FieldDefinition;
   data: T;
-  onFieldChange: (path: string, value: any) => void;
+  onFieldChange: (path: string, value: unknown) => void;
   onBlur?: () => void;
   isLightMode: boolean;
 }) {
   const value = getNestedValue(data, field.key);
 
   switch (field.type) {
-    case "text":
+    case 'text':
       return (
         <div>
           <TextInput
             id={field.key}
             label={field.label}
-            value={value || ""}
+            value={typeof value === 'string' ? value : String(value ?? '')}
             onChange={(v) => onFieldChange(field.key, v)}
             onBlur={onBlur}
             placeholder={field.placeholder}
@@ -83,18 +71,22 @@ function DynamicField<T extends BaseStatBlockData>({
         </div>
       );
 
-    case "textarea": {
+    case 'textarea': {
       // Handle array values by converting to/from newline-separated strings
       const isArray = Array.isArray(value);
-      const displayValue = isArray ? value.join('\n') : (value || "");
-      
+      const displayValue = isArray
+        ? value.join('\n')
+        : typeof value === 'string'
+          ? value
+          : String(value ?? '');
+
       return (
         <div>
           <Label
             htmlFor={field.key}
             className={cn(
-              "text-xs transition-colors",
-              isLightMode ? "text-zinc-600" : "text-zinc-400"
+              'text-xs transition-colors',
+              isLightMode ? 'text-zinc-600' : 'text-zinc-400'
             )}
           >
             {field.label}
@@ -105,31 +97,30 @@ function DynamicField<T extends BaseStatBlockData>({
             onChange={(e) => {
               const newValue = e.target.value;
               // If original was array, convert back to array, otherwise keep as string
-              const finalValue = isArray 
-                ? newValue.split('\n').filter(line => line.trim() !== '')
+              const finalValue = isArray
+                ? newValue.split('\n').filter((line) => line.trim() !== '')
                 : newValue;
               onFieldChange(field.key, finalValue);
             }}
             onBlur={onBlur}
             placeholder={field.placeholder}
             rows={3}
-            className={cn(
-              getInputClassName(isLightMode),
-              "resize-none"
-            )}
+            className={cn(getInputClassName(isLightMode), 'resize-none')}
           />
           <FieldHelp helpText={field.helpText} isLightMode={isLightMode} />
         </div>
       );
     }
 
-    case "number":
+    case 'number':
       return (
         <div>
           <NumberInput
             id={field.key}
             label={field.label}
-            value={value ?? 0}
+            value={
+              typeof value === 'number' ? value : typeof value === 'string' ? Number(value) || 0 : 0
+            }
             onChange={(v) => onFieldChange(field.key, v ?? 0)}
             isLightMode={isLightMode}
           />
@@ -137,27 +128,27 @@ function DynamicField<T extends BaseStatBlockData>({
         </div>
       );
 
-    case "checkbox":
+    case 'checkbox':
       return (
         <div>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
               id={field.key}
-              checked={value || false}
+              checked={typeof value === 'boolean' ? value : Boolean(value)}
               onChange={(e) => onFieldChange(field.key, e.target.checked)}
               className={cn(
-                "w-4 h-4 rounded transition-colors",
+                'w-4 h-4 rounded transition-colors',
                 isLightMode
-                  ? "border-zinc-300 text-amber-600 focus:ring-amber-500"
-                  : "border-zinc-700 text-amber-600 focus:ring-amber-500"
+                  ? 'border-zinc-300 text-amber-600 focus:ring-amber-500'
+                  : 'border-zinc-700 text-amber-600 focus:ring-amber-500'
               )}
             />
             <Label
               htmlFor={field.key}
               className={cn(
-                "text-xs transition-colors cursor-pointer",
-                isLightMode ? "text-zinc-600" : "text-zinc-400"
+                'text-xs transition-colors cursor-pointer',
+                isLightMode ? 'text-zinc-600' : 'text-zinc-400'
               )}
             >
               {field.label}
@@ -167,21 +158,21 @@ function DynamicField<T extends BaseStatBlockData>({
         </div>
       );
 
-    case "select":
+    case 'select':
       return (
         <div>
           <Label
             htmlFor={field.key}
             className={cn(
-              "text-xs transition-colors",
-              isLightMode ? "text-zinc-600" : "text-zinc-400"
+              'text-xs transition-colors',
+              isLightMode ? 'text-zinc-600' : 'text-zinc-400'
             )}
           >
             {field.label}
           </Label>
           <select
             id={field.key}
-            value={value || ""}
+            value={typeof value === 'string' ? value : String(value ?? '')}
             onChange={(e) => onFieldChange(field.key, e.target.value)}
             className={getInputClassName(isLightMode)}
           >
@@ -222,9 +213,9 @@ export function DynamicEditor<T extends BaseStatBlockData>({
                 key={field.key}
                 className={cn(
                   // Full width for textarea and certain fields
-                  field.type === "textarea" || field.key === "name" || field.key === "description"
-                    ? "col-span-2"
-                    : "col-span-1"
+                  field.type === 'textarea' || field.key === 'name' || field.key === 'description'
+                    ? 'col-span-2'
+                    : 'col-span-1'
                 )}
               >
                 <DynamicField

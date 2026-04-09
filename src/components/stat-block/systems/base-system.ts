@@ -1,11 +1,11 @@
 /**
  * Base System Interface
- * 
+ *
  * Defines the contract that all stat block systems must implement.
  * This allows for easy addition of new TTRPG systems in the future.
  */
 
-import type { ReactNode } from "react";
+import type { ComponentType } from 'react';
 
 /**
  * Metadata about a stat block system
@@ -30,7 +30,7 @@ export type FieldDefinition = {
   /** Display label */
   label: string;
   /** Field type */
-  type: "text" | "number" | "textarea" | "select" | "checkbox" | "multiselect";
+  type: 'text' | 'number' | 'textarea' | 'select' | 'checkbox' | 'multiselect';
   /** Placeholder text (for text/textarea) */
   placeholder?: string;
   /** Options (for select/multiselect) */
@@ -65,7 +65,7 @@ export type SectionDefinition = {
 /**
  * Schema definition for a stat block system
  */
-export type SystemSchema<T = any> = {
+export type SystemSchema<T = unknown> = {
   /** Metadata about the system */
   metadata: SystemMetadata;
   /** Default empty stat block */
@@ -76,14 +76,12 @@ export type SystemSchema<T = any> = {
   traitSections?: string[];
   /** Validation function for the entire stat block */
   validate?: (data: T) => { valid: boolean; errors?: string[] };
-  /** Transform function to convert from another system (if applicable) */
-  transformFrom?: (sourceSystem: string, sourceData: any) => T | null;
 };
 
 /**
  * Renderer component props
  */
-export type SystemRendererProps<T = any> = {
+export type SystemRendererProps<T = unknown> = {
   data: T;
   className?: string;
 };
@@ -91,17 +89,19 @@ export type SystemRendererProps<T = any> = {
 /**
  * Complete system definition
  */
-export type StatBlockSystem<T = any> = {
+export type StatBlockSystem<T = unknown> = {
   schema: SystemSchema<T>;
   /** React component for rendering the stat block */
-  Renderer: React.ComponentType<SystemRendererProps<T>>;
+  Renderer: ComponentType<SystemRendererProps<T>>;
   /** Optional custom editor component (falls back to generic editor) */
-  Editor?: React.ComponentType<any>;
+  Editor?: ComponentType<SystemRendererProps<T>>;
 };
 
 /**
  * Type-safe system registry
  */
 export type SystemRegistry = {
+  // Heterogeneous systems per key; `any` is the practical erased row type here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [systemId: string]: StatBlockSystem<any>;
 };

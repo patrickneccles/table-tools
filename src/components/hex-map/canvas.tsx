@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   AlertDialog,
@@ -8,61 +8,32 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import {
+  Check,
   SquareArrowDown,
   SquareArrowLeft,
   SquareArrowRight,
   SquareArrowUp,
-} from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
-import { HexMapBrushProvider, useHexMapBrush } from "./brush-context";
-import { STAMP_ICONS } from "./constants/stamps";
-import { exportHexGridV1, importHexGrid } from "./hex-map-file";
-import { HexGrid } from "./hex-grid";
-import { HexMapSettingsProvider, useHexMapSettings } from "./settings-context";
-import { ExpandMapEdge, MAX_GRID_DIMENSION } from "./expand-map";
-import { HexMapToolbar } from "./toolbar";
-
-function generateHexes(
-  width: number,
-  height: number,
-  color: string,
-  orientation: "flat" | "pointy" = "flat"
-) {
-  const hexes: { q: number; r: number; color: string }[] = [];
-  if (orientation === "flat") {
-    for (let col = 0; col < width; col++) {
-      for (let row = 0; row < height; row++) {
-        const q = col;
-        const r = row - Math.floor(col / 2);
-        hexes.push({ q, r, color });
-      }
-    }
-  } else {
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
-        const q = col - Math.floor(row / 2);
-        const r = row;
-        hexes.push({ q, r, color });
-      }
-    }
-  }
-  return hexes;
-}
-
-function getHexNeighbors(q: number, r: number) {
-  const directions = [
-    [+1, 0],
-    [0, +1],
-    [-1, +1],
-    [-1, 0],
-    [0, -1],
-    [+1, -1],
-  ];
-  return directions.map(([dq, dr]) => ({ q: q + dq, r: r + dr }));
-}
+} from 'lucide-react';
+import {
+  createFile,
+  downloadFile,
+  type TableToolsFile,
+  updateFile,
+  uploadFile,
+} from '@/lib/file-system';
+import { useHistory } from '@/hooks/use-history';
+import React, { useEffect, useRef, useState } from 'react';
+import { HexMapBrushProvider, useHexMapBrush } from './brush-context';
+import { STAMP_ICONS } from './constants/stamps';
+import { exportHexGridV1, type HexFileV1, importHexGrid } from './hex-map-file';
+import { HexGrid } from './hex-grid';
+import { HexMapSettingsProvider, useHexMapSettings } from './settings-context';
+import { ExpandMapEdge, MAX_GRID_DIMENSION } from './expand-map';
+import { generateHexes, deriveDimensions, getHexNeighbors } from './hex-utils';
+import { HexMapToolbar } from './toolbar';
 
 export const HexMapCanvas: React.FC = () => (
   <HexMapBrushProvider>
@@ -79,19 +50,13 @@ type HexCell = {
   stroke?: string;
   strokeWidth?: number;
   stamp?: string;
+  label?: string;
 };
 
 const HexMapCanvasInner: React.FC = () => {
   const [zoom, setZoom] = useState(1);
-  const [hexes, setHexes] = useState<HexCell[]>(() =>
-    generateHexes(7, 7, "#e0e0e0", "flat")
-  );
-  const [history, setHistory] = useState<HexCell[][]>([]);
-  const [redoStack, setRedoStack] = useState<HexCell[][]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartHexes, setDragStartHexes] = useState<HexCell[] | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importErrorOpen, setImportErrorOpen] = useState(false);
+
+  // Settings must come before hex history so baseFill/orientation are available for initialization
   const {
     width,
     setWidth,
@@ -120,43 +85,42 @@ const HexMapCanvasInner: React.FC = () => {
     setSelectedStamp,
   } = useHexMapBrush();
 
+  const {
+    state: hexes,
+    setState: setHexes,
+    reset: resetHexes,
+    undo: handleUndo,
+    redo: handleRedo,
+    canUndo,
+    canRedo,
+    captureSnapshot,
+  } = useHistory<HexCell[]>(generateHexes(width, height, baseFill, orientation), 50);
+
+  const [isDragging, setIsDragging] = useState(false);
+  const [mapName, setMapName] = useState('Untitled Map');
+  const [currentFile, setCurrentFile] = useState<TableToolsFile<HexFileV1> | null>(null);
+  const [importErrorOpen, setImportErrorOpen] = useState(false);
+  const [editingHex, setEditingHex] = useState<{ q: number; r: number } | null>(null);
+  const [editingLabel, setEditingLabel] = useState('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const size = 30 * zoom;
-
-  const handleUndo = () => {
-    if (history.length === 0) return;
-    setRedoStack((prev) => [hexes, ...prev]);
-    const prevState = history[history.length - 1];
-    setHexes(prevState);
-    setHistory((h) => h.slice(0, h.length - 1));
-  };
-
-  const handleRedo = () => {
-    if (redoStack.length === 0) return;
-    setHistory((prev) => [...prev, hexes]);
-    const nextState = redoStack[0];
-    setHexes(nextState);
-    setRedoStack((r) => r.slice(1));
-  };
-
-  const pushHistory = (newHexes: HexCell[]) => {
-    setHistory((prev) => [...prev, hexes]);
-    setRedoStack([]);
-    setHexes(newHexes);
-  };
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.3));
   const handleZoomReset = () => setZoom(1);
 
   const applyToolToHex = (q: number, r: number, currentHexes: HexCell[]) => {
-    if (activeTool === "erase") {
+    if (activeTool === 'erase') {
       return currentHexes.map((hex) =>
         hex.q === q && hex.r === r
-          ? { ...hex, color: baseFill, stroke, strokeWidth, stamp: undefined }
+          ? { ...hex, color: baseFill, stroke, strokeWidth, stamp: undefined, label: undefined }
           : hex
       );
     }
-    if (activeTool === "paint") {
+    if (activeTool === 'paint') {
       return currentHexes.map((hex) =>
         hex.q === q && hex.r === r
           ? {
@@ -164,8 +128,7 @@ const HexMapCanvasInner: React.FC = () => {
               color: brushColor,
               stroke: brushStroke,
               strokeWidth: brushStrokeWidth,
-              stamp:
-                selectedStamp === "No Stamp" ? undefined : selectedStamp,
+              stamp: selectedStamp === 'No Stamp' ? undefined : selectedStamp,
             }
           : hex
       );
@@ -174,73 +137,64 @@ const HexMapCanvasInner: React.FC = () => {
   };
 
   const handleHexClick = (q: number, r: number) => {
-    if (activeTool === "erase") {
-      const newHexes = hexes.map((hex) =>
-        hex.q === q && hex.r === r
-          ? { ...hex, color: baseFill, stroke, strokeWidth, stamp: undefined }
-          : hex
-      );
-      pushHistory(newHexes);
-      return;
-    }
-    if (activeTool === "eyedrop") {
+    if (activeTool === 'eyedrop') {
       const hex = hexes.find((h) => h.q === q && h.r === r);
       if (hex) {
         setBrushColor(hex.color);
-        if ("stroke" in hex && typeof hex.stroke === "string")
-          setBrushStroke(hex.stroke);
-        if ("strokeWidth" in hex && typeof hex.strokeWidth === "number")
+        if ('stroke' in hex && typeof hex.stroke === 'string') setBrushStroke(hex.stroke);
+        if ('strokeWidth' in hex && typeof hex.strokeWidth === 'number')
           setBrushStrokeWidth(hex.strokeWidth);
-        setSelectedStamp(
-          "stamp" in hex && typeof hex.stamp === "string"
-            ? hex.stamp
-            : "No Stamp"
-        );
+        setSelectedStamp('stamp' in hex && typeof hex.stamp === 'string' ? hex.stamp : 'No Stamp');
       }
-      setActiveTool("paint");
+      setActiveTool('paint');
       return;
     }
-    if (activeTool === "paint") {
-      const newHexes = hexes.map((hex) =>
-        hex.q === q && hex.r === r
-          ? {
-              ...hex,
-              color: brushColor,
-              stroke: brushStroke,
-              strokeWidth: brushStrokeWidth,
-              stamp:
-                selectedStamp === "No Stamp" ? undefined : selectedStamp,
-            }
-          : hex
+    if (activeTool === 'erase') {
+      captureSnapshot();
+      setHexes((prev) =>
+        prev.map((hex) =>
+          hex.q === q && hex.r === r
+            ? { ...hex, color: baseFill, stroke, strokeWidth, stamp: undefined, label: undefined }
+            : hex
+        )
       );
-      pushHistory(newHexes);
       return;
     }
-    if (activeTool === "bucket") {
+    if (activeTool === 'text') {
+      const hex = hexes.find((h) => h.q === q && h.r === r);
+      setEditingLabel(hex?.label ?? '');
+      setEditingHex({ q, r });
+      return;
+    }
+    if (activeTool === 'paint') {
+      captureSnapshot();
+      setHexes((prev) =>
+        prev.map((hex) =>
+          hex.q === q && hex.r === r
+            ? {
+                ...hex,
+                color: brushColor,
+                stroke: brushStroke,
+                strokeWidth: brushStrokeWidth,
+                stamp: selectedStamp === 'No Stamp' ? undefined : selectedStamp,
+              }
+            : hex
+        )
+      );
+      return;
+    }
+    if (activeTool === 'bucket') {
       const clicked = hexes.find((h) => h.q === q && h.r === r);
       if (!clicked) return;
-      const targetColor = "color" in clicked ? clicked.color : undefined;
-      const targetStroke =
-        "stroke" in clicked && typeof clicked.stroke === "string"
-          ? clicked.stroke
-          : stroke;
-      const targetStrokeWidth =
-        "strokeWidth" in clicked && typeof clicked.strokeWidth === "number"
-          ? clicked.strokeWidth
-          : strokeWidth;
-      const targetStamp =
-        "stamp" in clicked && typeof clicked.stamp === "string"
-          ? clicked.stamp
-          : undefined;
+      const targetColor = clicked.color;
+      const targetStroke = clicked.stroke ?? stroke;
+      const targetStrokeWidth = clicked.strokeWidth ?? strokeWidth;
+      const targetStamp = clicked.stamp ?? undefined;
       const match = (h: HexCell) =>
         h.color === targetColor &&
-        (("stroke" in h && typeof h.stroke === "string" ? h.stroke : stroke) ===
-          targetStroke) &&
-        (("strokeWidth" in h && typeof h.strokeWidth === "number"
-          ? h.strokeWidth
-          : strokeWidth) === targetStrokeWidth) &&
-        (("stamp" in h && typeof h.stamp === "string" ? h.stamp : undefined) ===
-          targetStamp);
+        (h.stroke ?? stroke) === targetStroke &&
+        (h.strokeWidth ?? strokeWidth) === targetStrokeWidth &&
+        (h.stamp ?? undefined) === targetStamp;
       const visited = new Set<string>();
       const toFill = [{ q, r }];
       while (toFill.length > 0) {
@@ -251,144 +205,124 @@ const HexMapCanvasInner: React.FC = () => {
         if (!hex || !match(hex)) continue;
         visited.add(key);
         getHexNeighbors(cq, cr).forEach(({ q: nq, r: nr }) => {
-          const nkey = `${nq},${nr}`;
-          if (!visited.has(nkey)) {
+          if (!visited.has(`${nq},${nr}`)) {
             const neighbor = hexes.find((h) => h.q === nq && h.r === nr);
-            if (neighbor && match(neighbor)) {
-              toFill.push({ q: nq, r: nr });
-            }
+            if (neighbor && match(neighbor)) toFill.push({ q: nq, r: nr });
           }
         });
       }
-      const newHexes = hexes.map((hex) =>
-        visited.has(`${hex.q},${hex.r}`)
-          ? {
-              ...hex,
-              color: brushColor,
-              stroke: brushStroke,
-              strokeWidth: brushStrokeWidth,
-              stamp:
-                selectedStamp === "No Stamp" ? undefined : selectedStamp,
-            }
-          : hex
+      captureSnapshot();
+      setHexes((prev) =>
+        prev.map((hex) =>
+          visited.has(`${hex.q},${hex.r}`)
+            ? {
+                ...hex,
+                color: brushColor,
+                stroke: brushStroke,
+                strokeWidth: brushStrokeWidth,
+                stamp: selectedStamp === 'No Stamp' ? undefined : selectedStamp,
+              }
+            : hex
+        )
       );
-      pushHistory(newHexes);
     }
   };
 
-  const handleHexMouseDown = (q: number, r: number) => {
-    if (activeTool === "paint" || activeTool === "erase") {
+  const handleHexPointerDown = (q: number, r: number) => {
+    if (activeTool === 'paint' || activeTool === 'erase') {
+      captureSnapshot(); // save pre-drag state as the undo point
       setIsDragging(true);
-      setDragStartHexes(hexes);
-      const newHexes = applyToolToHex(q, r, hexes);
-      setHexes(newHexes);
+      setHexes((prev) => applyToolToHex(q, r, prev));
     }
   };
 
-  const handleHexMouseEnter = (q: number, r: number) => {
-    if (isDragging && (activeTool === "paint" || activeTool === "erase")) {
-      const newHexes = applyToolToHex(q, r, hexes);
-      setHexes(newHexes);
+  const handleHexPointerEnter = (q: number, r: number) => {
+    if (isDragging && (activeTool === 'paint' || activeTool === 'erase')) {
+      setHexes((prev) => applyToolToHex(q, r, prev));
     }
   };
 
-  const handleMouseUp = () => {
-    if (isDragging && dragStartHexes) {
-      setHistory((prev) => [...prev, dragStartHexes]);
-      setRedoStack([]);
-      setIsDragging(false);
-      setDragStartHexes(null);
+  const handlePointerUp = () => {
+    if (isDragging) setIsDragging(false);
+  };
+
+  const handleEditingConfirm = () => {
+    if (!editingHex) return;
+    const currentHex = hexes.find((h) => h.q === editingHex.q && h.r === editingHex.r);
+    const newLabel = editingLabel.trim() || undefined;
+    if (currentHex?.label !== newLabel) {
+      captureSnapshot();
+      setHexes((prev) =>
+        prev.map((h) =>
+          h.q === editingHex.q && h.r === editingHex.r ? { ...h, label: newLabel } : h
+        )
+      );
     }
+    setEditingHex(null);
+    setEditingLabel('');
+  };
+
+  const handleEditingCancel = () => {
+    setEditingHex(null);
+    setEditingLabel('');
   };
 
   const handleExport = () => {
-    const data = exportHexGridV1({
-      hexes,
-      stroke,
-      strokeWidth,
-      spacing,
-      orientation,
-    });
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "hexgrid.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const data = exportHexGridV1({ hexes, stroke, strokeWidth, spacing, orientation });
+    const file = currentFile ? updateFile(currentFile, data) : createFile('hex-map', mapName, data);
+    setCurrentFile(file);
+    downloadFile(file);
   };
 
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const json = JSON.parse(event.target?.result as string);
-        const imported = importHexGrid(json);
-        setHexes(imported.hexes as HexCell[]);
-        if (imported.hexes.length > 0) {
-          const qs = (imported.hexes as HexCell[]).map((h) => h.q);
-          const minQ = Math.min(...qs);
-          const maxQ = Math.max(...qs);
-          setWidth(maxQ - minQ + 1);
-          const rowsPerCol: Record<number, Set<number>> = {};
-          (imported.hexes as HexCell[]).forEach((h) => {
-            const col = h.q;
-            const row = h.r + Math.floor(col / 2);
-            if (!rowsPerCol[col]) rowsPerCol[col] = new Set();
-            rowsPerCol[col].add(row);
-          });
-          const h = Math.max(
-            ...Object.values(rowsPerCol).map((set) => set.size)
-          );
-          setHeight(h);
-        }
-        setStroke(imported.stroke);
-        setStrokeWidth(imported.strokeWidth);
-        setSpacing(imported.spacing);
-        if (imported.orientation === "pointy" || imported.orientation === "flat") {
-          setOrientation(imported.orientation);
-        }
-      } catch {
+  const handleImportClick = async () => {
+    try {
+      const file = await uploadFile<HexFileV1>('hex-map');
+      const imported = importHexGrid(file.data);
+      setCurrentFile(file);
+      setMapName(file.name);
+      const importedHexes = imported.hexes as HexCell[];
+      setHexes(importedHexes);
+      if (importedHexes.length > 0) {
+        const { width: w, height: h } = deriveDimensions(importedHexes);
+        setWidth(w);
+        setHeight(h);
+      }
+      setStroke(imported.stroke);
+      setStrokeWidth(imported.strokeWidth);
+      setSpacing(imported.spacing);
+      if (imported.orientation === 'pointy' || imported.orientation === 'flat') {
+        setOrientation(imported.orientation);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'File selection cancelled.') {
         setImportErrorOpen(true);
       }
-    };
-    reader.readAsText(file);
-    e.target.value = "";
+    }
   };
 
   const handleClear = () => {
+    captureSnapshot();
     setHexes(generateHexes(width, height, baseFill, orientation));
   };
 
   const handleExpandEdge = (edge: ExpandMapEdge) => {
-    if (edge === "left" || edge === "right") {
+    if (edge === 'left' || edge === 'right') {
       if (width >= MAX_GRID_DIMENSION) return;
     } else {
       if (height >= MAX_GRID_DIMENSION) return;
     }
 
-    setHistory((h) => [...h, hexes]);
-    setRedoStack([]);
+    captureSnapshot();
 
-    if (edge === "right") {
+    if (edge === 'right') {
       setWidth(width + 1);
       return;
     }
-    if (edge === "bottom") {
+    if (edge === 'bottom') {
       setHeight(height + 1);
       return;
     }
-    if (edge === "left") {
+    if (edge === 'left') {
       setHexes((prev) => prev.map((h) => ({ ...h, q: h.q + 1 })));
       setWidth(width + 1);
       return;
@@ -399,19 +333,18 @@ const HexMapCanvasInner: React.FC = () => {
   };
 
   useEffect(() => {
+    // Regenerate grid when dimensions/orientation/baseFill change, preserving any painted cells
     setHexes((prev) => {
       const prevMap = new Map(prev.map((hex) => [`${hex.q},${hex.r}`, hex]));
       const newHexes: HexCell[] = [];
-      if (orientation === "flat") {
+      if (orientation === 'flat') {
         for (let col = 0; col < width; col++) {
           for (let row = 0; row < height; row++) {
             const q = col;
             const r = row - Math.floor(col / 2);
             const key = `${q},${r}`;
             const prevHex = prevMap.get(key);
-            newHexes.push(
-              prevHex ? { ...prevHex } : { q, r, color: baseFill }
-            );
+            newHexes.push(prevHex ? { ...prevHex } : { q, r, color: baseFill });
           }
         }
       } else {
@@ -421,25 +354,61 @@ const HexMapCanvasInner: React.FC = () => {
             const r = row;
             const key = `${q},${r}`;
             const prevHex = prevMap.get(key);
-            newHexes.push(
-              prevHex ? { ...prevHex } : { q, r, color: baseFill }
-            );
+            newHexes.push(prevHex ? { ...prevHex } : { q, r, color: baseFill });
           }
         }
       }
       return newHexes;
     });
-  }, [width, height, orientation, baseFill]);
+  }, [width, height, orientation, baseFill, setHexes]);
+
+  // Load saved map on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('hex-map-canvas');
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { hexes?: HexCell[]; mapName?: string };
+      if (Array.isArray(saved.hexes) && saved.hexes.length > 0) {
+        const { width: w, height: h } = deriveDimensions(saved.hexes);
+        resetHexes(saved.hexes);
+        setWidth(w);
+        setHeight(h);
+      }
+      if (typeof saved.mapName === 'string') setMapName(saved.mapName);
+    } catch {
+      /* ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save map to localStorage (debounced)
+  useEffect(() => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    if (savedStatusTimerRef.current) clearTimeout(savedStatusTimerRef.current);
+    setSaveStatus('saving');
+    autoSaveTimerRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem('hex-map-canvas', JSON.stringify({ hexes, mapName }));
+      } catch {
+        /* ignore storage errors */
+      }
+      setSaveStatus('saved');
+      savedStatusTimerRef.current = setTimeout(() => setSaveStatus('idle'), 2000);
+    }, 500);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      if (savedStatusTimerRef.current) clearTimeout(savedStatusTimerRef.current);
+    };
+  }, [hexes, mapName]);
 
   return (
-    <div className="flex h-full w-full min-h-0 flex-col gap-2">
+    <div className="flex h-full w-full min-h-0 flex-col gap-2 lg:flex-row">
       <AlertDialog open={importErrorOpen} onOpenChange={setImportErrorOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Could not import file</AlertDialogTitle>
             <AlertDialogDescription>
-              The file must be valid JSON in the hex map export format (version
-              1).
+              The file must be valid JSON in the hex map export format (version 1).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -448,7 +417,7 @@ const HexMapCanvasInner: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="flex w-full shrink-0 justify-center">
+      <div className="order-1 flex w-full shrink-0 justify-center lg:order-2 lg:w-auto lg:items-start">
         <HexMapToolbar
           handleExport={handleExport}
           handleImportClick={handleImportClick}
@@ -460,21 +429,16 @@ const HexMapCanvasInner: React.FC = () => {
           handleZoomReset={handleZoomReset}
           handleUndo={handleUndo}
           handleRedo={handleRedo}
-          canUndo={history.length > 0}
-          canRedo={redoStack.length > 0}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          mapName={mapName}
+          onMapNameChange={setMapName}
         />
       </div>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json"
-        className="hidden"
-        onChange={handleImport}
-      />
       <div
-        className="group/map-canvas bg-card relative flex min-h-0 flex-1 rounded-lg border"
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        className="bg-card relative order-2 flex min-h-0 flex-1 rounded-lg border lg:order-1"
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
       >
         <HexGrid
           hexes={hexes}
@@ -484,11 +448,27 @@ const HexMapCanvasInner: React.FC = () => {
           strokeWidth={strokeWidth}
           stroke={stroke}
           onHexClick={handleHexClick}
-          onHexMouseDown={handleHexMouseDown}
-          onHexMouseEnter={handleHexMouseEnter}
+          onHexPointerDown={handleHexPointerDown}
+          onHexPointerEnter={handleHexPointerEnter}
+          isDragging={isDragging}
           stampIcons={STAMP_ICONS}
+          editingHex={editingHex}
+          editingLabel={editingLabel}
+          onEditingLabelChange={setEditingLabel}
+          onEditingConfirm={handleEditingConfirm}
+          onEditingCancel={handleEditingCancel}
         />
-        <div className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-200 group-hover/map-canvas:opacity-100 group-focus-within/map-canvas:opacity-100">
+        {saveStatus !== 'idle' && (
+          <div className="pointer-events-none absolute right-2 top-2 z-20 flex items-center gap-1 rounded-md bg-background/80 px-2 py-1 text-xs text-muted-foreground backdrop-blur-sm">
+            {saveStatus === 'saving' ? (
+              <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+            ) : (
+              <Check className="h-3 w-3 text-emerald-500" />
+            )}
+            {saveStatus === 'saving' ? 'Saving…' : 'Saved'}
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-0 z-10">
           <Button
             type="button"
             variant="secondary"
@@ -499,7 +479,7 @@ const HexMapCanvasInner: React.FC = () => {
             aria-label="Add column on the left"
             onClick={(e) => {
               e.stopPropagation();
-              handleExpandEdge("left");
+              handleExpandEdge('left');
             }}
           >
             <SquareArrowLeft className="h-4 w-4" />
@@ -514,7 +494,7 @@ const HexMapCanvasInner: React.FC = () => {
             aria-label="Add column on the right"
             onClick={(e) => {
               e.stopPropagation();
-              handleExpandEdge("right");
+              handleExpandEdge('right');
             }}
           >
             <SquareArrowRight className="h-4 w-4" />
@@ -529,7 +509,7 @@ const HexMapCanvasInner: React.FC = () => {
             aria-label="Add row on the top"
             onClick={(e) => {
               e.stopPropagation();
-              handleExpandEdge("top");
+              handleExpandEdge('top');
             }}
           >
             <SquareArrowUp className="h-4 w-4" />
@@ -544,7 +524,7 @@ const HexMapCanvasInner: React.FC = () => {
             aria-label="Add row on the bottom"
             onClick={(e) => {
               e.stopPropagation();
-              handleExpandEdge("bottom");
+              handleExpandEdge('bottom');
             }}
           >
             <SquareArrowDown className="h-4 w-4" />

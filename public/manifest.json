@@ -1,6 +1,6 @@
 {
-  "name": "Moodie - Virtual Soundboard",
-  "short_name": "Moodie",
+  "name": "Table Tools - Virtual Soundboard",
+  "short_name": "Virtual Soundboard",
   "description": "A virtual soundboard for immersive audio experiences - perfect for podcasts, streaming, and TTRPGs",
   "start_url": "/",
   "display": "standalone",

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState } from 'react';
 
-export type HexMapTool = "paint" | "bucket" | "eyedrop" | "erase";
+export type HexMapTool = 'paint' | 'bucket' | 'eyedrop' | 'erase' | 'text';
 
 export type HexMapBrushContextType = {
   activeTool: HexMapTool;
@@ -17,16 +17,14 @@ export type HexMapBrushContextType = {
   setSelectedStamp: (v: string) => void;
 };
 
-const HexMapBrushContext = createContext<HexMapBrushContextType | undefined>(
-  undefined
-);
+const HexMapBrushContext = createContext<HexMapBrushContextType | undefined>(undefined);
 
 export function HexMapBrushProvider({ children }: { children: React.ReactNode }) {
-  const [activeTool, setActiveTool] = useState<HexMapTool>("paint");
-  const [brushColor, setBrushColor] = useState("#eab308");
-  const [brushStroke, setBrushStroke] = useState("#000000");
+  const [activeTool, setActiveTool] = useState<HexMapTool>('paint');
+  const [brushColor, setBrushColor] = useState('#eab308');
+  const [brushStroke, setBrushStroke] = useState('#000000');
   const [brushStrokeWidth, setBrushStrokeWidth] = useState(0);
-  const [selectedStamp, setSelectedStamp] = useState("No Stamp");
+  const [selectedStamp, setSelectedStamp] = useState('No Stamp');
 
   return (
     <HexMapBrushContext.Provider
@@ -50,7 +48,6 @@ export function HexMapBrushProvider({ children }: { children: React.ReactNode })
 
 export function useHexMapBrush() {
   const ctx = useContext(HexMapBrushContext);
-  if (!ctx)
-    throw new Error("useHexMapBrush must be used within HexMapBrushProvider");
+  if (!ctx) throw new Error('useHexMapBrush must be used within HexMapBrushProvider');
   return ctx;
 }

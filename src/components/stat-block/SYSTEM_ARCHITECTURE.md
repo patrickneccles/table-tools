@@ -1,298 +1,167 @@
 # Stat Block System Architecture
 
-This document describes the new multi-system architecture for the Stat Block Generator, which now supports multiple TTRPG systems and editions.
-
 ## Overview
 
-The Stat Block Generator has been evolved from a single D&D 5e 2014 implementation to a flexible, extensible system that can support multiple TTRPG systems and editions. This allows users to:
+The Stat Block Generator supports multiple TTRPG systems through a registry-based architecture. Each system is a self-contained module that defines its own data schema, editor fields, and visual renderer. Adding a new system doesn't require touching existing code.
 
-- Switch between different stat block formats (e.g., D&D 5e 2014 vs 2024)
-- Transform stat blocks between compatible systems
-- Add new systems easily without modifying existing code
+## Currently Supported Systems
 
-## Architecture
+| System ID    | Name           | Notes                                                                                              |
+| ------------ | -------------- | -------------------------------------------------------------------------------------------------- |
+| `dnd5e-2024` | D&D 5e (2024)  | Default system                                                                                     |
+| `dnd5e-2014` | D&D 5e (2014)  | Classic Monster Manual format                                                                      |
+| `shadowdark` | Shadowdark RPG | Compact format; displays ability modifiers directly (not raw scores); single-line core stats block |
 
-### Core Concepts
-
-1. **System** - A complete stat block implementation including data schema and renderer
-2. **Registry** - Central catalog of all available systems
-3. **Transformer** - Functions to convert data between systems
-4. **Renderer** - React component that displays a stat block in a specific format
-
-### Directory Structure
+## Directory Structure
 
 ```
 src/components/stat-block/
 ├── systems/
 │   ├── base-system.ts          # Core interfaces and types
-│   ├── registry.ts              # System registry and utilities
-│   ├── index.ts                 # Exports for systems
+│   ├── registry.ts             # System registry and utility functions
+│   ├── index.ts                # Exports
 │   ├── dnd5e-2014/
-│   │   ├── types.ts             # 2014 data types
-│   │   ├── renderer.tsx         # 2014 visual renderer
-│   │   ├── system.ts            # 2014 system definition
-│   │   └── index.ts             # 2014 exports
-│   └── dnd5e-2024/
-│       ├── types.ts             # 2024 data types
-│       ├── renderer.tsx         # 2024 visual renderer
-│       ├── system.ts            # 2024 system definition
-│       └── index.ts             # 2024 exports
-├── system-stat-block-view.tsx   # System-agnostic renderer
-├── system-selector.tsx          # UI for switching systems
-└── [existing files...]          # Backwards compatibility
+│   │   ├── types.ts
+│   │   ├── renderer.tsx
+│   │   ├── system.ts
+│   │   └── index.ts
+│   ├── dnd5e-2024/
+│   │   ├── types.ts
+│   │   ├── renderer.tsx
+│   │   ├── system.ts
+│   │   └── index.ts
+│   └── shadowdark/
+│       ├── types.ts
+│       ├── renderer.tsx
+│       ├── system.ts
+│       └── index.ts
+├── system-stat-block-view.tsx  # System-agnostic renderer wrapper
+├── system-selector.tsx         # UI for switching systems
+├── stat-block-editor.tsx
+├── dynamic-editor.tsx          # Schema-driven form editor
+└── [supporting files]
 ```
 
-## Currently Supported Systems
+## Core Concepts
 
-### D&D 5e (2014)
-- Classic 2014 Monster Manual format
-- Standard ability score grid
-- Traditional layout
+- **System** — a complete stat block implementation: data schema, editor field definitions, and a renderer
+- **Registry** — `systems/registry.ts` is the single source of truth for all available systems
+- **Renderer** — React component that displays a stat block in a system-specific visual format
+- **DynamicEditor** — schema-driven form; field UI is generated from the `sections[]` array in each system definition
 
-### D&D 5e (2024)
-- Updated 2024 Core Rules format
-- **New**: Explicit Initiative display
-- **New**: Gear section for retrievable equipment
-- **New**: Proficiency Bonus in CR line
-- **Updated**: Two-column ability score table with saves
-- **Updated**: Separate Resistances and Immunities
-
-## Key Differences Between 2014 and 2024
-
-| Feature | 2014 Edition | 2024 Edition |
-|---------|-------------|-------------|
-| **Initiative** | Not shown | **Initiative +5 (15)** |
-| **Ability Scores** | Single 6-column grid | Two 3-row tables with saves |
-| **Gear** | Not present | **Gear** line for retrievable items |
-| **Challenge Rating** | **CR 3 (700 XP)** | **CR 3 (XP 700; PB +2)** |
-| **Resistances** | Combined with immunities | Separate **Resistances** line |
-| **Immunities** | Separate damage/condition | Combined **Immunities** line |
-
-## Usage Examples
-
-### Basic Rendering
-
-```typescript
-import { SystemStatBlockView } from "@/components/stat-block";
-
-function MyComponent() {
-  const statBlockData = { /* ... */ };
-  
-  return (
-    <SystemStatBlockView
-      systemId="dnd5e-2024"
-      data={statBlockData}
-    />
-  );
-}
-```
-
-### System Selection
-
-```typescript
-import { SystemSelector } from "@/components/stat-block";
-
-function Editor() {
-  const [currentSystem, setCurrentSystem] = useState("dnd5e-2024");
-  
-  return (
-    <SystemSelector
-      currentSystemId={currentSystem}
-      onSystemChange={setCurrentSystem}
-    />
-  );
-}
-```
-
-### System Transformation
-
-```typescript
-import { transformBetweenSystems } from "@/components/stat-block";
-
-// Convert 2014 data to 2024 format
-const data2014 = { /* 2014 stat block */ };
-const data2024 = transformBetweenSystems("dnd5e-2014", "dnd5e-2024", data2014);
-```
+When switching systems, data is kept as-is and the new renderer works with what it has. There is no cross-system data transformation — it was removed as too cumbersome to maintain across an expanding set of systems.
 
 ## Adding a New System
 
-To add support for a new TTRPG system:
-
-### 1. Create System Directory
+### 1. Create the system directory
 
 ```
-src/components/stat-block/systems/your-system/
+src/components/stat-block/systems/<your-system-id>/
 ├── types.ts       # Data types for your system
 ├── renderer.tsx   # Visual renderer component
-├── system.ts      # System definition
+├── system.ts      # System definition (schema + Renderer)
 └── index.ts       # Exports
 ```
 
-### 2. Define Types
+### 2. Define types (`types.ts`)
 
 ```typescript
-// types.ts
 export type YourSystemData = {
   name: string;
   // ... your fields
 };
-
-export function yourCalculation(value: number): number {
-  // ... your logic
-}
 ```
 
-### 3. Create Renderer
+### 3. Create a renderer (`renderer.tsx`)
 
 ```typescript
-// renderer.tsx
 import type { YourSystemData } from "./types";
 
 export function YourSystemRenderer({ data }: { data: YourSystemData }) {
   return (
-    <div className="your-styling">
-      {/* Render your stat block */}
+    <div className="...">
+      {/* render the stat block */}
     </div>
   );
 }
 ```
 
-### 4. Define System
+### 4. Define the system (`system.ts`)
 
 ```typescript
-// system.ts
-import type { StatBlockSystem } from "../base-system";
-import type { YourSystemData } from "./types";
-import { YourSystemRenderer } from "./renderer";
+import type { StatBlockSystem } from '../base-system';
+import type { YourSystemData } from './types';
+import { YourSystemRenderer } from './renderer';
 
 export const yourSystem: StatBlockSystem<YourSystemData> = {
   schema: {
     metadata: {
-      id: "your-system-id",
-      name: "Your System Name",
-      description: "Brief description",
-      version: "1.0",
+      id: 'your-system-id',
+      name: 'Your System Name',
+      description: 'Brief description',
+      version: '1.0',
     },
     defaultData: {
-      // Default empty stat block
+      // empty/default stat block
     },
     sections: [
-      // Editor field definitions
+      // editor field definitions
     ],
-    transformFrom: (sourceSystem, sourceData) => {
-      // Optional: conversion logic
-    },
   },
   Renderer: YourSystemRenderer,
 };
 ```
 
-### 5. Register System
+### 5. Register the system (`systems/registry.ts`)
 
 ```typescript
-// systems/registry.ts
-import { yourSystem } from "./your-system/system";
+import { yourSystem } from './your-system/system';
 
 export const SYSTEM_REGISTRY: SystemRegistry = {
-  "dnd5e-2014": dnd5e2014System,
-  "dnd5e-2024": dnd5e2024System,
-  "your-system-id": yourSystem,  // Add here
+  'dnd5e-2014': dnd5e2014System,
+  'dnd5e-2024': dnd5e2024System,
+  shadowdark: shadowdarkSystem,
+  'your-system-id': yourSystem, // add here
 };
 ```
 
+The system will appear automatically in the selector UI.
+
 ## API Reference
 
-### Core Functions
+### Registry functions (`systems/registry.ts`)
 
-#### `getSystem(systemId: string)`
-Get a system definition by ID.
-
-#### `getAllSystems()`
-Get all registered systems.
-
-#### `getAllSystemMetadata()`
-Get metadata for all systems (useful for UI lists).
-
-#### `transformBetweenSystems(sourceSystemId, targetSystemId, sourceData)`
-Convert data from one system to another.
-
-#### `canTransform(sourceSystemId, targetSystemId)`
-Check if transformation is available.
+| Function                 | Description                         |
+| ------------------------ | ----------------------------------- |
+| `getSystem(id)`          | Get a system definition by ID       |
+| `getAllSystems()`        | All registered systems as an array  |
+| `getAllSystemMetadata()` | Metadata only (useful for UI lists) |
 
 ### Components
 
-#### `SystemStatBlockView`
-System-agnostic renderer that automatically uses the correct renderer.
+**`SystemStatBlockView`** — renders a stat block using the correct system renderer
 
-**Props:**
-- `systemId: string` - System identifier
-- `data: any` - Stat block data
-- `className?: string` - Additional CSS classes
+```tsx
+<SystemStatBlockView systemId="shadowdark" data={statBlockData} />
+```
 
-#### `SystemSelector`
-UI component for switching between systems.
+**`SystemSelector`** — UI dropdown for switching systems
 
-**Props:**
-- `currentSystemId: string` - Currently selected system
-- `onSystemChange: (systemId: string) => void` - Change handler
-- `isLightMode?: boolean` - Theme flag
-- `sourceSystemId?: string` - For showing conversion availability
+```tsx
+<SystemSelector
+  currentSystemId={currentSystem}
+  onSystemChange={setCurrentSystem}
+  isLightMode={isLightMode}
+/>
+```
 
 ## Backwards Compatibility
 
-All existing code continues to work without modification:
+Legacy imports still work — `StatBlockView` and `StatBlockData` are re-exported aliases that use the 2014 system internally.
 
-```typescript
-// Legacy import still works
-import { StatBlockView } from "@/components/stat-block";
+## Planned Additions
 
-// Legacy types still available
-import type { StatBlockData } from "@/components/stat-block";
-```
-
-The legacy `StatBlockView` component now uses the 2014 system internally.
-
-## Future Enhancements
-
-Potential additions to the system:
-
-1. **More Systems**
-   - Pathfinder 2e
-   - Call of Cthulhu
-   - Savage Worlds
-   - Custom/homebrew systems
-
-2. **Advanced Transformations**
-   - Lossy transformations with warnings
-   - Manual field mapping UI
-   - Conversion history
-
-3. **System Extensions**
-   - Custom field validators
-   - Auto-calculation rules
-   - Template libraries per system
-
-4. **Import/Export**
-   - System-specific file formats
-   - Cross-system compatibility checks
-   - Batch conversion tools
-
-## References
-
-- [D&D Beyond 2024 Stat Blocks](https://www.dndbeyond.com/sources/dnd/br-2024/how-to-use-a-monster)
-- 2014 Monster Manual (Wizards of the Coast)
-- System Reference Document (SRD 5.1)
-
-## Contributing
-
-When adding a new system:
-
-1. Follow the directory structure pattern
-2. Include complete TypeScript types
-3. Add tests for transformations
-4. Update this documentation
-5. Add example templates
-
-## License
-
-Part of the Moodie project. See project LICENSE for details.
+1. **Spell Block Editor** — parallel system to stat blocks; will follow this same architecture
+2. **More TTRPG systems** — Pathfinder 2e, Call of Cthulhu, custom/homebrew
+3. **System-specific validation** — field validators, auto-calculation rules
+4. **System-specific export formats**

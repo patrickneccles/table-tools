@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +12,11 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { NEUTRAL_COLORS, PALETTES } from "./constants/palette";
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { NEUTRAL_COLORS, PALETTES } from './constants/palette';
 import {
   Stamp,
   STAMP_GROUP_LABELS,
@@ -25,21 +25,23 @@ import {
   STAMPS,
   Stamps,
   type StampIconProps,
-} from "./constants/stamps";
-import { cn } from "@/lib/utils";
+} from './constants/stamps';
+import { cn } from '@/lib/utils';
 import {
-  Ellipsis,
   Eraser,
   Paintbrush,
   PaintBucket,
   Pipette,
-  Search,
+  Redo2,
   Settings,
-} from "lucide-react";
-import { useHexMapBrush, type HexMapTool } from "./brush-context";
-import type { ExpandMapEdge } from "./expand-map";
-import { HexMapGridSettingsDialog } from "./grid-settings-dialog";
-import { useHexMapSettings } from "./settings-context";
+  Type,
+  Undo2,
+  ZoomIn,
+} from 'lucide-react';
+import { useHexMapBrush, type HexMapTool } from './brush-context';
+import type { ExpandMapEdge } from './expand-map';
+import { HexMapGridSettingsDialog } from './grid-settings-dialog';
+import { useHexMapSettings } from './settings-context';
 
 type StampLucideIcon = React.ComponentType<StampIconProps>;
 
@@ -72,8 +74,8 @@ function StampTileSwatch({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full box-border",
-        selected && "z-[1] outline outline-2 outline-offset-2 outline-primary",
+        'inline-flex shrink-0 items-center justify-center rounded-full box-border',
+        selected && 'z-[1] outline outline-2 outline-offset-2 outline-primary',
         className
       )}
       style={{
@@ -102,6 +104,8 @@ export interface HexMapToolbarProps {
   handleRedo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  mapName: string;
+  onMapNameChange: (name: string) => void;
 }
 
 export function HexMapToolbar(props: HexMapToolbarProps) {
@@ -118,6 +122,8 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
     handleRedo,
     canUndo,
     canRedo,
+    mapName,
+    onMapNameChange,
   } = props;
 
   const {
@@ -135,33 +141,34 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
 
   const { palette } = useHexMapSettings();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsDraftKey, setSettingsDraftKey] = useState(0);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       const commandKey = e.metaKey || e.ctrlKey;
       if (!commandKey) return;
       switch (e.key) {
-        case "n":
+        case 'n':
           e.preventDefault();
           handleClear();
           break;
-        case "i":
+        case 'i':
           e.preventDefault();
           handleImportClick();
           break;
-        case "e":
+        case 'e':
           e.preventDefault();
           handleExport();
           break;
-        case "=":
+        case '=':
           e.preventDefault();
           handleZoomIn();
           break;
-        case "-":
+        case '-':
           e.preventDefault();
           handleZoomOut();
           break;
-        case "0":
+        case '0':
           e.preventDefault();
           handleZoomReset();
           break;
@@ -169,67 +176,19 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
           break;
       }
     };
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, [
-    handleClear,
-    handleExport,
-    handleImportClick,
-    handleZoomIn,
-    handleZoomOut,
-    handleZoomReset,
-  ]);
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, [handleClear, handleExport, handleImportClick, handleZoomIn, handleZoomOut, handleZoomReset]);
 
   return (
     <>
       <div
         className={cn(
-          "flex flex-wrap items-center justify-center gap-1 rounded-lg border p-1 shadow-xs",
-          "bg-background"
+          'flex flex-wrap items-center justify-center gap-1 rounded-lg border p-1 shadow-xs',
+          'bg-background',
+          'lg:flex-col lg:flex-nowrap'
         )}
       >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="File and grid settings">
-              <Settings className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={handleClear}>
-              Clear <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExport}>
-              Export <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleImportClick}>
-              Import <DropdownMenuShortcut>⌘I</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
-              Grid settings…
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Zoom">
-              <Search className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={handleZoomOut}>
-              Zoom out <DropdownMenuShortcut>⌘-</DropdownMenuShortcut>
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled>Zoom: {zoom.toFixed(2)}×</DropdownMenuItem>
-            <DropdownMenuItem onClick={handleZoomIn}>
-              Zoom in <DropdownMenuShortcut>⌘+</DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <span className="bg-border mx-1 hidden h-6 w-px sm:block" />
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -239,10 +198,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
               aria-label="Fill, stroke, and stamp"
             >
               <StampTileSwatch
-                icon={
-                  STAMP_ICONS.find((i) => i.name === selectedStamp)?.icon ??
-                  undefined
-                }
+                icon={STAMP_ICONS.find((i) => i.name === selectedStamp)?.icon ?? undefined}
                 fillColor={brushColor}
                 strokeColor={brushStroke}
                 strokeWidth={brushStrokeWidth}
@@ -258,7 +214,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
                   <Button
                     key={color}
                     type="button"
-                    variant={brushColor === color ? "default" : "outline"}
+                    variant={brushColor === color ? 'default' : 'outline'}
                     size="icon"
                     className="h-8 w-8 rounded-full p-0"
                     style={{
@@ -269,7 +225,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
                     aria-label={`Select fill color ${color}`}
                     onClick={() => setBrushColor(color)}
                   >
-                    {brushColor === color ? "✓" : "•"}
+                    {brushColor === color ? '✓' : '•'}
                   </Button>
                 ))}
               </div>
@@ -283,7 +239,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
                     <Button
                       key={color}
                       type="button"
-                      variant={brushStroke === color ? "default" : "outline"}
+                      variant={brushStroke === color ? 'default' : 'outline'}
                       size="icon"
                       className="h-8 w-8 rounded-full p-0"
                       style={{
@@ -294,7 +250,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
                       aria-label={`Select stroke color ${color}`}
                       onClick={() => setBrushStroke(color)}
                     >
-                      {brushStroke === color ? "✓" : "•"}
+                      {brushStroke === color ? '✓' : '•'}
                     </Button>
                   ))}
               </div>
@@ -318,9 +274,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
               <DropdownMenuSubTrigger className="flex w-full items-center gap-2">
                 <span className="flex-1 text-left">Stamp</span>
                 <StampTileSwatch
-                  icon={
-                    STAMP_ICONS.find((i) => i.name === selectedStamp)?.icon
-                  }
+                  icon={STAMP_ICONS.find((i) => i.name === selectedStamp)?.icon}
                   fillColor={brushColor}
                   strokeColor={brushStroke}
                   strokeWidth={brushStrokeWidth}
@@ -369,9 +323,8 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
           size="sm"
           type="single"
           value={activeTool}
-          onValueChange={(val) =>
-            setActiveTool((val as HexMapTool) || activeTool)
-          }
+          onValueChange={(val) => setActiveTool((val as HexMapTool) || activeTool)}
+          className="lg:flex-col"
         >
           <ToggleGroupItem value="paint" aria-label="Paintbrush">
             <Paintbrush className="h-4 w-4" />
@@ -385,22 +338,103 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
           <ToggleGroupItem value="erase" aria-label="Eraser">
             <Eraser className="h-4 w-4" />
           </ToggleGroupItem>
+          <ToggleGroupItem value="text" aria-label="Text label">
+            <Type className="h-4 w-4" />
+          </ToggleGroupItem>
         </ToggleGroup>
 
-        <span className="bg-border mx-1 hidden h-6 w-px sm:block" />
+        <span className="bg-border hidden sm:block mx-1 h-6 w-px lg:mx-0 lg:my-1 lg:h-px lg:w-6" />
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleUndo}
+          disabled={!canUndo}
+          aria-label="Undo"
+          title="Undo (⌘Z)"
+        >
+          <Undo2 className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleRedo}
+          disabled={!canRedo}
+          aria-label="Redo"
+          title="Redo (⇧⌘Z)"
+        >
+          <Redo2 className="h-4 w-4" />
+        </Button>
+
+        <span className="bg-border hidden sm:block mx-1 h-6 w-px lg:mx-0 lg:my-1 lg:h-px lg:w-6" />
+
+        <div className="flex items-center gap-0.5 lg:flex-col">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleZoomOut}
+            aria-label="Zoom out"
+            title="Zoom out (⌘-)"
+          >
+            <span className="text-base font-medium leading-none">−</span>
+          </Button>
+          <button
+            onClick={handleZoomReset}
+            className="flex w-12 items-center justify-center gap-0.5 rounded px-1 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="Reset zoom (⌘0)"
+            aria-label="Reset zoom"
+          >
+            <ZoomIn className="h-3 w-3 shrink-0" />
+            {Math.round(zoom * 100)}%
+          </button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleZoomIn}
+            aria-label="Zoom in"
+            title="Zoom in (⌘+)"
+          >
+            <span className="text-base font-medium leading-none">+</span>
+          </Button>
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="More">
-              <Ellipsis className="h-5 w-5" />
+            <Button variant="ghost" size="icon" aria-label="File and grid settings">
+              <Settings className="h-5 w-5" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleUndo} disabled={!canUndo}>
-              Undo <DropdownMenuShortcut>⌘Z</DropdownMenuShortcut>
+          <DropdownMenuContent align="start" className="w-56">
+            <div className="px-2 py-1.5">
+              <Label htmlFor="map-name" className="mb-1 block text-xs text-muted-foreground">
+                Map name
+              </Label>
+              <Input
+                id="map-name"
+                value={mapName}
+                onChange={(e) => onMapNameChange(e.target.value)}
+                className="h-7 text-xs"
+                placeholder="Untitled Map"
+              />
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleClear}>
+              Clear <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleRedo} disabled={!canRedo}>
-              Redo <DropdownMenuShortcut>⇧⌘Z</DropdownMenuShortcut>
+            <DropdownMenuItem onClick={handleExport}>
+              Export <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleImportClick}>
+              Import <DropdownMenuShortcut>⌘I</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                setSettingsDraftKey((k) => k + 1);
+                setSettingsOpen(true);
+              }}
+            >
+              Grid settings…
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -408,6 +442,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
 
       <HexMapGridSettingsDialog
         open={settingsOpen}
+        draftKey={settingsDraftKey}
         onOpenChange={setSettingsOpen}
         onSaveComplete={handleZoomReset}
         onExpandEdge={onExpandEdge}

@@ -1,15 +1,11 @@
-// Moodie Service Worker
+// Table Tools Service Worker
 // Provides offline support and audio caching
 
-const CACHE_NAME = 'moodie-v1';
-const AUDIO_CACHE_NAME = 'moodie-audio-v1';
+const CACHE_NAME = 'tabletools-v1';
+const AUDIO_CACHE_NAME = 'tabletools-audio-v1';
 
 // Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/builder',
-  '/manifest.json',
-];
+const STATIC_ASSETS = ['/', '/builder', '/manifest.json'];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -57,7 +53,7 @@ self.addEventListener('fetch', (event) => {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;
-        } catch (error) {
+        } catch {
           // Return a silent audio response if offline and not cached
           return new Response(null, {
             status: 503,

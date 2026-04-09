@@ -1,17 +1,18 @@
 /**
  * System-Aware Stat Block View
- * 
+ *
  * Renders a stat block using the appropriate system renderer.
  */
 
-"use client";
+'use client';
 
-import React from "react";
-import { getSystem } from "./systems";
+import React from 'react';
+import type { BaseStatBlockData } from './stat-block-utils';
+import { getSystem } from './systems';
 
 export type SystemStatBlockViewProps = {
   systemId: string;
-  data: any;
+  data: BaseStatBlockData;
   className?: string;
 };
 
@@ -20,17 +21,17 @@ export type SystemStatBlockViewProps = {
  */
 export function SystemStatBlockView({ systemId, data, className }: SystemStatBlockViewProps) {
   const system = getSystem(systemId);
-  
+
   if (!system) {
     return (
       <div className="bg-red-50 border-2 border-red-500 p-4 rounded-lg text-red-900">
         <p className="font-bold">Unknown System</p>
-        <p className="text-sm">System "{systemId}" not found in registry.</p>
+        <p className="text-sm">System &quot;{systemId}&quot; not found in registry.</p>
       </div>
     );
   }
-  
+
   const Renderer = system.Renderer;
-  
+
   return <Renderer data={data} className={className} />;
 }

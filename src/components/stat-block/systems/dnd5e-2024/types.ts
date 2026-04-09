@@ -1,6 +1,6 @@
 /**
  * D&D 5e 2024 Edition Stat Block Types
- * 
+ *
  * These are the types from the 2024 D&D Beyond Basic Rules.
  * Key differences from 2014:
  * - Initiative is explicitly shown
@@ -10,7 +10,7 @@
  */
 
 /** The six D&D ability score keys */
-export type AbilityKey = "str" | "dex" | "con" | "int" | "wis" | "cha";
+export type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha';
 
 /** Ability scores mapped by key */
 export type AbilityScores = Record<AbilityKey, number>;
@@ -22,7 +22,12 @@ export type TraitEntry = {
 };
 
 /** Keys for sections that contain trait entries */
-export type TraitSectionKey = "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions";
+export type TraitSectionKey =
+  | 'traits'
+  | 'actions'
+  | 'bonusActions'
+  | 'reactions'
+  | 'legendaryActions';
 
 /**
  * D&D 5e 2024 Stat Block Data Structure
@@ -33,7 +38,7 @@ export type DnD5e2024Data = {
   size: string;
   type: string;
   alignment: string;
-  
+
   // Combat Stats
   armorClass: number;
   armorType?: string;
@@ -41,61 +46,61 @@ export type DnD5e2024Data = {
   hitPoints: number;
   hitDice: string;
   speed: string;
-  
+
   // Ability Scores
   abilityScores: AbilityScores;
-  
+
   // Proficiencies
   savingThrows?: string[];
   skills?: string[];
-  
+
   // Resistances & Immunities (more granular in 2024)
   resistances?: string; // Damage types
   vulnerabilities?: string; // Damage types
   immunities?: string; // Damage types AND conditions combined
-  
+
   // Gear (NEW in 2024)
   gear?: string; // Comma-separated list of equipment
-  
+
   // Senses & Languages
   senses?: string;
   languages?: string;
-  
+
   // Challenge
   challengeRating: string;
   experiencePoints?: number;
   proficiencyBonus?: number; // NEW in 2024: explicit PB
-  
+
   // Features
   traits?: TraitEntry[];
   actions?: TraitEntry[];
   bonusActions?: TraitEntry[];
   reactions?: TraitEntry[];
   legendaryActions?: TraitEntry[];
-  
+
   // Lore
   description?: string;
 };
 
 /** Ordered list of ability keys for consistent rendering */
-export const ABILITY_KEYS: AbilityKey[] = ["str", "dex", "con", "int", "wis", "cha"];
+export const ABILITY_KEYS: AbilityKey[] = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
 /** All trait section keys for iteration */
 export const TRAIT_SECTION_KEYS: TraitSectionKey[] = [
-  "traits",
-  "actions",
-  "bonusActions",
-  "reactions",
-  "legendaryActions",
+  'traits',
+  'actions',
+  'bonusActions',
+  'reactions',
+  'legendaryActions',
 ];
 
 /** Display names for trait sections */
 export const TRAIT_SECTION_LABELS: Record<TraitSectionKey, string> = {
-  traits: "Traits",
-  actions: "Actions",
-  bonusActions: "Bonus Actions",
-  reactions: "Reactions",
-  legendaryActions: "Legendary Actions",
+  traits: 'Traits',
+  actions: 'Actions',
+  bonusActions: 'Bonus Actions',
+  reactions: 'Reactions',
+  legendaryActions: 'Legendary Actions',
 };
 
 /** Calculate ability modifier from score */
@@ -109,18 +114,21 @@ export function formatModifier(mod: number): string {
 }
 
 /** Calculate Initiative from Dexterity */
-export function calculateInitiative(dexScore: number, proficiencyBonus: number = 0): { modifier: number; score: number } {
+export function calculateInitiative(dexScore: number): {
+  modifier: number;
+  score: number;
+} {
   const modifier = calculateModifier(dexScore);
   return {
     modifier,
-    score: 10 + modifier
+    score: 10 + modifier,
   };
 }
 
 /** Calculate Proficiency Bonus from CR */
 export function calculateProficiencyBonus(cr: string): number {
-  const crNum = cr === "1/8" ? 0.125 : cr === "1/4" ? 0.25 : cr === "1/2" ? 0.5 : parseFloat(cr);
-  
+  const crNum = cr === '1/8' ? 0.125 : cr === '1/4' ? 0.25 : cr === '1/2' ? 0.5 : parseFloat(cr);
+
   if (crNum <= 4) return 2;
   if (crNum <= 8) return 3;
   if (crNum <= 12) return 4;
