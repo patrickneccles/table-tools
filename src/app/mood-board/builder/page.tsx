@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import dynamic from "next/dynamic";
-import { cn } from "@/lib/utils";
-import { useIsLightMode } from "@/hooks/use-is-light-mode";
-import { ArrowLeft, Loader2, Wrench } from "lucide-react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import dynamic from 'next/dynamic';
+import { cn } from '@/lib/utils';
+import { useIsLightMode } from '@/hooks/use-is-light-mode';
+import { ArrowLeft, Loader2, Wrench } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 // Dynamically import BoardBuilder with SSR disabled to prevent hydration errors
 // @dnd-kit generates different aria-describedby IDs on server vs client
 const BoardBuilder = dynamic(
-  () => import("@/components/mood-board/builder").then((mod) => mod.BoardBuilder),
+  () => import('@/components/mood-board/builder').then((mod) => mod.BoardBuilder),
   {
     ssr: false,
     loading: () => (
@@ -30,8 +30,8 @@ export default function BuilderPage() {
   return (
     <div
       className={cn(
-        "min-h-full transition-colors duration-300",
-        isLightMode ? "bg-[#f0f0f2]" : "bg-[#0a0a0b]"
+        'flex-1 transition-colors duration-300',
+        isLightMode ? 'bg-[#f0f0f2]' : 'bg-[#0a0a0b]'
       )}
     >
       <div className="container mx-auto max-w-7xl px-4 py-6">
@@ -44,10 +44,10 @@ export default function BuilderPage() {
               size="sm"
               asChild
               className={cn(
-                "rounded-full text-xs",
+                'rounded-full text-xs',
                 isLightMode
-                  ? "bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800"
-                  : "bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200"
+                  ? 'bg-zinc-900/10 border border-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800'
+                  : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-white/10 hover:text-zinc-200'
               )}
             >
               <Link href="/mood-board">
@@ -58,8 +58,8 @@ export default function BuilderPage() {
             <div className="flex items-center gap-3">
               <div
                 className={cn(
-                  "p-2 rounded-xl",
-                  isLightMode ? "bg-violet-100 text-violet-600" : "bg-violet-900/20 text-violet-400"
+                  'p-2 rounded-xl',
+                  isLightMode ? 'bg-violet-100 text-violet-600' : 'bg-violet-900/20 text-violet-400'
                 )}
               >
                 <Wrench className="h-5 w-5" />
@@ -67,18 +67,13 @@ export default function BuilderPage() {
               <div>
                 <h1
                   className={cn(
-                    "text-xl font-bold tracking-tight",
-                    isLightMode ? "text-zinc-800" : "text-white"
+                    'text-xl font-bold tracking-tight',
+                    isLightMode ? 'text-zinc-800' : 'text-white'
                   )}
                 >
                   Mood Board Builder
                 </h1>
-                <p
-                  className={cn(
-                    "text-sm",
-                    isLightMode ? "text-zinc-500" : "text-zinc-400"
-                  )}
-                >
+                <p className={cn('text-sm', isLightMode ? 'text-zinc-500' : 'text-zinc-400')}>
                   Create and customize your own soundboard
                 </p>
               </div>
@@ -92,7 +87,7 @@ export default function BuilderPage() {
             isLightMode={isLightMode}
             onSave={(config) => {
               // In a real app, this would save to a database
-              console.log("Saving board config:", config);
+              console.log('Saving board config:', config);
               // Could also save to localStorage for persistence
               localStorage.setItem(`moodboard-${config.id}`, JSON.stringify(config));
             }}

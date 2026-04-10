@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { ServiceWorkerRegistration } from '@/components/service-worker-registration';
 import { AppFooter } from '@/components/theme-toggle';
+import { Toaster } from '@/components/ui/sonner';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -15,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Table Tools - Virtual Soundboard',
+  title: 'Table Tools - Creative Tools for Tabletop Gaming',
   description:
-    'A virtual soundboard for immersive audio experiences - perfect for podcasts, streaming, and TTRPGs',
+    'A collection of tools to enhance your TTRPG sessions, streaming, and creative projects.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -64,9 +65,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 flex flex-col">{children}</div>
         <AppFooter />
         <ServiceWorkerRegistration />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );

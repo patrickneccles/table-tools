@@ -18,6 +18,7 @@ export const VALID_FILE_TYPES: readonly FileType[] = [
   'hex-map',
   'mood-board-preset',
   'gm-screen',
+  'spell-block',
 ];
 
 export type TableToolsFile<T = unknown> = {

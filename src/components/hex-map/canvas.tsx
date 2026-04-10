@@ -15,6 +15,7 @@ import { SquareArrowDown, SquareArrowLeft, SquareArrowRight, SquareArrowUp } fro
 import {
   createFile,
   downloadFile,
+  renameFile,
   type TableToolsFile,
   updateFile,
   uploadFile,
@@ -264,7 +265,8 @@ const HexMapCanvasInner: React.FC = () => {
 
   const handleExport = () => {
     const data = exportHexGridV1({ hexes, stroke, strokeWidth, spacing, orientation });
-    const file = currentFile ? updateFile(currentFile, data) : createFile('hex-map', mapName, data);
+    const base = currentFile ? updateFile(currentFile, data) : createFile('hex-map', mapName, data);
+    const file = base.name !== mapName ? renameFile(base, mapName) : base;
     setCurrentFile(file);
     downloadFile(file);
   };

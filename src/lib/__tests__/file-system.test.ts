@@ -116,9 +116,9 @@ describe('isValidFileType', () => {
   });
 
   it('returns false for unknown strings', () => {
-    expect(isValidFileType('spell-block')).toBe(false);
     expect(isValidFileType('')).toBe(false);
     expect(isValidFileType('STAT-BLOCK')).toBe(false);
+    expect(isValidFileType('unknown-type')).toBe(false);
   });
 
   it('returns false for non-string values', () => {
@@ -178,7 +178,7 @@ describe('parseFileJSON', () => {
 
   it('throws on an unknown file type', () => {
     const file = createFile('stat-block', 'X', {});
-    const tampered = { ...file, type: 'spell-block' };
+    const tampered = { ...file, type: 'not-a-real-type' };
     expect(() => parseFileJSON(JSON.stringify(tampered))).toThrow('Unknown file type');
   });
 

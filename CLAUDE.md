@@ -114,6 +114,34 @@ Git commits automatically run prettier + eslint --fix via lint-staged (pre-commi
 2. **Hex Map** — visual polish and UX refinement pass
 3. **Spell Block Generator** — renderer polish pass; additional TTRPG systems beyond D&D 5e 2024
 
+## Roadmap
+
+See `src/app/roadmap/page.tsx` for the user-facing version.
+
+**Product identity:** Table Tools is a **prep toolkit**, not a digital table replacement. Features primarily useful _during_ a game session (combat tracker, session notes) are deprioritized — Roll20/Foundry own that space.
+
+**Near-term fixes:**
+
+- Mood Board: replace missing audio files (CC0), builder file export/import via `TableToolsFile<BoardConfig>`
+- All tools: toast notifications via Sonner (replacing `alert()`)
+
+**New tools (priority order):**
+
+1. **Dice Probability Calculator** `/dice` — roll distribution charts for encounter/DC design (like anydice.com)
+2. **Random Tables** `/random-tables` — weighted table builder with drag-to-reorder and system templates
+3. **NPC Generator** `/npc-generator` — quick NPC gen with export-to-stat-block flow
+
+**Existing tool enhancements:**
+
+- Pathfinder 2e system for both stat blocks and spell blocks
+- CR auto-calculator (D&D 5e Defensive/Offensive formula)
+- Spell book compiler: multi-spell export as single print/PDF view
+- Hex Map: POI markers with labels, region label overlay
+
+**Long-term:**
+
+- **Digital GM Screen** `/gm-screen` — composable widget dashboard (Mood Board transport + Dice + Random Tables + Stat/Spell quick-reference). A composition layer, not a new tool.
+
 ## File Persistence
 
 `src/lib/file-system.ts` is the canonical module for file save/load. All tool data is wrapped in a `TableToolsFile<T>` envelope before download/upload:

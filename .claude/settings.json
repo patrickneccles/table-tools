@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -i -c 'nvm use && [ -n \"$CLAUDE_ENV_FILE\" ] && echo \"PATH=$PATH\" >> \"$CLAUDE_ENV_FILE\"'"
+          }
+        ]
+      }
+    ]
+  }
+}

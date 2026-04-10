@@ -1,9 +1,19 @@
 'use client';
 
-import Link from 'next/link';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
 import { cn } from '@/lib/utils';
-import { Music, Scroll, Wrench, ArrowRight, Sparkles, Mail, Hexagon } from 'lucide-react';
+import {
+  ArrowRight,
+  BarChart2,
+  Hexagon,
+  Mail,
+  Map,
+  Music,
+  PanelTopDashed,
+  Scroll,
+  Toolbox,
+} from 'lucide-react';
+import Link from 'next/link';
 
 interface ToolCardProps {
   title: string;
@@ -109,7 +119,7 @@ export default function HomePage() {
       description:
         'Create and print D&D 5e stat blocks. Includes SRD templates with auto-calculations.',
       href: '/stat-blocks',
-      icon: <Scroll className="h-6 w-6" />,
+      icon: <PanelTopDashed className="h-6 w-6" />,
       color: '#f59e0b',
       badge: 'Print',
     },
@@ -126,16 +136,25 @@ export default function HomePage() {
       description:
         'Create and export D&D 5e 2024 spell blocks with live preview and JSON import/export.',
       href: '/spell-blocks',
-      icon: <Sparkles className="h-6 w-6" />,
+      icon: <Scroll className="h-6 w-6" />,
       color: '#3b82f6',
       badge: 'Spells',
+    },
+    {
+      title: 'Dice Probability',
+      description:
+        'Visualize roll distributions for any expression. Set DCs, design encounters, and compare methods.',
+      href: '/dice',
+      icon: <BarChart2 className="h-6 w-6" />,
+      color: '#dc2626',
+      badge: 'Prep',
     },
   ];
 
   return (
     <div
       className={cn(
-        'min-h-full transition-colors duration-300',
+        'flex-1 transition-colors duration-300',
         isLightMode ? 'bg-[#f5f5f7]' : 'bg-[#0a0a0b]'
       )}
     >
@@ -158,9 +177,7 @@ export default function HomePage() {
         <div className="flex items-center justify-center mb-16">
           <div className="flex items-center gap-3">
             <div className={cn('p-2 rounded-xl', isLightMode ? 'bg-zinc-900/5' : 'bg-white/5')}>
-              <Sparkles
-                className={cn('h-6 w-6', isLightMode ? 'text-zinc-700' : 'text-zinc-300')}
-              />
+              <Toolbox className={cn('h-6 w-6', isLightMode ? 'text-zinc-700' : 'text-zinc-300')} />
             </div>
             <span
               className={cn('font-semibold text-lg', isLightMode ? 'text-zinc-800' : 'text-white')}
@@ -209,12 +226,18 @@ export default function HomePage() {
           )}
         >
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Wrench className={cn('h-4 w-4', isLightMode ? 'text-zinc-400' : 'text-zinc-500')} />
-            <span
-              className={cn('text-sm font-medium', isLightMode ? 'text-zinc-600' : 'text-zinc-400')}
+            <Link
+              href="/roadmap"
+              className={cn(
+                'inline-flex items-center gap-1.5 text-sm transition-colors',
+                isLightMode
+                  ? 'text-zinc-500 hover:text-zinc-800'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              )}
             >
-              More tools coming soon
-            </span>
+              <Map className="h-4 w-4" />
+              View roadmap
+            </Link>
           </div>
           <p className={cn('text-xs', isLightMode ? 'text-zinc-400' : 'text-zinc-500')}>
             Reach out with requests or suggestions!

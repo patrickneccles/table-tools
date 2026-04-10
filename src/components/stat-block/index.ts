@@ -9,8 +9,6 @@ export {
   getInputWithPlaceholderClassName,
 } from './stat-block-editor';
 
-// Dynamic editor
-export { DynamicEditor } from './dynamic-editor';
 export {
   ABILITY_KEYS,
   FEATURE_SECTION_KEYS as TRAIT_SECTION_KEYS,

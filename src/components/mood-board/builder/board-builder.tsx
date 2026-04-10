@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
   pointerWithin,
-} from "@dnd-kit/core";
-import { cn } from "@/lib/utils";
+} from '@dnd-kit/core';
+import { cn } from '@/lib/utils';
 import {
   BoardConfig,
   createDefaultBoardConfig,
@@ -17,14 +17,16 @@ import {
   SlotConfig,
   LAYOUT_PRESETS,
   LayoutPreset,
-} from "./types";
-import { getSoundById } from "./sound-registry";
-import { SoundPalette } from "./sound-palette";
-import { DroppableSlot } from "./droppable-slot";
-import { ColorPicker } from "./color-picker";
-import { Save, RotateCcw, Download, Upload, Play, Pencil, Volume2 } from "lucide-react";
-import { audioManager } from "@/lib/audio-manager";
-import { Button } from "@/components/ui/button";
+} from './types';
+import { getSoundById } from './sound-registry';
+import { SoundPalette } from './sound-palette';
+import { DroppableSlot } from './droppable-slot';
+import { ColorPicker } from './color-picker';
+import { Save, RotateCcw, Download, Upload, Play, Pencil, Volume2 } from 'lucide-react';
+import { audioManager } from '@/lib/audio-manager';
+import { Button } from '@/components/ui/button';
+import { createFile, downloadFile, uploadFile } from '@/lib/file-system';
+import { toast } from 'sonner';
 
 type BoardBuilderProps = {
   isLightMode?: boolean;
@@ -32,11 +34,7 @@ type BoardBuilderProps = {
   onSave?: (config: BoardConfig) => void;
 };
 
-export function BoardBuilder({
-  isLightMode = false,
-  initialConfig,
-  onSave,
-}: BoardBuilderProps) {
+export function BoardBuilder({ isLightMode = false, initialConfig, onSave }: BoardBuilderProps) {
   const [slotConfig, setSlotConfig] = useState<SlotConfig>(DEFAULT_SLOT_CONFIG);
   const [config, setConfig] = useState<BoardConfig>(
     initialConfig ?? createDefaultBoardConfig(DEFAULT_SLOT_CONFIG)
@@ -49,10 +47,8 @@ export function BoardBuilder({
   // Preload sounds that are placed on the board (for live preview)
   useEffect(() => {
     const soundIds = [...config.ambienceSlots, ...config.effectSlots].filter(Boolean) as string[];
-    const urls = soundIds
-      .map((id) => getSoundById(id)?.audioSrc)
-      .filter(Boolean) as string[];
-    
+    const urls = soundIds.map((id) => getSoundById(id)?.audioSrc).filter(Boolean) as string[];
+
     if (urls.length > 0) {
       audioManager.preloadAll(urls);
     }
@@ -71,12 +67,12 @@ export function BoardBuilder({
     setSlotConfig(preset.config);
     // Resize the slot arrays to match the new configuration
     setConfig((prev) => {
-      const newAmbienceSlots = Array(preset.config.ambienceCount).fill(null).map(
-        (_, i) => prev.ambienceSlots[i] ?? null
-      );
-      const newEffectSlots = Array(preset.config.effectCount).fill(null).map(
-        (_, i) => prev.effectSlots[i] ?? null
-      );
+      const newAmbienceSlots = Array(preset.config.ambienceCount)
+        .fill(null)
+        .map((_, i) => prev.ambienceSlots[i] ?? null);
+      const newEffectSlots = Array(preset.config.effectCount)
+        .fill(null)
+        .map((_, i) => prev.effectSlots[i] ?? null);
       return {
         ...prev,
         ambienceSlots: newAmbienceSlots,
@@ -120,7 +116,7 @@ export function BoardBuilder({
 
       const sound = active.data.current?.sound as SoundDefinition | undefined;
       const dropData = over.data.current as
-        | { slotType: "ambience" | "effect"; slotIndex: number }
+        | { slotType: 'ambience' | 'effect'; slotIndex: number }
         | undefined;
 
       if (!sound || !dropData) return;
@@ -129,14 +125,14 @@ export function BoardBuilder({
 
       // Validate slot type matches sound category
       if (
-        (slotType === "ambience" && sound.category !== "ambience") ||
-        (slotType === "effect" && sound.category !== "effect")
+        (slotType === 'ambience' && sound.category !== 'ambience') ||
+        (slotType === 'effect' && sound.category !== 'effect')
       ) {
         return; // Don't allow dropping wrong category
       }
 
       // Update the appropriate slot
-      if (slotType === "ambience") {
+      if (slotType === 'ambience') {
         const newSlots = [...config.ambienceSlots];
         newSlots[slotIndex] = sound.id;
         updateConfig({ ambienceSlots: newSlots });
@@ -150,8 +146,8 @@ export function BoardBuilder({
   );
 
   const removeFromSlot = useCallback(
-    (slotType: "ambience" | "effect", slotIndex: number) => {
-      if (slotType === "ambience") {
+    (slotType: 'ambience' | 'effect', slotIndex: number) => {
+      if (slotType === 'ambience') {
         const newSlots = [...config.ambienceSlots];
         newSlots[slotIndex] = null;
         updateConfig({ ambienceSlots: newSlots });
@@ -167,8 +163,7 @@ export function BoardBuilder({
   const handleSave = useCallback(() => {
     onSave?.(config);
     setIsDirty(false);
-    // For now, just log to console
-    console.log("Saved config:", config);
+    toast.success('Board saved.');
   }, [config, onSave]);
 
   const handleReset = useCallback(() => {
@@ -177,37 +172,22 @@ export function BoardBuilder({
   }, [slotConfig]);
 
   const handleExport = useCallback(() => {
-    const dataStr = JSON.stringify(config, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${config.name.toLowerCase().replace(/\s+/g, "-")}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const file = createFile('mood-board-preset', config.name || 'Untitled', config);
+    downloadFile(file);
+    toast.success('Board exported.');
   }, [config]);
 
-  const handleImport = useCallback(() => {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const imported = JSON.parse(e.target?.result as string) as BoardConfig;
-            setConfig(imported);
-            setIsDirty(true);
-          } catch (err) {
-            console.error("Failed to import config:", err);
-          }
-        };
-        reader.readAsText(file);
+  const handleImport = useCallback(async () => {
+    try {
+      const file = await uploadFile<BoardConfig>('mood-board-preset');
+      setConfig(file.data);
+      setIsDirty(false);
+      toast.success(`Loaded "${file.data.name}".`);
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'File selection cancelled.') {
+        toast.error(err.message);
       }
-    };
-    input.click();
+    }
   }, []);
 
   return (
@@ -227,10 +207,8 @@ export function BoardBuilder({
           {/* Board Metadata */}
           <div
             className={cn(
-              "rounded-xl border p-4",
-              isLightMode
-                ? "bg-white border-zinc-200"
-                : "bg-zinc-900 border-zinc-800"
+              'rounded-xl border p-4',
+              isLightMode ? 'bg-white border-zinc-200' : 'bg-zinc-900 border-zinc-800'
             )}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -239,8 +217,8 @@ export function BoardBuilder({
                 <div>
                   <label
                     className={cn(
-                      "text-xs font-medium uppercase tracking-wide block mb-1",
-                      isLightMode ? "text-zinc-500" : "text-zinc-400"
+                      'text-xs font-medium uppercase tracking-wide block mb-1',
+                      isLightMode ? 'text-zinc-500' : 'text-zinc-400'
                     )}
                   >
                     Board Name
@@ -250,32 +228,32 @@ export function BoardBuilder({
                     value={config.name}
                     onChange={(e) => updateConfig({ name: e.target.value })}
                     className={cn(
-                      "w-full px-3 py-2 rounded-lg text-sm",
+                      'w-full px-3 py-2 rounded-lg text-sm',
                       isLightMode
-                        ? "bg-zinc-100 text-zinc-700 border border-zinc-200"
-                        : "bg-zinc-800 text-zinc-300 border border-zinc-700"
+                        ? 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+                        : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
                     )}
                   />
                 </div>
                 <div>
                   <label
                     className={cn(
-                      "text-xs font-medium uppercase tracking-wide block mb-1",
-                      isLightMode ? "text-zinc-500" : "text-zinc-400"
+                      'text-xs font-medium uppercase tracking-wide block mb-1',
+                      isLightMode ? 'text-zinc-500' : 'text-zinc-400'
                     )}
                   >
                     Description
                   </label>
                   <input
                     type="text"
-                    value={config.description ?? ""}
+                    value={config.description ?? ''}
                     onChange={(e) => updateConfig({ description: e.target.value })}
                     placeholder="Optional description..."
                     className={cn(
-                      "w-full px-3 py-2 rounded-lg text-sm",
+                      'w-full px-3 py-2 rounded-lg text-sm',
                       isLightMode
-                        ? "bg-zinc-100 text-zinc-700 border border-zinc-200 placeholder:text-zinc-400"
-                        : "bg-zinc-800 text-zinc-300 border border-zinc-700 placeholder:text-zinc-500"
+                        ? 'bg-zinc-100 text-zinc-700 border border-zinc-200 placeholder:text-zinc-400'
+                        : 'bg-zinc-800 text-zinc-300 border border-zinc-700 placeholder:text-zinc-500'
                     )}
                   />
                 </div>
@@ -283,8 +261,8 @@ export function BoardBuilder({
                 <div>
                   <label
                     className={cn(
-                      "text-xs font-medium uppercase tracking-wide block mb-1",
-                      isLightMode ? "text-zinc-500" : "text-zinc-400"
+                      'text-xs font-medium uppercase tracking-wide block mb-1',
+                      isLightMode ? 'text-zinc-500' : 'text-zinc-400'
                     )}
                   >
                     Layout
@@ -297,18 +275,18 @@ export function BoardBuilder({
                       return (
                         <Button
                           key={preset.id}
-                          variant={isSelected ? "default" : "outline"}
+                          variant={isSelected ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => handleLayoutChange(preset)}
                           className={cn(
-                            "text-xs",
+                            'text-xs',
                             isSelected
                               ? isLightMode
-                                ? "bg-zinc-800 text-white hover:bg-zinc-700"
-                                : "bg-white text-zinc-900 hover:bg-zinc-100"
+                                ? 'bg-zinc-800 text-white hover:bg-zinc-700'
+                                : 'bg-white text-zinc-900 hover:bg-zinc-100'
                               : isLightMode
-                                ? "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 border-zinc-200"
-                                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-zinc-700"
+                                ? 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 border-zinc-200'
+                                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 border-zinc-700'
                           )}
                           title={preset.description}
                         >
@@ -325,17 +303,13 @@ export function BoardBuilder({
                 <ColorPicker
                   label="Primary Color"
                   value={config.theme.primary}
-                  onChange={(primary) =>
-                    updateConfig({ theme: { ...config.theme, primary } })
-                  }
+                  onChange={(primary) => updateConfig({ theme: { ...config.theme, primary } })}
                   isLightMode={isLightMode}
                 />
                 <ColorPicker
                   label="Glow Color"
                   value={config.theme.secondary}
-                  onChange={(secondary) =>
-                    updateConfig({ theme: { ...config.theme, secondary } })
-                  }
+                  onChange={(secondary) => updateConfig({ theme: { ...config.theme, secondary } })}
                   isLightMode={isLightMode}
                 />
               </div>
@@ -345,23 +319,21 @@ export function BoardBuilder({
           {/* Board Preview */}
           <div
             className={cn(
-              "flex-1 rounded-xl border overflow-hidden",
-              isLightMode
-                ? "bg-zinc-100 border-zinc-200"
-                : "bg-zinc-900 border-zinc-800"
+              'flex-1 rounded-xl border overflow-hidden',
+              isLightMode ? 'bg-zinc-100 border-zinc-200' : 'bg-zinc-900 border-zinc-800'
             )}
           >
             {/* Preview Header */}
             <div
               className={cn(
-                "px-4 py-3 border-b flex items-center justify-between",
-                isLightMode ? "border-zinc-200" : "border-zinc-800"
+                'px-4 py-3 border-b flex items-center justify-between',
+                isLightMode ? 'border-zinc-200' : 'border-zinc-800'
               )}
             >
               <h3
                 className={cn(
-                  "text-sm font-semibold flex items-center gap-2",
-                  isLightMode ? "text-zinc-700" : "text-zinc-300"
+                  'text-sm font-semibold flex items-center gap-2',
+                  isLightMode ? 'text-zinc-700' : 'text-zinc-300'
                 )}
               >
                 {isPreviewMode ? (
@@ -380,7 +352,9 @@ export function BoardBuilder({
                 {/* Preview Volume */}
                 {isPreviewMode && (
                   <div className="flex items-center gap-2">
-                    <Volume2 className={cn("h-4 w-4", isLightMode ? "text-zinc-500" : "text-zinc-400")} />
+                    <Volume2
+                      className={cn('h-4 w-4', isLightMode ? 'text-zinc-500' : 'text-zinc-400')}
+                    />
                     <input
                       type="range"
                       min="0"
@@ -396,32 +370,30 @@ export function BoardBuilder({
                     />
                   </div>
                 )}
-                
+
                 {isDirty && !isPreviewMode && (
                   <span
                     className={cn(
-                      "text-xs px-2 py-0.5 rounded-full",
-                      isLightMode
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-amber-900/50 text-amber-400"
+                      'text-xs px-2 py-0.5 rounded-full',
+                      isLightMode ? 'bg-amber-100 text-amber-700' : 'bg-amber-900/50 text-amber-400'
                     )}
                   >
                     Unsaved changes
                   </span>
                 )}
-                
+
                 {/* Preview Mode Toggle */}
                 <Button
-                  variant={isPreviewMode ? "default" : "outline"}
+                  variant={isPreviewMode ? 'default' : 'outline'}
                   size="sm"
                   onClick={handleTogglePreviewMode}
                   className={cn(
-                    "text-xs",
+                    'text-xs',
                     isPreviewMode
-                      ? "bg-green-600 text-white hover:bg-green-700"
+                      ? 'bg-green-600 text-white hover:bg-green-700'
                       : isLightMode
-                        ? "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-                        : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                        ? 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
+                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                   )}
                 >
                   {isPreviewMode ? (
@@ -442,88 +414,89 @@ export function BoardBuilder({
             {/* Board Slots - order depends on effectsFirst setting */}
             <div className="p-4 space-y-6">
               {/* Render sections in correct order */}
-              {(slotConfig.effectsFirst ? ["effects", "ambience"] : ["ambience", "effects"]).map((section) =>
-                section === "ambience" ? (
-                  <div key="ambience" className="space-y-3">
-                    <h4
-                      className="text-xs font-semibold uppercase tracking-widest px-1"
-                      style={{ color: config.theme.secondary }}
-                    >
-                      Ambience (drag sounds here)
-                    </h4>
-                    <div
-                      className={cn(
-                        "rounded-xl p-3",
-                        isLightMode
-                          ? "bg-white border border-zinc-200"
-                          : "bg-black/30 border border-zinc-800"
-                      )}
-                    >
-                      <div
-                        className="grid gap-2 md:gap-4"
-                        style={{
-                          gridTemplateColumns: `repeat(${slotConfig.ambienceColumns}, minmax(0, 1fr))`,
-                        }}
+              {(slotConfig.effectsFirst ? ['effects', 'ambience'] : ['ambience', 'effects']).map(
+                (section) =>
+                  section === 'ambience' ? (
+                    <div key="ambience" className="space-y-3">
+                      <h4
+                        className="text-xs font-semibold uppercase tracking-widest px-1"
+                        style={{ color: config.theme.secondary }}
                       >
-                        {config.ambienceSlots.map((soundId, index) => (
-                          <DroppableSlot
-                            key={`ambience-${index}`}
-                            id={`ambience-${index}`}
-                            slotType="ambience"
-                            slotIndex={index}
-                            sound={soundId ? getSoundById(soundId) ?? null : null}
-                            theme={config.theme}
-                            isLightMode={isLightMode}
-                            rectangularAmbience={slotConfig.rectangularAmbience}
-                            isPreviewMode={isPreviewMode}
-                            previewVolume={previewVolume}
-                            onRemove={() => removeFromSlot("ambience", index)}
-                          />
-                        ))}
+                        Ambience (drag sounds here)
+                      </h4>
+                      <div
+                        className={cn(
+                          'rounded-xl p-3',
+                          isLightMode
+                            ? 'bg-white border border-zinc-200'
+                            : 'bg-black/30 border border-zinc-800'
+                        )}
+                      >
+                        <div
+                          className="grid gap-2 md:gap-4"
+                          style={{
+                            gridTemplateColumns: `repeat(${slotConfig.ambienceColumns}, minmax(0, 1fr))`,
+                          }}
+                        >
+                          {config.ambienceSlots.map((soundId, index) => (
+                            <DroppableSlot
+                              key={`ambience-${index}`}
+                              id={`ambience-${index}`}
+                              slotType="ambience"
+                              slotIndex={index}
+                              sound={soundId ? (getSoundById(soundId) ?? null) : null}
+                              theme={config.theme}
+                              isLightMode={isLightMode}
+                              rectangularAmbience={slotConfig.rectangularAmbience}
+                              isPreviewMode={isPreviewMode}
+                              previewVolume={previewVolume}
+                              onRemove={() => removeFromSlot('ambience', index)}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div key="effects" className="space-y-3">
-                    <h4
-                      className="text-xs font-semibold uppercase tracking-widest px-1"
-                      style={{ color: config.theme.secondary }}
-                    >
-                      Effects (drag sounds here)
-                    </h4>
-                    <div
-                      className={cn(
-                        "rounded-xl p-3",
-                        isLightMode
-                          ? "bg-white border border-zinc-200"
-                          : "bg-black/30 border border-zinc-800"
-                      )}
-                    >
-                      <div
-                        className="grid gap-2 md:gap-4"
-                        style={{
-                          gridTemplateColumns: `repeat(${slotConfig.effectColumns}, minmax(0, 1fr))`,
-                        }}
+                  ) : (
+                    <div key="effects" className="space-y-3">
+                      <h4
+                        className="text-xs font-semibold uppercase tracking-widest px-1"
+                        style={{ color: config.theme.secondary }}
                       >
-                        {config.effectSlots.map((soundId, index) => (
-                          <DroppableSlot
-                            key={`effect-${index}`}
-                            id={`effect-${index}`}
-                            slotType="effect"
-                            slotIndex={index}
-                            sound={soundId ? getSoundById(soundId) ?? null : null}
-                            theme={config.theme}
-                            isLightMode={isLightMode}
-                            squareEffects={slotConfig.squareEffects}
-                            isPreviewMode={isPreviewMode}
-                            previewVolume={previewVolume}
-                            onRemove={() => removeFromSlot("effect", index)}
-                          />
-                        ))}
+                        Effects (drag sounds here)
+                      </h4>
+                      <div
+                        className={cn(
+                          'rounded-xl p-3',
+                          isLightMode
+                            ? 'bg-white border border-zinc-200'
+                            : 'bg-black/30 border border-zinc-800'
+                        )}
+                      >
+                        <div
+                          className="grid gap-2 md:gap-4"
+                          style={{
+                            gridTemplateColumns: `repeat(${slotConfig.effectColumns}, minmax(0, 1fr))`,
+                          }}
+                        >
+                          {config.effectSlots.map((soundId, index) => (
+                            <DroppableSlot
+                              key={`effect-${index}`}
+                              id={`effect-${index}`}
+                              slotType="effect"
+                              slotIndex={index}
+                              sound={soundId ? (getSoundById(soundId) ?? null) : null}
+                              theme={config.theme}
+                              isLightMode={isLightMode}
+                              squareEffects={slotConfig.squareEffects}
+                              isPreviewMode={isPreviewMode}
+                              previewVolume={previewVolume}
+                              onRemove={() => removeFromSlot('effect', index)}
+                            />
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
+                  )
               )}
             </div>
           </div>
@@ -539,8 +512,8 @@ export function BoardBuilder({
               onClick={handleExport}
               className={cn(
                 isLightMode
-                  ? "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                  ? 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
               )}
             >
               <Download className="h-4 w-4" />
@@ -551,8 +524,8 @@ export function BoardBuilder({
               onClick={handleImport}
               className={cn(
                 isLightMode
-                  ? "bg-zinc-100 text-zinc-700 hover:bg-zinc-200"
-                  : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                  ? 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
               )}
             >
               <Upload className="h-4 w-4" />
@@ -563,8 +536,8 @@ export function BoardBuilder({
               onClick={handleReset}
               className={cn(
                 isLightMode
-                  ? "text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+                  ? 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-100'
+                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
               )}
             >
               <RotateCcw className="h-4 w-4" />
@@ -579,24 +552,16 @@ export function BoardBuilder({
         {activeSound && (
           <div
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg",
-              "border shadow-xl",
-              isLightMode
-                ? "bg-white border-zinc-200"
-                : "bg-zinc-800 border-zinc-600"
+              'flex items-center gap-2 px-3 py-2 rounded-lg',
+              'border shadow-xl',
+              isLightMode ? 'bg-white border-zinc-200' : 'bg-zinc-800 border-zinc-600'
             )}
           >
             <activeSound.icon
-              className={cn(
-                "h-4 w-4",
-                isLightMode ? "text-zinc-600" : "text-zinc-300"
-              )}
+              className={cn('h-4 w-4', isLightMode ? 'text-zinc-600' : 'text-zinc-300')}
             />
             <span
-              className={cn(
-                "text-xs font-medium",
-                isLightMode ? "text-zinc-700" : "text-zinc-200"
-              )}
+              className={cn('text-xs font-medium', isLightMode ? 'text-zinc-700' : 'text-zinc-200')}
             >
               {activeSound.name}
             </span>

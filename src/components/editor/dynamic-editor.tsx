@@ -1,7 +1,8 @@
 /**
- * Dynamic Stat Block Editor
+ * Dynamic Editor
  *
- * Renders editor fields dynamically based on the active system's schema.
+ * Renders editor fields dynamically based on a system's schema sections array.
+ * Used by both stat blocks and spell blocks.
  */
 
 import React from 'react';
@@ -15,9 +16,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { EditorCard, TextInput, NumberInput, getInputClassName } from './stat-block-editor';
-import type { SectionDefinition, FieldDefinition } from './systems/base-system';
-import type { BaseStatBlockData } from './stat-block-utils';
+import { EditorCard, TextInput, NumberInput, getInputClassName } from './editor-primitives';
+import type {
+  SectionDefinition,
+  FieldDefinition,
+} from '@/components/stat-block/systems/base-system';
+import type { BaseStatBlockData } from '@/components/stat-block/stat-block-utils';
 
 type DynamicEditorProps<T extends BaseStatBlockData> = {
   data: T;

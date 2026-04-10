@@ -10,7 +10,8 @@ import {
   getThemeSnapshot,
   getThemeServerSnapshot,
 } from '@/lib/theme-store';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, Toolbox } from 'lucide-react';
+import Link from 'next/link';
 
 const emptySubscribe = () => () => {};
 
@@ -94,9 +95,16 @@ export function AppFooter() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-        <span className={cn('text-xs', isLightMode ? 'text-zinc-400' : 'text-zinc-500')}>
+        <Link
+          href="/"
+          className={cn(
+            'flex items-center gap-1.5 text-xs transition-colors',
+            isLightMode ? 'text-zinc-400 hover:text-zinc-700' : 'text-zinc-500 hover:text-zinc-200'
+          )}
+        >
+          <Toolbox className="h-3 w-3" />
           Table Tools
-        </span>
+        </Link>
         <ThemeToggle />
       </div>
     </footer>

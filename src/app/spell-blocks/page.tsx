@@ -1,7 +1,8 @@
 'use client';
 
 import { ErrorBoundary } from '@/components/error-boundary';
-import { DynamicEditor } from '@/components/stat-block';
+import { DynamicEditor } from '@/components/editor';
+import { toast } from 'sonner';
 import { SaveStatusIndicator } from '@/components/save-status-indicator';
 import {
   DEFAULT_SPELL_SYSTEM_ID,
@@ -35,8 +36,8 @@ import {
   uploadFile,
 } from '@/lib/file-system';
 import { cn } from '@/lib/utils';
-import { Download, Home, MoreHorizontal, Redo2, Sparkles, Undo2, Upload } from 'lucide-react';
-import Link from 'next/link';
+import { Download, MoreHorizontal, Redo2, Scroll, Undo2, Upload } from 'lucide-react';
+import { ToolPageHeader } from '@/components/layout/tool-page-header';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -171,7 +172,7 @@ export default function SpellBlocksPage() {
     } catch (err) {
       if (err instanceof Error && err.message !== 'File selection cancelled.') {
         console.error('Failed to import spell:', err);
-        alert(err.message);
+        toast.error(err.message);
       }
     }
   }, [setSpell, setSystemId]);
@@ -229,141 +230,89 @@ export default function SpellBlocksPage() {
   return (
     <div
       className={cn(
-        'min-h-full transition-colors duration-300',
+        'flex-1 transition-colors duration-300',
         isLightMode
           ? 'bg-gradient-to-b from-zinc-50 to-zinc-100'
           : 'bg-gradient-to-b from-zinc-900 to-zinc-950'
       )}
     >
-      {/* Header */}
-      <header
-        className={cn(
-          'sticky top-0 z-50 border-b backdrop-blur-sm transition-colors print:hidden',
-          isLightMode ? 'border-zinc-200 bg-white/80' : 'border-zinc-800 bg-zinc-900/80'
-        )}
+      <ToolPageHeader
+        heading="Spell Block Generator"
+        subtitle="Create spell blocks for D&D 5e and other TTRPG systems"
+        icon={<Scroll className="h-5 w-5" />}
+        iconColor="#3b82f6"
       >
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-6 py-4 lg:flex-nowrap">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'rounded-lg p-2',
-                isLightMode ? 'bg-blue-100 text-blue-600' : 'bg-blue-900/20 text-blue-400'
-              )}
-            >
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <h1
+        {allSystems.length > 1 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
                 className={cn(
-                  'text-xl font-bold transition-colors',
-                  isLightMode ? 'text-zinc-800' : 'text-white'
+                  isLightMode
+                    ? 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100'
+                    : 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800'
                 )}
               >
-                Spell Block Generator
-              </h1>
-              <p className="text-sm text-zinc-500">
-                Create spell blocks for D&amp;D 5e and other TTRPG systems
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Home */}
+                {currentSystem?.schema.metadata.name ?? systemId}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {allSystems.map((meta) => (
+                <DropdownMenuItem key={meta.id} onClick={() => setSystemId(meta.id)}>
+                  {meta.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        <SpellTemplateSelector
+          onSelect={handleLoadTemplate}
+          onReset={handleReset}
+          currentSystemId={systemId}
+          currentSystemName={currentSystem?.schema.metadata.name}
+          isLightMode={isLightMode}
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              asChild
               className={cn(
-                'rounded-full text-xs',
                 isLightMode
-                  ? 'border border-zinc-900/10 bg-zinc-900/10 text-zinc-600 hover:bg-zinc-900/20 hover:text-zinc-800'
-                  : 'border border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-zinc-200'
+                  ? 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100'
+                  : 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800'
               )}
             >
-              <Link href="/">
-                <Home className="h-3 w-3" />
-                <span className="ml-1 hidden md:inline">Home</span>
-              </Link>
+              <MoreHorizontal className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Actions</span>
             </Button>
-
-            {/* System selector */}
-            {allSystems.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      isLightMode
-                        ? 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100'
-                        : 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800'
-                    )}
-                  >
-                    {currentSystem?.schema.metadata.name ?? systemId}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {allSystems.map((meta) => (
-                    <DropdownMenuItem key={meta.id} onClick={() => setSystemId(meta.id)}>
-                      {meta.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {/* Templates */}
-            <SpellTemplateSelector
-              onSelect={handleLoadTemplate}
-              onReset={handleReset}
-              currentSystemId={systemId}
-              currentSystemName={currentSystem?.schema.metadata.name}
-              isLightMode={isLightMode}
-            />
-
-            {/* Actions */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    isLightMode
-                      ? 'border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-100'
-                      : 'border-zinc-700 bg-zinc-800/50 text-zinc-300 hover:bg-zinc-800'
-                  )}
-                >
-                  <MoreHorizontal className="h-4 w-4 md:mr-2" />
-                  <span className="hidden md:inline">Actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={undo} disabled={!canUndo}>
-                  <Undo2 className="mr-2 h-4 w-4" />
-                  Undo
-                  <span className="ml-auto text-xs text-muted-foreground">⌘Z</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={redo} disabled={!canRedo}>
-                  <Redo2 className="mr-2 h-4 w-4" />
-                  Redo
-                  <span className="ml-auto text-xs text-muted-foreground">⌘⇧Z</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleExport}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export JSON
-                  <span className="ml-auto text-xs text-muted-foreground">⌘E</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleImport()}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Import JSON
-                  <span className="ml-auto text-xs text-muted-foreground">⌘I</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={undo} disabled={!canUndo}>
+              <Undo2 className="mr-2 h-4 w-4" />
+              Undo
+              <span className="ml-auto text-xs text-muted-foreground">⌘Z</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={redo} disabled={!canRedo}>
+              <Redo2 className="mr-2 h-4 w-4" />
+              Redo
+              <span className="ml-auto text-xs text-muted-foreground">⌘⇧Z</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleExport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export JSON
+              <span className="ml-auto text-xs text-muted-foreground">⌘E</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void handleImport()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import JSON
+              <span className="ml-auto text-xs text-muted-foreground">⌘I</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ToolPageHeader>
 
       <main className="mx-auto max-w-7xl px-6 py-8">
         <div className="flex flex-col gap-8 lg:flex-row">
