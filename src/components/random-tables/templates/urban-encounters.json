@@ -1,0 +1,18 @@
+{
+  "name": "Urban Encounters",
+  "dieExpr": "d12",
+  "entries": [
+    { "id": "u01", "result": "Street brawl spilling out of a nearby tavern", "weight": 1 },
+    { "id": "u02", "result": "Pickpocket — someone bumps into the party", "weight": 1 },
+    { "id": "u03", "result": "City guard patrol demanding to see papers or permits", "weight": 1 },
+    { "id": "u04", "result": "Market vendor hawking something unusual or suspicious", "weight": 1 },
+    { "id": "u05", "result": "Runaway cart or spooked horse causing chaos", "weight": 1 },
+    { "id": "u06", "result": "Street preacher drawing a heated crowd", "weight": 1 },
+    { "id": "u07", "result": "Someone drops a coin purse and doesn't notice", "weight": 1 },
+    { "id": "u08", "result": "A wanted poster — the face looks familiar", "weight": 1 },
+    { "id": "u09", "result": "Fire! Smoke rising from a nearby building", "weight": 1 },
+    { "id": "u10", "result": "Messenger asks the party to deliver a sealed letter", "weight": 1 },
+    { "id": "u11", "result": "Someone is following the party", "weight": 1 },
+    { "id": "u12", "result": "Festival or procession blocking the road", "weight": 1 }
+  ]
+}

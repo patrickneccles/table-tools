@@ -7,7 +7,9 @@ Table Tools is a TTRPG toolkit web app — a growing collection of tools for tab
 - **Mood Board** — Web Audio API soundboard with looping ambience, one-shot effects, ducking, presets, and a drag-and-drop board builder
 - **Stat Block Generator** — Multi-system (D&D 5e 2014/2024, Shadowdark) stat block editor with live preview, undo/redo, and import/export
 - **Hex Map** — Hex grid canvas painter with stamps, flood fill, text labels, undo/redo, and import/export
-- **Spell Block Generator** — Multi-system spell block editor (D&D 5e 2024 so far) with live preview, SRD templates, undo/redo, and import/export
+- **Spell Block Generator** — Multi-system spell block editor (D&D 5e 2024, Shadowdark) with live preview, SRD templates, undo/redo, and import/export
+- **Dice Probability Calculator** — Roll distribution charts for any expression (NdM, drop/keep, adv/dis), with stats and probability lookup
+- **Random Tables** — Weighted table builder with drag-to-reorder, templates, and one-click rolling
 
 New tools will be added over time. Each tool gets its own route under `src/app/` and its own component directory under `src/components/`.
 
@@ -112,7 +114,6 @@ Git commits automatically run prettier + eslint --fix via lint-staged (pre-commi
 
 1. **Mood Board** — replacing `public/audio/` files with open-source audio; fixing broken playback
 2. **Hex Map** — visual polish and UX refinement pass
-3. **Spell Block Generator** — renderer polish pass; additional TTRPG systems beyond D&D 5e 2024
 
 ## Roadmap
 
@@ -122,14 +123,11 @@ See `src/app/roadmap/page.tsx` for the user-facing version.
 
 **Near-term fixes:**
 
-- Mood Board: replace missing audio files (CC0), builder file export/import via `TableToolsFile<BoardConfig>`
-- All tools: toast notifications via Sonner (replacing `alert()`)
+- Mood Board: replace missing audio files (CC0) — 9 files referenced but absent (`ambience-battle`, `ambience-cave`, `ambience-ocean`, `ambience-ship`, `ambience-storm`, `sfx-arrow`, `sfx-ghost`, `sfx-magic`, `sfx-sword-clash`)
 
 **New tools (priority order):**
 
-1. **Dice Probability Calculator** `/dice` — roll distribution charts for encounter/DC design (like anydice.com)
-2. **Random Tables** `/random-tables` — weighted table builder with drag-to-reorder and system templates
-3. **NPC Generator** `/npc-generator` — quick NPC gen with export-to-stat-block flow
+1. **NPC Generator** `/npc-generator` — quick NPC gen with export-to-stat-block flow
 
 **Existing tool enhancements:**
 

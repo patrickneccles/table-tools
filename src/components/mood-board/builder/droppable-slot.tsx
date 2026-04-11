@@ -1,16 +1,17 @@
-"use client";
+'use client';
 
-import React, { useState, useCallback } from "react";
-import { useDroppable } from "@dnd-kit/core";
-import { cn } from "@/lib/utils";
-import { SoundDefinition } from "./types";
-import { MoodTheme } from "../types";
-import { X, Plus } from "lucide-react";
-import { audioManager } from "@/lib/audio-manager";
+import React, { useState, useCallback } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { SoundDefinition } from './types';
+import { MoodTheme } from '../types';
+import { X, Plus } from 'lucide-react';
+import { audioManager } from '@/lib/audio-manager';
 
 type DroppableSlotProps = {
   id: string;
-  slotType: "ambience" | "effect";
+  slotType: 'ambience' | 'effect';
   slotIndex: number;
   sound: SoundDefinition | null;
   theme: MoodTheme;
@@ -36,7 +37,7 @@ export function DroppableSlot({
   onRemove,
 }: DroppableSlotProps) {
   const [isPlaying, setIsPlaying] = useState(false);
-  
+
   const { isOver, setNodeRef } = useDroppable({
     id,
     data: { slotType, slotIndex },
@@ -48,7 +49,7 @@ export function DroppableSlot({
     if (!isPreviewMode || !sound) return;
 
     const playId = `preview-slot-${id}`;
-    const isLoop = slotType === "ambience";
+    const isLoop = slotType === 'ambience';
 
     if (isPlaying) {
       await audioManager.stop(playId, { fadeOut: true, fadeOutDuration: 0.3 });
@@ -59,7 +60,7 @@ export function DroppableSlot({
         loop: isLoop,
         fadeIn: true,
         fadeInDuration: 0.2,
-        soundType: slotType === "ambience" ? "ambience" : "effect",
+        soundType: slotType === 'ambience' ? 'ambience' : 'effect',
       });
       if (success) {
         setIsPlaying(true);
@@ -73,7 +74,7 @@ export function DroppableSlot({
   }, [isPreviewMode, sound, isPlaying, id, slotType, previewVolume]);
 
   const Icon = sound?.icon;
-  const isAmbience = slotType === "ambience";
+  const isAmbience = slotType === 'ambience';
   // Determine layout: square vs rectangular
   // - Ambience: square by default, rectangular if rectangularAmbience is true
   // - Effects: rectangular by default, square if squareEffects is true
@@ -84,39 +85,39 @@ export function DroppableSlot({
       ref={setNodeRef}
       onClick={handlePreviewClick}
       className={cn(
-        "relative flex items-center justify-center overflow-hidden",
-        "rounded-xl border-2 transition-all duration-200",
-        "font-medium select-none",
+        'relative flex items-center justify-center overflow-hidden',
+        'rounded-xl border-2 transition-all duration-200',
+        'font-medium select-none',
         // Size variants - use square layout for ambience OR when squareEffects is enabled
         useSquareLayout
-          ? "aspect-square min-h-16 sm:min-h-20 md:min-h-24 flex-col gap-2 p-3 text-xs sm:text-sm"
-          : "h-16 px-4 sm:h-20 sm:px-6 flex-row gap-2 text-xs sm:text-sm",
+          ? 'aspect-square min-h-16 sm:min-h-20 md:min-h-24 flex-col gap-2 p-3 text-xs sm:text-sm'
+          : 'h-16 px-4 sm:h-20 sm:px-6 flex-row gap-2 text-xs sm:text-sm',
         // Empty slot styling
         !sound && [
-          "border-dashed",
-          isLightMode
-            ? "border-zinc-300 bg-zinc-100/50"
-            : "border-zinc-700 bg-zinc-900/50",
-          isOver && "border-solid",
+          'border-dashed',
+          isLightMode ? 'border-zinc-300 bg-zinc-100/50' : 'border-zinc-700 bg-zinc-900/50',
+          isOver && 'border-solid',
         ],
         // Filled slot styling - different based on preview mode and playing state
-        sound && !isPreviewMode && [
-          "border-dashed border-solid cursor-pointer group",
-          isLightMode
-            ? "border-zinc-200 bg-gradient-to-b from-white to-zinc-50 hover:border-zinc-300"
-            : "border-zinc-700 bg-gradient-to-b from-zinc-800 to-zinc-900 hover:border-zinc-600",
-        ],
+        sound &&
+          !isPreviewMode && [
+            'border-dashed border-solid cursor-pointer group',
+            isLightMode
+              ? 'border-zinc-200 bg-gradient-to-b from-white to-zinc-50 hover:border-zinc-300'
+              : 'border-zinc-700 bg-gradient-to-b from-zinc-800 to-zinc-900 hover:border-zinc-600',
+          ],
         // Preview mode - filled slot
-        sound && isPreviewMode && [
-          "border-solid cursor-pointer",
-          isPlaying
-            ? "border-transparent"
-            : isLightMode
-              ? "border-zinc-200 bg-gradient-to-b from-white to-zinc-50 hover:border-zinc-300 active:translate-y-[1px]"
-              : "border-zinc-700 bg-gradient-to-b from-zinc-800 to-zinc-900 hover:border-zinc-600 active:translate-y-[1px]",
-        ],
+        sound &&
+          isPreviewMode && [
+            'border-solid cursor-pointer',
+            isPlaying
+              ? 'border-transparent'
+              : isLightMode
+                ? 'border-zinc-200 bg-gradient-to-b from-white to-zinc-50 hover:border-zinc-300 active:translate-y-[1px]'
+                : 'border-zinc-700 bg-gradient-to-b from-zinc-800 to-zinc-900 hover:border-zinc-600 active:translate-y-[1px]',
+          ],
         // Drag over state (only when not in preview mode)
-        !isPreviewMode && isOver && "scale-105"
+        !isPreviewMode && isOver && 'scale-105'
       )}
       style={
         isOver && !isPreviewMode
@@ -140,19 +141,19 @@ export function DroppableSlot({
             {Icon && (
               <Icon
                 className={cn(
-                  useSquareLayout ? "h-6 w-6 sm:h-8 sm:w-8" : "h-4 w-4 sm:h-5 sm:w-5",
+                  useSquareLayout ? 'h-6 w-6 sm:h-8 sm:w-8' : 'h-4 w-4 sm:h-5 sm:w-5',
                   isPlaying
-                    ? "text-white drop-shadow-[0_0_8px_currentColor]"
-                    : isLightMode ? "text-zinc-600" : "text-zinc-400"
+                    ? 'text-white drop-shadow-[0_0_8px_currentColor]'
+                    : isLightMode
+                      ? 'text-zinc-600'
+                      : 'text-zinc-400'
                 )}
               />
             )}
             <span
               className={cn(
-                "truncate text-center",
-                isPlaying
-                  ? "text-white"
-                  : isLightMode ? "text-zinc-700" : "text-zinc-300"
+                'truncate text-center',
+                isPlaying ? 'text-white' : isLightMode ? 'text-zinc-700' : 'text-zinc-300'
               )}
             >
               {sound.name}
@@ -169,21 +170,23 @@ export function DroppableSlot({
 
           {/* Remove button - hidden in preview mode */}
           {!isPreviewMode && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 onRemove?.();
               }}
+              aria-label="Remove sound"
               className={cn(
-                "absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100",
-                "transition-opacity",
+                'absolute top-1 right-1 h-5 w-5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity',
                 isLightMode
-                  ? "bg-zinc-200 hover:bg-zinc-300 text-zinc-600"
-                  : "bg-zinc-700 hover:bg-zinc-600 text-zinc-300"
+                  ? 'bg-zinc-200 hover:bg-zinc-300 text-zinc-600'
+                  : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
               )}
             >
               <X className="h-3 w-3" />
-            </button>
+            </Button>
           )}
         </>
       ) : (
@@ -191,17 +194,17 @@ export function DroppableSlot({
           {/* Empty slot placeholder */}
           <Plus
             className={cn(
-              "h-6 w-6",
-              isLightMode ? "text-zinc-400" : "text-zinc-600",
-              isOver && "text-current"
+              'h-6 w-6',
+              isLightMode ? 'text-zinc-400' : 'text-zinc-600',
+              isOver && 'text-current'
             )}
             style={isOver ? { color: theme.secondary } : undefined}
           />
           <span
             className={cn(
-              "text-xs",
-              isLightMode ? "text-zinc-400" : "text-zinc-600",
-              useSquareLayout && "absolute bottom-2"
+              'text-xs',
+              isLightMode ? 'text-zinc-400' : 'text-zinc-600',
+              useSquareLayout && 'absolute bottom-2'
             )}
           >
             {isAmbience ? `Ambience ${slotIndex + 1}` : `Effect ${slotIndex + 1}`}

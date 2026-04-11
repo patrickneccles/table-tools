@@ -141,16 +141,3 @@ export function parseDiceExpression(raw: string): ParsedExpression {
 
   return { groups, modifier };
 }
-
-/** Human-readable description of a parsed expression */
-export function describeExpression(expr: ParsedExpression): string {
-  const parts: string[] = expr.groups.map((g) => {
-    let s = `${g.count}d${g.sides}`;
-    if (g.op) s += ` ${g.op.kind}${g.op.count}`;
-    return s;
-  });
-  if (expr.modifier !== 0) {
-    parts.push(expr.modifier > 0 ? `+${expr.modifier}` : `${expr.modifier}`);
-  }
-  return parts.join(' + ');
-}

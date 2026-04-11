@@ -38,6 +38,7 @@ import {
   Undo2,
   ZoomIn,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useHexMapBrush, type HexMapTool } from './brush-context';
 import type { ExpandMapEdge } from './expand-map';
 import { HexMapGridSettingsDialog } from './grid-settings-dialog';
@@ -148,6 +149,18 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
       const commandKey = e.metaKey || e.ctrlKey;
       if (!commandKey) return;
       switch (e.key) {
+        case 'z':
+          e.preventDefault();
+          if (e.shiftKey) {
+            handleRedo();
+          } else {
+            handleUndo();
+          }
+          break;
+        case 'y':
+          e.preventDefault();
+          handleRedo();
+          break;
         case 'n':
           e.preventDefault();
           handleClear();
@@ -178,7 +191,16 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
     };
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
-  }, [handleClear, handleExport, handleImportClick, handleZoomIn, handleZoomOut, handleZoomReset]);
+  }, [
+    handleClear,
+    handleExport,
+    handleImportClick,
+    handleUndo,
+    handleRedo,
+    handleZoomIn,
+    handleZoomOut,
+    handleZoomReset,
+  ]);
 
   return (
     <>
@@ -326,76 +348,101 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
           onValueChange={(val) => setActiveTool((val as HexMapTool) || activeTool)}
           className="lg:flex-col"
         >
-          <ToggleGroupItem value="paint" aria-label="Paintbrush">
-            <Paintbrush className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="bucket" aria-label="Paint bucket">
-            <PaintBucket className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="eyedrop" aria-label="Eyedropper">
-            <Pipette className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="erase" aria-label="Eraser">
-            <Eraser className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="text" aria-label="Text label">
-            <Type className="h-4 w-4" />
-          </ToggleGroupItem>
+          {(
+            [
+              { value: 'paint', icon: <Paintbrush className="h-4 w-4" />, label: 'Paint' },
+              { value: 'bucket', icon: <PaintBucket className="h-4 w-4" />, label: 'Fill' },
+              { value: 'eyedrop', icon: <Pipette className="h-4 w-4" />, label: 'Eyedropper' },
+              { value: 'erase', icon: <Eraser className="h-4 w-4" />, label: 'Erase' },
+              { value: 'text', icon: <Type className="h-4 w-4" />, label: 'Text label' },
+            ] as const
+          ).map(({ value, icon, label }) => (
+            <Tooltip key={value}>
+              <TooltipTrigger asChild>
+                <ToggleGroupItem value={value} aria-label={label}>
+                  {icon}
+                </ToggleGroupItem>
+              </TooltipTrigger>
+              <TooltipContent side="right">{label}</TooltipContent>
+            </Tooltip>
+          ))}
         </ToggleGroup>
 
         <span className="bg-border hidden sm:block mx-1 h-6 w-px lg:mx-0 lg:my-1 lg:h-px lg:w-6" />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleUndo}
-          disabled={!canUndo}
-          aria-label="Undo"
-          title="Undo (⌘Z)"
-        >
-          <Undo2 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleRedo}
-          disabled={!canRedo}
-          aria-label="Redo"
-          title="Redo (⇧⌘Z)"
-        >
-          <Redo2 className="h-4 w-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleUndo}
+              disabled={!canUndo}
+              aria-label="Undo"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Undo <kbd className="ml-1 font-mono">⌘Z</kbd>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRedo}
+              disabled={!canRedo}
+              aria-label="Redo"
+            >
+              <Redo2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Redo <kbd className="ml-1 font-mono">⇧⌘Z</kbd>
+          </TooltipContent>
+        </Tooltip>
 
         <span className="bg-border hidden sm:block mx-1 h-6 w-px lg:mx-0 lg:my-1 lg:h-px lg:w-6" />
 
         <div className="flex items-center gap-0.5 lg:flex-col">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleZoomOut}
-            aria-label="Zoom out"
-            title="Zoom out (⌘-)"
-          >
-            <span className="text-base font-medium leading-none">−</span>
-          </Button>
-          <button
-            onClick={handleZoomReset}
-            className="flex w-12 items-center justify-center gap-0.5 rounded px-1 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-            title="Reset zoom (⌘0)"
-            aria-label="Reset zoom"
-          >
-            <ZoomIn className="h-3 w-3 shrink-0" />
-            {Math.round(zoom * 100)}%
-          </button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleZoomIn}
-            aria-label="Zoom in"
-            title="Zoom in (⌘+)"
-          >
-            <span className="text-base font-medium leading-none">+</span>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleZoomOut} aria-label="Zoom out">
+                <span className="text-base font-medium leading-none">−</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Zoom out <kbd className="ml-1 font-mono">⌘−</kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleZoomReset}
+                aria-label="Reset zoom"
+                className="w-12 gap-0.5 px-1 text-xs text-muted-foreground"
+              >
+                <ZoomIn className="h-3 w-3 shrink-0" />
+                {Math.round(zoom * 100)}%
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Reset zoom <kbd className="ml-1 font-mono">⌘0</kbd>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={handleZoomIn} aria-label="Zoom in">
+                <span className="text-base font-medium leading-none">+</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Zoom in <kbd className="ml-1 font-mono">⌘+</kbd>
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <DropdownMenu>
@@ -417,6 +464,15 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
                 placeholder="Untitled Map"
               />
             </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleUndo} disabled={!canUndo}>
+              <Undo2 className="mr-2 h-4 w-4" />
+              Undo <DropdownMenuShortcut>⌘Z</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleRedo} disabled={!canRedo}>
+              <Redo2 className="mr-2 h-4 w-4" />
+              Redo <DropdownMenuShortcut>⇧⌘Z</DropdownMenuShortcut>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleClear}>
               Clear <DropdownMenuShortcut>⌘N</DropdownMenuShortcut>

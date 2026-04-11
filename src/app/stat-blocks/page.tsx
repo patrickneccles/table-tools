@@ -57,6 +57,7 @@ import {
   Undo2,
   Upload,
 } from 'lucide-react';
+import { KeyboardShortcutsHelp } from '@/components/ui/keyboard-shortcuts-help';
 import { ToolPageHeader } from '@/components/layout/tool-page-header';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -517,8 +518,33 @@ export default function StatBlocksPage() {
               Import JSON
               <span className="ml-auto text-xs text-muted-foreground">⌘I</span>
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handlePrint}>
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+              <span className="ml-auto text-xs text-muted-foreground">⌘P</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <KeyboardShortcutsHelp
+          groups={[
+            {
+              label: 'History',
+              shortcuts: [
+                { keys: '⌘Z', description: 'Undo' },
+                { keys: '⇧⌘Z', description: 'Redo' },
+              ],
+            },
+            {
+              label: 'File',
+              shortcuts: [
+                { keys: '⌘E', description: 'Export JSON' },
+                { keys: '⌘I', description: 'Import JSON' },
+                { keys: '⌘P', description: 'Print' },
+              ],
+            },
+          ]}
+        />
         <Button
           onClick={handlePrint}
           size="sm"
@@ -593,21 +619,14 @@ export default function StatBlocksPage() {
       </main>
 
       {/* Floating Scroll Toggle Button (Mobile Only) */}
-      <button
+      <Button
         onClick={handleScrollToggle}
-        className={cn(
-          'fixed bottom-6 right-6 z-50 lg:hidden print:hidden',
-          'w-14 h-14 rounded-full shadow-lg',
-          'flex items-center justify-center',
-          'transition-all duration-200 hover:scale-110 active:scale-95',
-          isLightMode
-            ? 'bg-amber-600 hover:bg-amber-500 text-white'
-            : 'bg-amber-600 hover:bg-amber-500 text-white'
-        )}
+        size="icon"
         aria-label={isAtPreview ? 'Scroll to details' : 'Scroll to preview'}
+        className="fixed bottom-6 right-6 z-50 lg:hidden print:hidden h-14 w-14 rounded-full shadow-lg bg-amber-600 hover:bg-amber-500 text-white hover:scale-110 active:scale-95 transition-all duration-200"
       >
         {isAtPreview ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
-      </button>
+      </Button>
 
       {/* Global styles */}
       <style jsx global>{`

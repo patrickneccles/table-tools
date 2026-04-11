@@ -103,23 +103,23 @@ export default function RoadmapPage() {
       status: 'live',
       icon: <span className="text-base">✨</span>,
     },
-  ];
-
-  const upcomingTools: RoadmapItem[] = [
     {
       title: 'Dice Probability Calculator',
       description:
         'Visualize roll distributions for any expression — great for designing encounters, setting DCs, and evaluating ability score methods.',
-      status: 'planned',
+      status: 'live',
       icon: <BarChart2 className="h-5 w-5" />,
     },
     {
       title: 'Random Tables',
       description:
-        'Build weighted tables for loot, encounters, NPC quirks, and plot hooks. Roll with one click.',
-      status: 'planned',
+        'Build weighted tables for encounters, loot, NPC quirks, and more. Roll with one click.',
+      status: 'live',
       icon: <Table2 className="h-5 w-5" />,
     },
+  ];
+
+  const upcomingTools: RoadmapItem[] = [
     {
       title: 'NPC Generator',
       description:

@@ -1,0 +1,53 @@
+{
+  "name": "Dungeon Encounters",
+  "dieExpr": "2d6",
+  "entries": [
+    {
+      "id": "e01",
+      "result": "Cave-in — a section of ceiling collapses; everyone rolls to avoid being buried",
+      "weight": 1
+    },
+    {
+      "id": "e02",
+      "result": "Elite patrol — a tougher, well-equipped group actively searching the area",
+      "weight": 1
+    },
+    {
+      "id": "e03",
+      "result": "Trap — concealed hazard (pit, tripwire, pressure plate)",
+      "weight": 1
+    },
+    {
+      "id": "e04",
+      "result": "Wandering patrol — 1d4 guards or monsters moving through",
+      "weight": 1
+    },
+    {
+      "id": "e05",
+      "result": "Environmental hazard — gas pocket, unstable floor, or rising water",
+      "weight": 1
+    },
+    {
+      "id": "e06",
+      "result": "Empty — signs of very recent occupation (cold embers, discarded food)",
+      "weight": 1
+    },
+    {
+      "id": "e07",
+      "result": "Abandoned cache — supplies or valuables, possibly trapped",
+      "weight": 1
+    },
+    {
+      "id": "e08",
+      "result": "Distant sounds — scraping, voices, or movement just out of sight",
+      "weight": 1
+    },
+    { "id": "e09", "result": "Survivor — a wounded, lost, or hiding NPC", "weight": 1 },
+    {
+      "id": "e10",
+      "result": "Unmarked door or passage — not on any map, recently disturbed",
+      "weight": 1
+    },
+    { "id": "e11", "result": "The dungeon goes silent — something is hunting nearby", "weight": 1 }
+  ]
+}

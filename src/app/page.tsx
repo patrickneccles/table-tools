@@ -11,6 +11,7 @@ import {
   Music,
   PanelTopDashed,
   Scroll,
+  Table2,
   Toolbox,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -147,6 +148,15 @@ export default function HomePage() {
       href: '/dice',
       icon: <BarChart2 className="h-6 w-6" />,
       color: '#dc2626',
+      badge: 'Prep',
+    },
+    {
+      title: 'Random Tables',
+      description:
+        'Build weighted tables for encounters, loot, NPC quirks, and more. Roll with one click.',
+      href: '/random-tables',
+      icon: <Table2 className="h-6 w-6" />,
+      color: '#f97316',
       badge: 'Prep',
     },
   ];

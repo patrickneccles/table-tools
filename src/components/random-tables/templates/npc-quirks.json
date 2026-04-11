@@ -1,0 +1,54 @@
+{
+  "name": "NPC Quirks",
+  "dieExpr": "d20",
+  "entries": [
+    { "id": "q01", "result": "Talks to themselves under their breath", "weight": 1 },
+    { "id": "q02", "result": "Never makes direct eye contact", "weight": 1 },
+    { "id": "q03", "result": "Laughs at their own jokes even when no one else does", "weight": 1 },
+    { "id": "q04", "result": "Refers to themselves in the third person", "weight": 1 },
+    { "id": "q05", "result": "Always eating or drinking something", "weight": 1 },
+    {
+      "id": "q06",
+      "result": "Collects something mundane obsessively (corks, pebbles, buttons)",
+      "weight": 1
+    },
+    { "id": "q07", "result": "Quotes proverbs or old sayings at every opportunity", "weight": 1 },
+    { "id": "q08", "result": "Taps a rhythm on any nearby surface while thinking", "weight": 1 },
+    {
+      "id": "q09",
+      "result": "Deeply superstitious about a specific number or colour",
+      "weight": 1
+    },
+    {
+      "id": "q10",
+      "result": "Startles easily but immediately pretends it didn't happen",
+      "weight": 1
+    },
+    { "id": "q11", "result": "Unusually formal in all speech and mannerisms", "weight": 1 },
+    {
+      "id": "q12",
+      "result": "Never uses names — describes people by a memorable feature instead",
+      "weight": 1
+    },
+    { "id": "q13", "result": "Frequently glances over their shoulder", "weight": 1 },
+    { "id": "q14", "result": "Volunteers unsolicited opinions on everything", "weight": 1 },
+    {
+      "id": "q15",
+      "result": "Excessively apologetic, even for things outside their control",
+      "weight": 1
+    },
+    {
+      "id": "q16",
+      "result": "Speaks very slowly and deliberately, choosing every word",
+      "weight": 1
+    },
+    { "id": "q17", "result": "Constantly predicts that things will go badly", "weight": 1 },
+    { "id": "q18", "result": "Claims to be distantly related to someone famous", "weight": 1 },
+    { "id": "q19", "result": "Repeats the last thing said to them before responding", "weight": 1 },
+    {
+      "id": "q20",
+      "result": "Smells faintly of something oddly specific (cinnamon, wet stone, candle wax)",
+      "weight": 1
+    }
+  ]
+}

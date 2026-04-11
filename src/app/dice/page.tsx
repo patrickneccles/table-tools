@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -92,9 +93,21 @@ function StatCard({
 type RollDirection = 'over' | 'under';
 
 export default function DicePage() {
-  const isLightMode = useIsLightMode();
+  return (
+    <Suspense>
+      <DicePageContent />
+    </Suspense>
+  );
+}
 
-  const [rawExpr, setRawExpr] = useState('2d6');
+function DicePageContent() {
+  const isLightMode = useIsLightMode();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const initialExpr = searchParams.get('expr') ?? '2d6';
+
+  const [rawExpr, setRawExpr] = useState(initialExpr);
   const [distribution, setDistribution] = useState<Distribution | null>(null);
   const [stats, setStats] = useState<DiceStats | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -103,25 +116,33 @@ export default function DicePage() {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const calculate = useCallback((expr: string) => {
-    try {
-      const parsed = parseDiceExpression(expr);
-      const dist = computeDistribution(parsed);
-      const s = computeStats(dist);
-      setDistribution(dist);
-      setStats(s);
-      setError(null);
-      setTargetInput((prev) => (prev === '' ? String(s.median) : prev));
-    } catch (e) {
-      if (e instanceof DiceParseError) {
-        setError(e.message);
-      } else {
-        setError('Could not compute distribution.');
+  const calculate = useCallback(
+    (expr: string, { updateUrl = false } = {}) => {
+      try {
+        const parsed = parseDiceExpression(expr);
+        const dist = computeDistribution(parsed);
+        const s = computeStats(dist);
+        setDistribution(dist);
+        setStats(s);
+        setError(null);
+        setTargetInput((prev) => (prev === '' ? String(s.median) : prev));
+        if (updateUrl) {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set('expr', expr);
+          router.replace(`?${params.toString()}`, { scroll: false });
+        }
+      } catch (e) {
+        if (e instanceof DiceParseError) {
+          setError(e.message);
+        } else {
+          setError('Could not compute distribution.');
+        }
+        setDistribution(null);
+        setStats(null);
       }
-      setDistribution(null);
-      setStats(null);
-    }
-  }, []);
+    },
+    [router, searchParams]
+  );
 
   useEffect(() => {
     calculate(rawExpr);
@@ -130,15 +151,15 @@ export default function DicePage() {
 
   const handleExprChange = (value: string) => {
     setRawExpr(value);
-    setError(null); // clear immediately while typing — errors only appear after debounce settles
+    setError(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => calculate(value), 250);
+    debounceRef.current = setTimeout(() => calculate(value, { updateUrl: true }), 250);
   };
 
   const handlePreset = (expr: string) => {
     setRawExpr(expr);
     setError(null);
-    calculate(expr);
+    calculate(expr, { updateUrl: true });
   };
 
   // Probability lookup

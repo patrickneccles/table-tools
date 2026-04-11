@@ -37,6 +37,7 @@ import {
 } from '@/lib/file-system';
 import { cn } from '@/lib/utils';
 import { Download, MoreHorizontal, Redo2, Scroll, Undo2, Upload } from 'lucide-react';
+import { KeyboardShortcutsHelp } from '@/components/ui/keyboard-shortcuts-help';
 import { ToolPageHeader } from '@/components/layout/tool-page-header';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
@@ -272,6 +273,24 @@ export default function SpellBlocksPage() {
           currentSystemId={systemId}
           currentSystemName={currentSystem?.schema.metadata.name}
           isLightMode={isLightMode}
+        />
+        <KeyboardShortcutsHelp
+          groups={[
+            {
+              label: 'History',
+              shortcuts: [
+                { keys: '⌘Z', description: 'Undo' },
+                { keys: '⇧⌘Z', description: 'Redo' },
+              ],
+            },
+            {
+              label: 'File',
+              shortcuts: [
+                { keys: '⌘E', description: 'Export JSON' },
+                { keys: '⌘I', description: 'Import JSON' },
+              ],
+            },
+          ]}
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

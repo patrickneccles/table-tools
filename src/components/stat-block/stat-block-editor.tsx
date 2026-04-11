@@ -75,9 +75,10 @@ export function FeatureEditor({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
-              <button
+              <Button
+                variant="ghost"
                 className={cn(
-                  'flex items-center gap-2 transition-colors text-left',
+                  'flex items-center gap-2 h-auto p-0 transition-colors text-left hover:bg-transparent',
                   isLightMode ? 'hover:text-zinc-900' : 'hover:text-white'
                 )}
               >
@@ -106,7 +107,7 @@ export function FeatureEditor({
                     </span>
                   )}
                 </CardTitle>
-              </button>
+              </Button>
             </CollapsibleTrigger>
             <Button
               variant="ghost"
