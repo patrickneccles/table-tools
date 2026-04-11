@@ -127,9 +127,7 @@ function DicePageContent() {
         setError(null);
         setTargetInput((prev) => (prev === '' ? String(s.median) : prev));
         if (updateUrl) {
-          const params = new URLSearchParams(searchParams.toString());
-          params.set('expr', expr);
-          router.replace(`?${params.toString()}`, { scroll: false });
+          router.replace(`?expr=${encodeURIComponent(expr)}`, { scroll: false });
         }
       } catch (e) {
         if (e instanceof DiceParseError) {
@@ -141,7 +139,7 @@ function DicePageContent() {
         setStats(null);
       }
     },
-    [router, searchParams]
+    [router]
   );
 
   useEffect(() => {

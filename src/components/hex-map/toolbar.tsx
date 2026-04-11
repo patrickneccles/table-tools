@@ -46,6 +46,14 @@ import { useHexMapSettings } from './settings-context';
 
 type StampLucideIcon = React.ComponentType<StampIconProps>;
 
+const TOOLS = [
+  { value: 'paint' as const, icon: <Paintbrush className="h-4 w-4" />, label: 'Paint' },
+  { value: 'bucket' as const, icon: <PaintBucket className="h-4 w-4" />, label: 'Fill' },
+  { value: 'eyedrop' as const, icon: <Pipette className="h-4 w-4" />, label: 'Eyedropper' },
+  { value: 'erase' as const, icon: <Eraser className="h-4 w-4" />, label: 'Erase' },
+  { value: 'text' as const, icon: <Type className="h-4 w-4" />, label: 'Text label' },
+];
+
 /** Border width for small on-screen swatches (matches map tile feel without overwhelming tiny circles). */
 function swatchBorderPx(strokeWidth: number, diameterPx: number): number {
   if (strokeWidth <= 0) return 1;
@@ -348,15 +356,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
           onValueChange={(val) => setActiveTool((val as HexMapTool) || activeTool)}
           className="lg:flex-col"
         >
-          {(
-            [
-              { value: 'paint', icon: <Paintbrush className="h-4 w-4" />, label: 'Paint' },
-              { value: 'bucket', icon: <PaintBucket className="h-4 w-4" />, label: 'Fill' },
-              { value: 'eyedrop', icon: <Pipette className="h-4 w-4" />, label: 'Eyedropper' },
-              { value: 'erase', icon: <Eraser className="h-4 w-4" />, label: 'Erase' },
-              { value: 'text', icon: <Type className="h-4 w-4" />, label: 'Text label' },
-            ] as const
-          ).map(({ value, icon, label }) => (
+          {TOOLS.map(({ value, icon, label }) => (
             <Tooltip key={value}>
               <TooltipTrigger asChild>
                 <ToggleGroupItem value={value} aria-label={label}>

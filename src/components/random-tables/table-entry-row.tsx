@@ -49,7 +49,6 @@ export function TableEntryRow({
             : 'border-zinc-800 bg-zinc-900/50'
       )}
     >
-      {/* Drag handle */}
       <Button
         variant="ghost"
         size="icon"
@@ -65,7 +64,6 @@ export function TableEntryRow({
         <GripVertical className="h-4 w-4" />
       </Button>
 
-      {/* Range badge */}
       <Badge
         variant="outline"
         className={cn(
@@ -76,7 +74,6 @@ export function TableEntryRow({
         {formatRange(range)}
       </Badge>
 
-      {/* Result input */}
       <Input
         value={entry.result}
         onChange={(e) => onChange(entry.id, 'result', e.target.value)}
@@ -89,7 +86,6 @@ export function TableEntryRow({
         )}
       />
 
-      {/* Weight controls */}
       <div className="flex shrink-0 items-center gap-0.5">
         <Button
           type="button"
@@ -124,7 +120,6 @@ export function TableEntryRow({
         </Button>
       </div>
 
-      {/* Delete */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button

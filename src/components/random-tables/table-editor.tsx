@@ -16,6 +16,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { Plus } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { computeRanges, newEntry, type TableEntry } from './random-table-utils';
@@ -41,28 +42,37 @@ export function TableEditor({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  const ranges = computeRanges(entries, dieMin);
+  const ranges = useMemo(() => computeRanges(entries, dieMin), [entries, dieMin]);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = entries.findIndex((e) => e.id === active.id);
-      const newIndex = entries.findIndex((e) => e.id === over.id);
-      onChange(arrayMove(entries, oldIndex, newIndex));
-    }
-  };
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (over && active.id !== over.id) {
+        const oldIndex = entries.findIndex((e) => e.id === active.id);
+        const newIndex = entries.findIndex((e) => e.id === over.id);
+        onChange(arrayMove(entries, oldIndex, newIndex));
+      }
+    },
+    [entries, onChange]
+  );
 
-  const handleEntryChange = (id: string, field: keyof TableEntry, value: string | number) => {
-    onChange(entries.map((e) => (e.id === id ? { ...e, [field]: value } : e)));
-  };
+  const handleEntryChange = useCallback(
+    (id: string, field: keyof TableEntry, value: string | number) => {
+      onChange(entries.map((e) => (e.id === id ? { ...e, [field]: value } : e)));
+    },
+    [entries, onChange]
+  );
 
-  const handleDelete = (id: string) => {
-    onChange(entries.filter((e) => e.id !== id));
-  };
+  const handleDelete = useCallback(
+    (id: string) => {
+      onChange(entries.filter((e) => e.id !== id));
+    },
+    [entries, onChange]
+  );
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     onChange([...entries, newEntry()]);
-  };
+  }, [entries, onChange]);
 
   return (
     <div className="space-y-1.5">

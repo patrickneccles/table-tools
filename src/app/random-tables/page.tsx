@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -84,7 +84,6 @@ export default function RandomTablesPage() {
       isInitialMount.current = false;
     };
     handleLoadFromStorage();
-     
   }, []);
 
   // Auto-save to localStorage (debounced)
@@ -107,13 +106,15 @@ export default function RandomTablesPage() {
     };
   }, [tableData]);
 
-  // Derived die info from the last valid expression stored in tableData
-  const dieInfo = parseDieExpr(tableData.dieExpr);
-  const dieInputInfo = parseDieExpr(dieInput);
+  const dieInfo = useMemo(() => parseDieExpr(tableData.dieExpr), [tableData.dieExpr]);
+  const dieInputInfo = useMemo(() => parseDieExpr(dieInput), [dieInput]);
   const dieInputError = dieInput.trim() !== '' && dieInputInfo === null;
 
-  const validation = validateTable(tableData.dieExpr, tableData.entries);
-  const used = totalWeight(tableData.entries);
+  const validation = useMemo(
+    () => validateTable(tableData.dieExpr, tableData.entries),
+    [tableData.dieExpr, tableData.entries]
+  );
+  const used = useMemo(() => totalWeight(tableData.entries), [tableData.entries]);
   const capacity = dieInfo?.total ?? 0;
 
   const handleDieInputChange = (value: string) => {
@@ -219,23 +220,21 @@ export default function RandomTablesPage() {
     isLightMode ? 'bg-white border-zinc-200' : 'bg-zinc-900/50 border-zinc-800'
   );
 
-  const validationLabel =
-    validation === 'ok'
-      ? `${used} / ${capacity} ✓`
-      : validation === 'invalid-expr'
-        ? null
-        : `${used} / ${capacity}`;
-
-  const validationColor =
-    validation === 'ok'
-      ? isLightMode
-        ? 'text-emerald-600'
-        : 'text-emerald-400'
-      : validation === 'over'
+  const validationDisplay = useMemo(() => {
+    if (validation === 'invalid-expr') return null;
+    const label = validation === 'ok' ? `${used} / ${capacity} ✓` : `${used} / ${capacity}`;
+    const color =
+      validation === 'ok'
         ? isLightMode
-          ? 'text-red-600'
-          : 'text-red-400'
-        : dimText;
+          ? 'text-emerald-600'
+          : 'text-emerald-400'
+        : validation === 'over'
+          ? isLightMode
+            ? 'text-red-600'
+            : 'text-red-400'
+          : dimText;
+    return { label, color };
+  }, [validation, used, capacity, isLightMode, dimText]);
 
   return (
     <div
@@ -311,10 +310,8 @@ export default function RandomTablesPage() {
       </ToolPageHeader>
 
       <div className="container mx-auto max-w-3xl px-4 py-8 space-y-4">
-        {/* Table config + entries */}
         <Card className={cardClass}>
           <CardHeader className="pb-3 space-y-2">
-            {/* Name + die + weight indicator */}
             <div className="flex items-center gap-3">
               <Input
                 value={tableData.name}
@@ -326,7 +323,6 @@ export default function RandomTablesPage() {
                 )}
               />
 
-              {/* Die expression input */}
               <div className="flex shrink-0 items-center gap-1.5">
                 <Input
                   value={dieInput}
@@ -350,15 +346,15 @@ export default function RandomTablesPage() {
                 )}
               </div>
 
-              {/* Weight indicator */}
-              {validationLabel && (
-                <span className={cn('shrink-0 font-mono text-xs tabular-nums', validationColor)}>
-                  {validationLabel}
+              {validationDisplay && (
+                <span
+                  className={cn('shrink-0 font-mono text-xs tabular-nums', validationDisplay.color)}
+                >
+                  {validationDisplay.label}
                 </span>
               )}
             </div>
 
-            {/* Validation hint */}
             {(validation === 'under' || validation === 'over') && (
               <p className={cn('text-xs', dimText)}>
                 {validation === 'under'

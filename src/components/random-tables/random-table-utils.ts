@@ -1,10 +1,6 @@
 import { parseDiceExpression } from '@/lib/dice-parser';
 import { computeDistribution } from '@/lib/dice-probability';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 export type TableEntry = {
   id: string;
   result: string;
@@ -39,10 +35,6 @@ export const DEFAULT_TABLE: RandomTableData = {
   dieExpr: 'd20',
   entries: [],
 };
-
-// ---------------------------------------------------------------------------
-// Die expression utilities
-// ---------------------------------------------------------------------------
 
 /** Parse a die expression and return its range info, or null if invalid. */
 export function parseDieExpr(expr: string | undefined | null): DieExprInfo | null {
@@ -93,10 +85,6 @@ export function rollDieExpr(expr: string | undefined | null): number | null {
     return null;
   }
 }
-
-// ---------------------------------------------------------------------------
-// Table utilities
-// ---------------------------------------------------------------------------
 
 export function totalWeight(entries: TableEntry[]): number {
   return entries.reduce((sum, e) => sum + e.weight, 0);
