@@ -105,6 +105,7 @@ export interface HexMapToolbarProps {
   handleImportClick: () => void;
   handleClear: () => void;
   onExpandEdge: (edge: ExpandMapEdge) => void;
+  onShrinkEdge: (edge: ExpandMapEdge) => void;
   zoom: number;
   handleZoomIn: () => void;
   handleZoomOut: () => void;
@@ -123,6 +124,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
     handleImportClick,
     handleClear,
     onExpandEdge,
+    onShrinkEdge,
     zoom,
     handleZoomIn,
     handleZoomOut,
@@ -502,6 +504,7 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
         onOpenChange={setSettingsOpen}
         onSaveComplete={handleZoomReset}
         onExpandEdge={onExpandEdge}
+        onShrinkEdge={onShrinkEdge}
       />
     </>
   );

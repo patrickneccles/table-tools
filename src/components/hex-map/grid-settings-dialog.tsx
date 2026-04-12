@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { SquareArrowDown, SquareArrowLeft, SquareArrowRight, SquareArrowUp } from 'lucide-react';
 import { NEUTRAL_COLORS, PALETTES } from './constants/palette';
 import type { ExpandMapEdge } from './expand-map';
-import { MAX_GRID_DIMENSION } from './expand-map';
+import { MAX_GRID_DIMENSION, MIN_GRID_DIMENSION } from './expand-map';
 import { useHexMapSettings } from './settings-context';
 
 type Orientation = 'flat' | 'pointy';
@@ -23,10 +23,12 @@ type Orientation = 'flat' | 'pointy';
 function GridSettingsFields({
   onSaveComplete,
   onExpandEdge,
+  onShrinkEdge,
   onClose,
 }: {
   onSaveComplete: () => void;
   onExpandEdge: (edge: ExpandMapEdge) => void;
+  onShrinkEdge: (edge: ExpandMapEdge) => void;
   onClose: () => void;
 }) {
   const {
@@ -151,6 +153,58 @@ function GridSettingsFields({
               onClick={() => onExpandEdge('bottom')}
             >
               <SquareArrowDown className="h-3.5 w-3.5" />
+              Row bottom
+            </Button>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Shrink map</Label>
+          <p className="text-muted-foreground text-xs">
+            Remove one column or row from a side. Applies immediately; undo with ⌘Z.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={width <= MIN_GRID_DIMENSION}
+              onClick={() => onShrinkEdge('left')}
+            >
+              <SquareArrowRight className="h-3.5 w-3.5" />
+              Column left
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={width <= MIN_GRID_DIMENSION}
+              onClick={() => onShrinkEdge('right')}
+            >
+              Column right
+              <SquareArrowLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={height <= MIN_GRID_DIMENSION}
+              onClick={() => onShrinkEdge('top')}
+            >
+              <SquareArrowDown className="h-3.5 w-3.5" />
+              Row top
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              disabled={height <= MIN_GRID_DIMENSION}
+              onClick={() => onShrinkEdge('bottom')}
+            >
+              <SquareArrowUp className="h-3.5 w-3.5" />
               Row bottom
             </Button>
           </div>
@@ -285,6 +339,7 @@ export function HexMapGridSettingsDialog({
   onOpenChange,
   onSaveComplete,
   onExpandEdge,
+  onShrinkEdge,
 }: {
   open: boolean;
   /** Bumps when the user opens the dialog so draft state remounts from current context. */
@@ -292,6 +347,7 @@ export function HexMapGridSettingsDialog({
   onOpenChange: (open: boolean) => void;
   onSaveComplete: () => void;
   onExpandEdge: (edge: ExpandMapEdge) => void;
+  onShrinkEdge: (edge: ExpandMapEdge) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -301,6 +357,7 @@ export function HexMapGridSettingsDialog({
             key={draftKey}
             onSaveComplete={onSaveComplete}
             onExpandEdge={onExpandEdge}
+            onShrinkEdge={onShrinkEdge}
             onClose={() => onOpenChange(false)}
           />
         ) : null}
