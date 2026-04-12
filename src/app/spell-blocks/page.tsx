@@ -349,7 +349,7 @@ export default function SpellBlocksPage() {
 
           {/* Preview panel */}
           <ErrorBoundary>
-            <div className="w-full lg:w-[380px] lg:shrink-0">
+            <div className="max-w-lg shrink-0 mx-auto">
               <div className="lg:sticky lg:top-[88px]">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-medium text-zinc-500">Preview</h2>

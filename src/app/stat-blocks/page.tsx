@@ -583,7 +583,7 @@ export default function StatBlocksPage() {
 
           {/* Preview Panel */}
           <ErrorBoundary>
-            <div id="stat-block-preview" className="w-full lg:w-[420px] shrink-0 print:w-full">
+            <div id="stat-block-preview" className="max-w-lg shrink-0 mx-auto print:w-full">
               <div className="lg:sticky lg:top-[88px] print:relative print:top-0">
                 <div className="flex items-center justify-between mb-3 print:hidden">
                   <h2 className="text-sm font-medium text-zinc-500">Preview</h2>

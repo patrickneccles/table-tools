@@ -7,7 +7,7 @@ export function ShadowdarkSpellRenderer({ data }: SystemRendererProps<Shadowdark
   const { name, tier, classes, duration, range, description, source } = data;
 
   return (
-    <div className="font-sans text-black bg-white max-w-2xs mx-auto p-4 space-y-2">
+    <div className="font-sans text-black bg-white max-w-2xs p-4 space-y-2">
       <h1 className="text-center text-xl font-bold p-1 bg-black text-white uppercase">
         {name || 'New Spell'}
       </h1>
