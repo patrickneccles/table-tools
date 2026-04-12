@@ -5,17 +5,18 @@ import { cn } from '@/lib/utils';
 import type { DnD5e2024SpellData } from './types';
 import { spellLevelLabel } from './types';
 
+const MAROON = '#5b160c';
+
 function Divider() {
-  return <hr className="my-2 border-t border-border" />;
+  return <hr className="my-2 border-t" style={{ borderColor: MAROON }} />;
 }
 
-function StatLine({ label, value }: { label: string; value: string | undefined }) {
+function CastingLine({ label, value }: { label: string; value: string | undefined }) {
   if (!value) return null;
   return (
-    <div className="flex gap-1.5 text-sm">
-      <span className="font-semibold shrink-0">{label}:</span>
-      <span>{value}</span>
-    </div>
+    <p className="font-sans indent-[-1rem] pl-4">
+      <span className="font-semibold">{label}</span>: {value}
+    </p>
   );
 }
 
@@ -38,55 +39,58 @@ export function DnD5e2024SpellRenderer({
   } = data;
 
   const levelLabel = spellLevelLabel(level, school);
-
-  const hasFooter = Boolean(classes || source);
+  // 2024 PHB renamed this section
+  const higherLevelLabel =
+    level === 'cantrip' ? 'Cantrip Upgrade.' : 'Using a Higher-Level Spell Slot.';
 
   return (
     <div
       className={cn(
-        'rounded-lg border bg-card text-card-foreground shadow-sm p-5 space-y-3 text-sm',
+        'bg-white font-serif text-stone-900 text-sm max-w-sm rounded-md shadow-lg',
         className
       )}
+      style={{ border: '3px double #64748b' }}
     >
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-bold leading-tight">{name || 'New Spell'}</h2>
-        <p className="text-muted-foreground italic text-[13px] mt-0.5">{levelLabel}</p>
-      </div>
+      <div className="bg-yellow-100/10 p-4 space-y-2">
+        {/* Name */}
+        <div>
+          <h2
+            className="text-lg font-semibold tracking-wide leading-tight"
+            style={{ color: MAROON, fontVariant: 'small-caps' }}
+          >
+            {name || 'New Spell'}
+          </h2>
+          <p className="italic text-stone-900 mt-0.5">
+            {levelLabel}&nbsp;({classes})
+          </p>
+        </div>
 
-      <Divider />
+        {/* Casting properties — no rule before, rule after */}
+        <div>
+          <CastingLine label="Casting Time" value={castingTime} />
+          <CastingLine label="Range" value={range} />
+          <CastingLine label="Components" value={components} />
+          <CastingLine label="Duration" value={duration} />
+        </div>
 
-      {/* Casting block */}
-      <div className="space-y-1">
-        <StatLine label="Casting Time" value={castingTime} />
-        <StatLine label="Range" value={range} />
-        <StatLine label="Components" value={components || undefined} />
-        <StatLine label="Duration" value={duration} />
-      </div>
+        {/* Description body */}
+        {description && <p className="whitespace-pre-wrap">{description}</p>}
 
-      <Divider />
+        {/* Higher-level scaling */}
+        {atHigherLevels && (
+          <p className="font-serif">
+            <span className="font-semibold italic">{higherLevelLabel} </span>
+            {atHigherLevels}
+          </p>
+        )}
 
-      {/* Description */}
-      {description && <p className="leading-relaxed whitespace-pre-wrap">{description}</p>}
-
-      {/* At Higher Levels */}
-      {atHigherLevels && (
-        <p className="leading-relaxed">
-          <span className="font-semibold italic">At Higher Levels. </span>
-          {atHigherLevels}
-        </p>
-      )}
-
-      {/* Footer */}
-      {hasFooter && (
-        <>
-          <Divider />
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-            {classes && <span>{classes}</span>}
-            {source && <span className="ml-auto italic">{source}</span>}
+        {/* Footer: classes + source */}
+        {source && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-500">
+            {<span className="ml-auto italic">{source}</span>}
           </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

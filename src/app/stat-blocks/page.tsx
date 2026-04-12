@@ -16,13 +16,12 @@ import {
   DEFAULT_SYSTEM_ID,
   getSystem,
   loadStatBlockFromStorage,
-  loadSystemFromStorage,
   saveStatBlockToStorage,
-  saveSystemToStorage,
   SystemSelector,
   SystemStatBlockView,
   TraitEditor,
 } from '@/components/stat-block';
+import { resolveSystem, saveActiveSystem, useActiveSystem } from '@/lib/active-system';
 import {
   calculateInitiative,
   calculateProficiencyBonus,
@@ -232,17 +231,12 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
 // ============================================================================
 
 export default function StatBlocksPage() {
-  // Always start with default system (for consistent SSR)
-  const [systemId, setSystemId] = useState(DEFAULT_SYSTEM_ID);
-
-  // Load saved system from localStorage on client side only (after hydration)
-  useEffect(() => {
-    const saved = loadSystemFromStorage();
-    if (saved && saved !== DEFAULT_SYSTEM_ID) {
-      // eslint-disable-next-line -- Intentional: loading from localStorage after hydration to avoid SSR mismatch
-      setSystemId(saved);
-    }
-  }, []);
+  const activeSystem = useActiveSystem();
+  const systemId = resolveSystem(
+    activeSystem,
+    ['dnd5e-2014', 'dnd5e-2024', 'shadowdark'],
+    DEFAULT_SYSTEM_ID
+  );
 
   // Get current system and its schema
   const currentSystem = getSystem(systemId);
@@ -295,11 +289,6 @@ export default function StatBlocksPage() {
     };
   }, []);
 
-  // Save system selection to localStorage (runs when systemId changes)
-  useEffect(() => {
-    saveSystemToStorage(systemId);
-  }, [systemId]);
-
   // Handlers for keyboard shortcuts and UI actions
   const handlePrint = useCallback(() => {
     window.print();
@@ -318,7 +307,7 @@ export default function StatBlocksPage() {
     try {
       const file = await uploadFile<StatBlockFileData>('stat-block');
       setCurrentFile(file);
-      setSystemId(file.data.systemId);
+      saveActiveSystem(file.data.systemId);
       setStatBlock(file.data.statBlock as AnyStatBlockData);
     } catch (err) {
       if (err instanceof Error && err.message !== 'File selection cancelled.') {
@@ -393,7 +382,7 @@ export default function StatBlocksPage() {
   const handleLoadTemplate = useCallback(
     (template: StatBlockTemplate) => {
       loadTemplate(template);
-      setSystemId(template.systemId);
+      saveActiveSystem(template.systemId);
       setCurrentFile(null);
     },
     [loadTemplate]
@@ -436,7 +425,7 @@ export default function StatBlocksPage() {
 
   // Handle system change — data is kept as-is, renderer adapts
   const handleSystemChange = (newSystemId: string) => {
-    setSystemId(newSystemId);
+    saveActiveSystem(newSystemId);
   };
 
   // Get current stat block data with 2024 fields if in 2024 mode

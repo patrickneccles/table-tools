@@ -4,7 +4,7 @@ import type { SystemRendererProps } from '@/components/stat-block/systems/base-s
 import type { ShadowdarkSpellData } from './types';
 
 export function ShadowdarkSpellRenderer({ data }: SystemRendererProps<ShadowdarkSpellData>) {
-  const { name, tier, classes, duration, range, description } = data;
+  const { name, tier, classes, duration, range, description, source } = data;
 
   return (
     <div className="font-sans text-black bg-white max-w-2xs mx-auto p-4 space-y-2">

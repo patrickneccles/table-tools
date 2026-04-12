@@ -17,28 +17,28 @@ describe('spellLevelLabel', () => {
   });
 
   it('returns "1st-Level {school}" for level 1', () => {
-    expect(spellLevelLabel('1', 'Abjuration')).toBe('1st-Level Abjuration');
+    expect(spellLevelLabel('1', 'Abjuration')).toBe('Level 1 Abjuration');
   });
 
   it('returns "2nd-Level {school}" for level 2', () => {
-    expect(spellLevelLabel('2', 'Evocation')).toBe('2nd-Level Evocation');
+    expect(spellLevelLabel('2', 'Evocation')).toBe('Level 2 Evocation');
   });
 
   it('returns "3rd-Level {school}" for level 3', () => {
-    expect(spellLevelLabel('3', 'Conjuration')).toBe('3rd-Level Conjuration');
+    expect(spellLevelLabel('3', 'Conjuration')).toBe('Level 3 Conjuration');
   });
 
   it('uses "th" ordinals for levels 4–9', () => {
     const cases: [SpellLevel, string][] = [
-      ['4', '4th-Level Enchantment'],
-      ['5', '5th-Level Divination'],
-      ['6', '6th-Level Transmutation'],
-      ['7', '7th-Level Illusion'],
-      ['8', '8th-Level Necromancy'],
-      ['9', '9th-Level Evocation'],
+      ['4', 'Level 4 Enchantment'],
+      ['5', 'Level 5 Divination'],
+      ['6', 'Level 6 Transmutation'],
+      ['7', 'Level 7 Illusion'],
+      ['8', 'Level 8 Necromancy'],
+      ['9', 'Level 9 Evocation'],
     ];
     for (const [level, expected] of cases) {
-      expect(spellLevelLabel(level, expected.split(' ')[1])).toBe(expected);
+      expect(spellLevelLabel(level, expected.split(' ')[2])).toBe(expected);
     }
   });
 

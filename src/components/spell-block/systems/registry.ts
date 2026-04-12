@@ -1,11 +1,13 @@
 import type { StatBlockSystem, SystemMetadata } from '@/components/stat-block/systems/base-system';
 import { dnd5e2024SpellSystem } from './dnd5e-2024';
+import { genericSpellSystem } from './generic';
 import { shadowdarkSpellSystem } from './shadowdark';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SPELL_SYSTEM_REGISTRY: Record<string, StatBlockSystem<any>> = {
   'dnd5e-2024': dnd5e2024SpellSystem,
   shadowdark: shadowdarkSpellSystem,
+  generic: genericSpellSystem,
 };
 
 export const DEFAULT_SPELL_SYSTEM_ID = 'dnd5e-2024';

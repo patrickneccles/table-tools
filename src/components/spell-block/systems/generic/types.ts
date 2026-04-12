@@ -1,7 +1,6 @@
 export type SpellLevel = 'cantrip' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
 
-/** Data shape for a D&D 5e 2024 spell. Extends BaseStatBlockData via `name`. */
-export type DnD5e2024SpellData = {
+export type GenericSpellData = {
   name: string;
   level: SpellLevel;
   school: string;
@@ -43,7 +42,9 @@ export const SPELL_SCHOOL_OPTIONS = [
 
 // ─── Utilities ─────────────────────────────────────────────────────────────
 
+const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th'] as const;
+
 export function spellLevelLabel(level: SpellLevel, school: string): string {
   if (level === 'cantrip') return `${school} Cantrip`;
-  return `Level ${level} ${school}`;
+  return `${ORDINALS[Number(level)]}-Level ${school}`;
 }

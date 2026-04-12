@@ -9,13 +9,11 @@ import {
   getAllSpellSystemMetadata,
   getSpellSystem,
   loadSpellFromStorage,
-  loadSpellSystemFromStorage,
-  saveSpellSystemToStorage,
-  subscribeSpellSystemId,
   saveSpellToStorage,
   SpellTemplateSelector,
   SystemSpellView,
 } from '@/components/spell-block';
+import { resolveSystem, saveActiveSystem, useActiveSystem } from '@/lib/active-system';
 import type { DnD5e2024SpellData } from '@/components/spell-block';
 import type { StatBlockTemplate } from '@/components/stat-block/stat-block-utils';
 import { Button } from '@/components/ui/button';
@@ -39,7 +37,7 @@ import { cn } from '@/lib/utils';
 import { Download, MoreHorizontal, Redo2, Scroll, Undo2, Upload } from 'lucide-react';
 import { KeyboardShortcutsHelp } from '@/components/ui/keyboard-shortcuts-help';
 import { ToolPageHeader } from '@/components/layout/tool-page-header';
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -126,14 +124,15 @@ function useSpellEditor(initialData: AnySpellData) {
 export default function SpellBlocksPage() {
   const isLightMode = useIsLightMode();
 
-  const systemId = useSyncExternalStore(
-    subscribeSpellSystemId,
-    () => loadSpellSystemFromStorage() ?? DEFAULT_SPELL_SYSTEM_ID,
-    () => DEFAULT_SPELL_SYSTEM_ID
+  const activeSystem = useActiveSystem();
+  const systemId = resolveSystem(
+    activeSystem,
+    ['dnd5e-2024', 'shadowdark', 'generic'],
+    DEFAULT_SPELL_SYSTEM_ID
   );
 
   const setSystemId = useCallback((id: string) => {
-    saveSpellSystemToStorage(id);
+    saveActiveSystem(id);
   }, []);
 
   const currentSystem = getSpellSystem(systemId);

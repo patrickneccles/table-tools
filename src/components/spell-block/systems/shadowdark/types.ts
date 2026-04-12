@@ -7,6 +7,7 @@ export type ShadowdarkSpellData = {
   duration: string;
   range: string;
   description: string;
+  source?: string;
 };
 
 export const TIER_OPTIONS = [

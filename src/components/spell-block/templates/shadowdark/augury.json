@@ -1,0 +1,15 @@
+{
+  "id": "augury-shadowdark",
+  "systemId": "shadowdark",
+  "name": "Augury",
+  "description": "Tier 2 Priest",
+  "data": {
+    "name": "Augury",
+    "tier": "2",
+    "classes": "Priest",
+    "duration": "Instant",
+    "range": "Self",
+    "description": "You interpret the meaning of supernatural portents and omens.\n\nAsk the GM one question about a specific course of action. The GM says whether the action will lead to \"weal\" or \"woe.\"",
+    "source": "pg. 55"
+  }
+}
