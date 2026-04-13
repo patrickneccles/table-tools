@@ -5,6 +5,7 @@
 import type { StatBlockSystem } from '../base-system';
 import type { DnD5e2024Data } from './types';
 import { DnD5e2024Renderer } from './renderer';
+import { generateDnD5e2024Markdown } from './markdown';
 
 const TRAIT_PLACEHOLDER =
   '**Feature Name.** Description of the feature.\n\n**Another Feature.** Description here.';
@@ -260,4 +261,5 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
     ],
   },
   Renderer: DnD5e2024Renderer,
+  generateMarkdown: generateDnD5e2024Markdown,
 };

@@ -19,6 +19,7 @@ import {
   SystemSelector,
   SystemStatBlockView,
 } from '@/components/stat-block';
+import { MarkdownView } from '@/components/stat-block/markdown-view';
 import { resolveSystem, saveActiveSystem, useActiveSystem } from '@/lib/active-system';
 import {
   calculateInitiative,
@@ -202,6 +203,7 @@ export default function StatBlocksPage() {
 
   const [loadKey, setLoadKey] = useState(0);
   const bumpLoadKey = useCallback(() => setLoadKey((k) => k + 1), []);
+  const [viewMode, setViewMode] = useState<'preview' | 'markdown'>('preview');
 
   const {
     statBlock,
@@ -523,10 +525,37 @@ export default function StatBlocksPage() {
 
           {/* Preview Panel */}
           <ErrorBoundary>
-            <div id="stat-block-preview" className="max-w-lg shrink-0 mx-auto print:w-full">
+            <div id="stat-block-preview" className="w-md shrink-0 mx-auto print:w-full">
               <div className="lg:sticky lg:top-[88px] print:relative print:top-0">
                 <div className="flex items-center justify-between mb-3 print:hidden">
-                  <h2 className="text-sm font-medium text-zinc-500">Preview</h2>
+                  {/* View toggle */}
+                  <div
+                    className={cn(
+                      'flex rounded-md border text-xs font-medium overflow-hidden',
+                      isLightMode ? 'border-zinc-300' : 'border-zinc-700'
+                    )}
+                  >
+                    {(['preview', 'markdown'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setViewMode(mode)}
+                        className={cn(
+                          'px-3 py-1 capitalize transition-colors',
+                          mode === 'markdown' &&
+                            (isLightMode ? 'border-l border-zinc-300' : 'border-l border-zinc-700'),
+                          viewMode === mode
+                            ? isLightMode
+                              ? 'bg-zinc-800 text-white'
+                              : 'bg-zinc-200 text-zinc-900'
+                            : isLightMode
+                              ? 'text-zinc-500 hover:bg-zinc-100'
+                              : 'text-zinc-400 hover:bg-zinc-800'
+                        )}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
                   <span
                     className={cn(
                       'text-xs px-2 py-0.5 rounded-full',
@@ -536,11 +565,18 @@ export default function StatBlocksPage() {
                     {currentSystem?.schema.metadata.name || systemId}
                   </span>
                 </div>
-                <SystemStatBlockView
-                  systemId={systemId}
-                  data={currentStatBlock}
-                  className="print:shadow-none print:max-w-none"
-                />
+                {viewMode === 'preview' ? (
+                  <SystemStatBlockView
+                    systemId={systemId}
+                    data={currentStatBlock}
+                    className="print:shadow-none print:max-w-none"
+                  />
+                ) : (
+                  <MarkdownView
+                    markdown={currentSystem?.generateMarkdown?.(currentStatBlock) ?? ''}
+                    isLightMode={isLightMode}
+                  />
+                )}
               </div>
             </div>
           </ErrorBoundary>

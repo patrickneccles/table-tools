@@ -5,6 +5,7 @@
 import type { StatBlockSystem } from '../base-system';
 import type { ShadowdarkData } from './types';
 import { ShadowdarkRenderer } from './renderer';
+import { generateShadowdarkMarkdown } from './markdown';
 
 export const shadowdarkSystem: StatBlockSystem<ShadowdarkData> = {
   schema: {
@@ -87,4 +88,5 @@ export const shadowdarkSystem: StatBlockSystem<ShadowdarkData> = {
     ],
   },
   Renderer: ShadowdarkRenderer,
+  generateMarkdown: generateShadowdarkMarkdown,
 };

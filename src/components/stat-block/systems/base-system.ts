@@ -97,6 +97,8 @@ export type StatBlockSystem<T = unknown> = {
   Renderer: ComponentType<SystemRendererProps<T>>;
   /** Optional custom editor component (falls back to generic editor) */
   Editor?: ComponentType<SystemRendererProps<T>>;
+  /** Optional markdown export — returns a copyable markdown string */
+  generateMarkdown?: (data: T) => string;
 };
 
 /**
