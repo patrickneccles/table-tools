@@ -30,7 +30,19 @@ type DynamicEditorProps<T extends BaseStatBlockData> = {
   onFieldChange: (path: string, value: unknown) => void;
   onBlur?: () => void;
   isLightMode: boolean;
+  /** Increment to force sections to re-evaluate their open state from current data */
+  loadKey?: number;
 };
+
+// Returns true if any field in the section has a non-empty value
+function sectionHasContent(data: unknown, section: SectionDefinition): boolean {
+  return section.fields.some((field) => {
+    const value = getNestedValue(data, field.key);
+    if (value === undefined || value === null || value === '') return false;
+    if (Array.isArray(value)) return value.length > 0;
+    return true;
+  });
+}
 
 // Helper to get nested value from object using dot notation
 function getNestedValue(obj: unknown, path: string): unknown {
@@ -240,15 +252,16 @@ export function DynamicEditor<T extends BaseStatBlockData>({
   onFieldChange,
   onBlur,
   isLightMode,
+  loadKey = 0,
 }: DynamicEditorProps<T>) {
   return (
     <div className="space-y-2">
       {sections.map((section) => (
         <EditorCard
-          key={section.key}
+          key={`${section.key}-${loadKey}`}
           title={section.title}
           isLightMode={isLightMode}
-          defaultOpen={!section.defaultCollapsed}
+          defaultOpen={sectionHasContent(data, section)}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {section.fields.map((field) => (

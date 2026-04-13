@@ -82,7 +82,7 @@ type DnD5eData = (DnD5e2014Data | DnD5e2024Data) &
 // Custom Hooks
 // ============================================================================
 
-function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
+function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T, onLoad?: () => void) {
   // Use history management for undo/redo
   const history = useHistory<T>(initialData, 50);
   const statBlock = history.state;
@@ -91,12 +91,18 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isInitialMount = useRef(true);
+  // Stable ref so the effect below doesn't re-run when onLoad identity changes
+  const onLoadRef = useRef(onLoad);
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  });
 
   // Load from localStorage on client side only (after hydration)
   useEffect(() => {
     const saved = loadStatBlockFromStorage();
     if (saved) {
       history.reset(saved as unknown as T);
+      onLoadRef.current?.();
     }
     isInitialMount.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -194,6 +200,9 @@ export default function StatBlocksPage() {
   }) as AnyStatBlockData;
   const systemSections = currentSystem?.schema.sections || [];
 
+  const [loadKey, setLoadKey] = useState(0);
+  const bumpLoadKey = useCallback(() => setLoadKey((k) => k + 1), []);
+
   const {
     statBlock,
     saveStatus,
@@ -205,7 +214,7 @@ export default function StatBlocksPage() {
     canUndo,
     canRedo,
     captureSnapshot,
-  } = useStatBlockEditor(initialData);
+  } = useStatBlockEditor(initialData, bumpLoadKey);
   const isLightMode = useIsLightMode();
   const [isAtPreview, setIsAtPreview] = useState(false);
   // Tracks the identity of the current file — set on import, preserved on export so repeated
@@ -255,13 +264,14 @@ export default function StatBlocksPage() {
       setCurrentFile(file);
       saveActiveSystem(file.data.systemId);
       setStatBlock(file.data.statBlock as AnyStatBlockData);
+      bumpLoadKey();
     } catch (err) {
       if (err instanceof Error && err.message !== 'File selection cancelled.') {
         console.error('Failed to import stat block:', err);
         toast.error(err.message);
       }
     }
-  }, [setStatBlock]);
+  }, [setStatBlock, bumpLoadKey]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -330,8 +340,9 @@ export default function StatBlocksPage() {
       loadTemplate(template);
       saveActiveSystem(template.systemId);
       setCurrentFile(null);
+      bumpLoadKey();
     },
-    [loadTemplate]
+    [loadTemplate, bumpLoadKey]
   );
 
   // Handle reset to default data for current system
@@ -340,8 +351,9 @@ export default function StatBlocksPage() {
     if (defaultData) {
       setStatBlock(defaultData as AnyStatBlockData);
       setCurrentFile(null);
+      bumpLoadKey();
     }
-  }, [currentSystem, setStatBlock]);
+  }, [currentSystem, setStatBlock, bumpLoadKey]);
 
   // Handle dynamic field changes (supports nested paths like "abilityScores.str")
   const handleDynamicFieldChange = useCallback(
@@ -503,6 +515,7 @@ export default function StatBlocksPage() {
                   onFieldChange={handleDynamicFieldChange}
                   onBlur={() => setTimeout(() => captureSnapshot(), 0)}
                   isLightMode={isLightMode}
+                  loadKey={loadKey}
                 />
               </div>
             </div>
