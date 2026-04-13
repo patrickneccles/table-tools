@@ -124,18 +124,28 @@ function DynamicField<T extends BaseStatBlockData>({
       );
     }
 
-    case 'markdown':
+    case 'markdown': {
+      // Backward-compat: old localStorage data may have TraitEntry[] arrays
+      let markdownValue: string;
+      if (Array.isArray(value)) {
+        markdownValue = (value as Array<{ name?: string; description?: string }>)
+          .map((entry) => `**${entry.name ?? ''}.** ${entry.description ?? ''}`)
+          .join('\n\n');
+      } else {
+        markdownValue = typeof value === 'string' ? value : String(value ?? '');
+      }
       return (
         <MarkdownEditor
           id={field.key}
           label={field.label}
-          value={typeof value === 'string' ? value : String(value ?? '')}
+          value={markdownValue}
           onChange={(v) => onFieldChange(field.key, v)}
           onBlur={onBlur}
           placeholder={field.placeholder}
           isLightMode={isLightMode}
         />
       );
+    }
 
     case 'number':
       return (

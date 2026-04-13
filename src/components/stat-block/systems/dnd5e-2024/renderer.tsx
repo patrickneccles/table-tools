@@ -1,6 +1,6 @@
 /**
  * D&D 5e 2024 Edition Stat Block Renderer
- * 
+ *
  * Renders stat blocks in the updated 2024 style with:
  * - Explicit Initiative display
  * - Gear section
@@ -8,12 +8,19 @@
  * - Updated ability score table layout
  */
 
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import React from "react";
-import type { DnD5e2024Data, TraitEntry } from "./types";
-import { ABILITY_KEYS, calculateInitiative, calculateModifier, calculateProficiencyBonus, formatModifier } from "./types";
+import { cn } from '@/lib/utils';
+import React from 'react';
+import { MarkdownContent } from '@/components/ui/markdown-content';
+import type { DnD5e2024Data } from './types';
+import {
+  ABILITY_KEYS,
+  calculateInitiative,
+  calculateModifier,
+  calculateProficiencyBonus,
+  formatModifier,
+} from './types';
 
 // ============================================================================
 // Internal Sub-Components
@@ -22,50 +29,37 @@ import { ABILITY_KEYS, calculateInitiative, calculateModifier, calculateProficie
 /** Renders a labeled stat line (e.g., "Armor Class 15") - RED for 2024 */
 function StatLine({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <p style={{ color: "#5b160c" }}>
+    <p style={{ color: '#5b160c' }}>
       <span className="font-bold">{label}</span> {children}
     </p>
   );
 }
 
-/** Renders a single trait entry with bold italic name - DARK for 2024 */
-function TraitItem({ trait }: { trait: TraitEntry }) {
-  return (
-    <p className="text-stone-900">
-      <span className="font-bold italic">{trait.name}.</span>{" "}
-      <span className="whitespace-pre-wrap">{trait.description}</span>
-    </p>
-  );
-}
-
-/** Renders a section of traits/actions with optional heading */
-function TraitSection({
+/** Renders a named section with optional heading and markdown content */
+function MarkdownSection({
   title,
-  entries,
-  showHeading = true
+  content,
+  showHeading = true,
+  preamble,
 }: {
   title: string;
-  entries: TraitEntry[] | undefined;
+  content: string | undefined;
   showHeading?: boolean;
+  preamble?: string;
 }) {
-  if (!entries || entries.length === 0) return null;
-
+  if (!content && !preamble) return null;
   return (
-    <div className="space-y-2">
+    <div className="space-y-1 leading-normal">
       {showHeading && (
-        <h3 className="text-lg font-bold border-b border-solid" style={{
-          borderColor: "#5b160c",
-          color: "#5b160c",
-          fontVariant: "small-caps"
-        }}>
+        <h3
+          className="text-lg font-bold border-b border-solid"
+          style={{ borderColor: '#5b160c', color: '#5b160c', fontVariant: 'small-caps' }}
+        >
           {title}
         </h3>
       )}
-      <div className="space-y-2 text-sm">
-        {entries.map((entry, i) => (
-          <TraitItem key={i} trait={entry} />
-        ))}
-      </div>
+      {preamble && <p className="text-sm italic text-stone-500">{preamble}</p>}
+      {content && <MarkdownContent content={content} className="text-sm text-stone-900" />}
     </div>
   );
 }
@@ -91,22 +85,25 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
   return (
     <div
       className={cn(
-        "bg-white shadow-lg rounded-md",
-        "font-sans text-stone-900 max-w-md",
+        'bg-white shadow-lg rounded-md',
+        'font-sans text-stone-900 max-w-md',
         className
       )}
       style={{
-        border: "3px double #64748b"
+        border: '3px double #64748b',
       }}
     >
       <div className="bg-yellow-100/10 p-4 space-y-3">
         {/* Name & Type */}
         <div>
-          <h2 className="text-2xl font-bold border-b border-solid" style={{
-            color: "#5b160c",
-            borderColor: "#5b160c",
-            fontVariant: "small-caps"
-          }}>
+          <h2
+            className="text-2xl font-bold border-b border-solid"
+            style={{
+              color: '#5b160c',
+              borderColor: '#5b160c',
+              fontVariant: 'small-caps',
+            }}
+          >
             {data.name}
           </h2>
           <p className="text-sm italic text-stone-500 mt-1">
@@ -115,13 +112,14 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
         </div>
 
         {/* Combat Highlights - 2024 style with Initiative */}
-        <div className="text-sm" style={{ color: "#5b160c" }}>
+        <div className="text-sm" style={{ color: '#5b160c' }}>
           <div className="grid grid-cols-2 gap-4">
             <p>
               <span className="font-bold">AC</span> {data.armorClass}
             </p>
             <p>
-              <span className="font-bold">Initiative</span> {formatModifier(initiative)} ({initiativeScore})
+              <span className="font-bold">Initiative</span> {formatModifier(initiative)} (
+              {initiativeScore})
             </p>
           </div>
           <p>
@@ -135,17 +133,22 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
         {/* Ability Scores - 2024 physical/mental split in 3 columns */}
         <div className="space-y-1">
           {/* Physical Stats: STR | DEX | CON */}
-          <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-sm" style={{ color: "#5b160c" }}>
+          <div className="grid grid-cols-3 gap-x-2 gap-y-0.5 text-sm" style={{ color: '#5b160c' }}>
             {ABILITY_KEYS.map((key) => {
               const value = data.abilityScores?.[key] ?? 10;
               const mod = calculateModifier(value);
-              const customSave = data.savingThrows?.find(s => s.toLowerCase().startsWith(key));
+              const customSave = data.savingThrows?.find((s) => s.toLowerCase().startsWith(key));
               const save = customSave ? customSave.split(/\s+/)[1] : formatModifier(mod);
               const isPhysical = ['str', 'dex', 'con'].includes(key);
               return (
                 <div key={key} className="grid grid-cols-2">
                   {/* Label and Score row */}
-                  <div className={cn("grid grid-cols-2 text-center", isPhysical ? "bg-yellow-600/15" : "bg-emerald-900/15")}>
+                  <div
+                    className={cn(
+                      'grid grid-cols-2 text-center',
+                      isPhysical ? 'bg-yellow-600/15' : 'bg-emerald-900/15'
+                    )}
+                  >
                     <span className="font-bold p-1">{key.toUpperCase()}</span>
                     <span className="p-1">{value}</span>
                   </div>
@@ -155,13 +158,14 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
                     <div className="flex-1">SAVE</div>
                   </div> */}
                   {/* MOD/SAVE values */}
-                  <div className={cn("grid grid-cols-2 text-center", isPhysical ? "bg-orange-900/15" : "bg-indigo-900/15")}>
-                    <div className="p-1">
-                      {formatModifier(mod)}
-                    </div>
-                    <div className="p-1">
-                      {save}
-                    </div>
+                  <div
+                    className={cn(
+                      'grid grid-cols-2 text-center',
+                      isPhysical ? 'bg-orange-900/15' : 'bg-indigo-900/15'
+                    )}
+                  >
+                    <div className="p-1">{formatModifier(mod)}</div>
+                    <div className="p-1">{save}</div>
                   </div>
                 </div>
               );
@@ -174,32 +178,31 @@ export function DnD5e2024Renderer({ data, className }: DnD5e2024RendererProps) {
           {data.skills && data.skills.length > 0 && (
             <StatLine label="Skills">{data.skills.join(', ')}</StatLine>
           )}
-          {data.resistances && (
-            <StatLine label="Resistances">{data.resistances}</StatLine>
-          )}
+          {data.resistances && <StatLine label="Resistances">{data.resistances}</StatLine>}
           {data.vulnerabilities && (
             <StatLine label="Vulnerabilities">{data.vulnerabilities}</StatLine>
           )}
-          {data.immunities && (
-            <StatLine label="Immunities">{data.immunities}</StatLine>
-          )}
-          {data.gear && (
-            <StatLine label="Gear">{data.gear}</StatLine>
-          )}
+          {data.immunities && <StatLine label="Immunities">{data.immunities}</StatLine>}
+          {data.gear && <StatLine label="Gear">{data.gear}</StatLine>}
           {data.senses && <StatLine label="Senses">{data.senses}</StatLine>}
           {data.languages && <StatLine label="Languages">{data.languages}</StatLine>}
           <StatLine label="CR">
             {data.challengeRating}
-            {data.experiencePoints && ` (XP ${data.experiencePoints.toLocaleString()}; PB ${formatModifier(proficiencyBonus)})`}
+            {data.experiencePoints &&
+              ` (XP ${data.experiencePoints.toLocaleString()}; PB ${formatModifier(proficiencyBonus)})`}
           </StatLine>
         </div>
 
-        {/* Actions sections */}
-        <TraitSection title="Traits" entries={data.traits} />
-        <TraitSection title="Actions" entries={data.actions} />
-        <TraitSection title="Bonus Actions" entries={data.bonusActions} />
-        <TraitSection title="Reactions" entries={data.reactions} />
-        <TraitSection title="Legendary Actions" entries={data.legendaryActions} />
+        {/* Trait/action sections */}
+        <MarkdownSection title="Traits" content={data.traits} />
+        <MarkdownSection title="Actions" content={data.actions} />
+        <MarkdownSection title="Bonus Actions" content={data.bonusActions} />
+        <MarkdownSection title="Reactions" content={data.reactions} />
+        <MarkdownSection
+          title="Legendary Actions"
+          content={data.legendaryActions}
+          preamble={data.legendaryActionsPreamble}
+        />
 
         {/* Description/Lore */}
         {data.description && (

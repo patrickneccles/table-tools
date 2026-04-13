@@ -12,9 +12,6 @@
     "abilityScores": { "str": 1, "dex": -1, "con": 0, "int": -1, "wis": 2, "cha": 0 },
     "alignment": "C",
     "level": 2,
-    "features": [
-      { "name": "Fearless", "description": "Immune to morale checks." },
-      { "name": "Deathtouch (WIS Spell)", "description": "DC 12. 2d4 damage to one creature within close." }
-    ]
+    "features": "**Fearless.** Immune to morale checks.\n\n**Deathtouch (WIS Spell).** DC 12. 2d4 damage to one creature within close."
   }
 }

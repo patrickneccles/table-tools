@@ -19,11 +19,7 @@
     "languages": "any one language (usually Common)",
     "challengeRating": "1/8",
     "experiencePoints": 25,
-    "traits": [
-      { "name": "Dark Devotion", "description": "The cultist has advantage on saving throws against being charmed or frightened." }
-    ],
-    "actions": [
-      { "name": "Scimitar", "description": "Melee Weapon Attack: +3 to hit, reach 5 ft., one creature. Hit: 4 (1d6 + 1) slashing damage." }
-    ]
+    "traits": "**Dark Devotion.** The cultist has advantage on saving throws against being charmed or frightened.",
+    "actions": "**Scimitar.** *Melee Weapon Attack:* +3 to hit, reach 5 ft., one creature. *Hit:* 4 (1d6 + 1) slashing damage."
   }
 }

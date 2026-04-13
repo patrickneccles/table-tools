@@ -3,12 +3,13 @@
  * Renders a D&D 5e 2014 edition stat block in the classic style
  */
 
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import React from "react";
-import type { DnD5e2014Data, TraitEntry } from "./types";
-import { ABILITY_KEYS, calculateModifier, formatModifier } from "./types";
+import { cn } from '@/lib/utils';
+import React from 'react';
+import { MarkdownContent } from '@/components/ui/markdown-content';
+import type { DnD5e2014Data } from './types';
+import { ABILITY_KEYS, calculateModifier, formatModifier } from './types';
 
 // ============================================================================
 // Internal Sub-Components
@@ -17,7 +18,12 @@ import { ABILITY_KEYS, calculateModifier, formatModifier } from "./types";
 /** Tapered divider line SVG (from D&D Beyond) */
 function TaperedDivider() {
   return (
-    <svg viewBox="0 0 226.08 4" className="w-full h-[4px] my-2" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+    <svg
+      viewBox="0 0 226.08 4"
+      className="w-full h-[4px] my-2"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="none"
+    >
       <path fill="#822000" d="M0,4 C5.76,3 226.08,1.5 226.08,1.5 S5.76,1 0,0 Z" />
     </svg>
   );
@@ -26,61 +32,47 @@ function TaperedDivider() {
 /** Decorative amber textured bar with black borders */
 function DecorativeBar() {
   return (
-    <div className="h-2 border-t border-b border-black" style={{
-      background: "linear-gradient(135deg, #d4a574 0%, #c9934a 25%, #e6c896 50%, #b8884a 75%, #d4a574 100%)"
-    }} />
+    <div
+      className="h-2 border-t border-b border-black"
+      style={{
+        background:
+          'linear-gradient(135deg, #d4a574 0%, #c9934a 25%, #e6c896 50%, #b8884a 75%, #d4a574 100%)',
+      }}
+    />
   );
 }
 
 /** Renders a labeled stat line (e.g., "Armor Class 15") */
 function StatLine({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <p style={{ color: "#822000" }}>
+    <p style={{ color: '#822000' }}>
       <span className="font-bold">{label}</span> {children}
     </p>
   );
 }
 
-/** Renders a single trait entry with bold italic name */
-function TraitItem({ trait }: { trait: TraitEntry }) {
-  return (
-    <p className="text-stone-900">
-      <span className="font-bold italic">{trait.name}.</span>{" "}
-      <span className="whitespace-pre-wrap">{trait.description}</span>
-    </p>
-  );
-}
-
-/** Renders a section of traits/actions with optional heading */
-function TraitSection({
+/** Renders a named section with optional heading and markdown content */
+function MarkdownSection({
   title,
-  entries,
-  showHeading = true
+  content,
+  showHeading = true,
 }: {
   title: string;
-  entries: TraitEntry[] | undefined;
+  content: string | undefined;
   showHeading?: boolean;
 }) {
-  if (!entries || entries.length === 0) return null;
-
+  if (!content) return null;
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {showHeading && (
-        <>
-          <h3 className="text-lg font-bold tracking-wide border-b border-solid" style={{
-            borderColor: "#822000",
-            color: "#822000",
-            fontVariant: "small-caps"
-          }}>
-            {title}
-          </h3>
-        </>
+        <h3
+          className="text-lg font-bold tracking-wide border-b border-solid"
+          style={{ borderColor: '#822000', color: '#822000', fontVariant: 'small-caps' }}
+        >
+          {title}
+        </h3>
       )}
-      <div className="space-y-2 text-sm">
-        {entries.map((entry, i) => (
-          <TraitItem key={i} trait={entry} />
-        ))}
-      </div>
+      <MarkdownContent content={content} className="text-sm text-stone-900" />
     </div>
   );
 }
@@ -97,22 +89,20 @@ export function DnD5e2014Renderer({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "bg-amber-50 shadow-lg font-serif text-stone-900 max-w-md",
-        className
-      )}
-    >
+    <div className={cn('bg-amber-50 shadow-lg font-serif text-stone-900 max-w-md', className)}>
       {/* Decorative top bar */}
       <DecorativeBar />
 
       <div className="p-4 space-y-3">
         {/* Name & Type */}
         <div>
-          <h2 className="text-2xl font-bold" style={{
-            color: "#822000",
-            fontVariant: "small-caps"
-          }}>
+          <h2
+            className="text-2xl font-bold"
+            style={{
+              color: '#822000',
+              fontVariant: 'small-caps',
+            }}
+          >
             {data.name}
           </h2>
           <p className="text-sm italic">
@@ -125,7 +115,8 @@ export function DnD5e2014Renderer({
         {/* Combat Stats */}
         <div className="space-y-1 text-sm">
           <StatLine label="Armor Class">
-            {data.armorClass}{data.armorType && ` (${data.armorType})`}
+            {data.armorClass}
+            {data.armorType && ` (${data.armorType})`}
           </StatLine>
           <StatLine label="Hit Points">
             {data.hitPoints} ({data.hitDice})
@@ -136,17 +127,16 @@ export function DnD5e2014Renderer({
         <TaperedDivider />
 
         {/* Ability Scores - 2014 single row */}
-        <div
-          className="grid grid-cols-6 gap-2 text-center text-sm"
-          style={{ color: "#822000" }}
-        >
+        <div className="grid grid-cols-6 gap-2 text-center text-sm" style={{ color: '#822000' }}>
           {ABILITY_KEYS.map((key) => {
             const value = data.abilityScores?.[key] ?? 10;
             const mod = calculateModifier(value);
             return (
               <div key={key}>
                 <div className="font-bold">{key.toUpperCase()}</div>
-                <div>{value} ({formatModifier(mod)})</div>
+                <div>
+                  {value} ({formatModifier(mod)})
+                </div>
               </div>
             );
           })}
@@ -157,10 +147,10 @@ export function DnD5e2014Renderer({
         {/* Proficiencies & Senses */}
         <div className="space-y-1 text-sm">
           {data.savingThrows && data.savingThrows.length > 0 && (
-            <StatLine label="Saving Throws">{data.savingThrows.join(", ")}</StatLine>
+            <StatLine label="Saving Throws">{data.savingThrows.join(', ')}</StatLine>
           )}
           {data.skills && data.skills.length > 0 && (
-            <StatLine label="Skills">{data.skills.join(", ")}</StatLine>
+            <StatLine label="Skills">{data.skills.join(', ')}</StatLine>
           )}
           {data.damageVulnerabilities && (
             <StatLine label="Damage Vulnerabilities">{data.damageVulnerabilities}</StatLine>
@@ -184,19 +174,14 @@ export function DnD5e2014Renderer({
 
         <TaperedDivider />
 
-
         {/* Traits (no heading) */}
-        <TraitSection title="Traits" entries={data.traits} showHeading={false} />
+        <MarkdownSection title="Traits" content={data.traits} showHeading={false} />
 
-        {/* Actions sections */}
-        <TraitSection title="Actions" entries={data.actions} />
-        <TraitSection title="Bonus Actions" entries={data.bonusActions} />
-        <TraitSection title="Reactions" entries={data.reactions} />
-
-        {/* Legendary Actions (if any) */}
-        {data.legendaryActions && data.legendaryActions.length > 0 && (
-          <TraitSection title="Legendary Actions" entries={data.legendaryActions} />
-        )}
+        {/* Action sections */}
+        <MarkdownSection title="Actions" content={data.actions} />
+        <MarkdownSection title="Bonus Actions" content={data.bonusActions} />
+        <MarkdownSection title="Reactions" content={data.reactions} />
+        <MarkdownSection title="Legendary Actions" content={data.legendaryActions} />
       </div>
 
       {/* Decorative bottom bar */}

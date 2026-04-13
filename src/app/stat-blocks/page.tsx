@@ -10,7 +10,6 @@ import type {
   DnD5e2014Data,
   DnD5e2024Data,
   StatBlockTemplate,
-  TraitSectionKey,
 } from '@/components/stat-block';
 import {
   DEFAULT_SYSTEM_ID,
@@ -19,7 +18,6 @@ import {
   saveStatBlockToStorage,
   SystemSelector,
   SystemStatBlockView,
-  TraitEditor,
 } from '@/components/stat-block';
 import { resolveSystem, saveActiveSystem, useActiveSystem } from '@/lib/active-system';
 import {
@@ -153,52 +151,6 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
     [setStatBlock]
   );
 
-  const addTrait = useCallback(
-    (section: TraitSectionKey) => {
-      setStatBlock((prev) => {
-        const sectionData = prev[section as keyof T];
-        if (Array.isArray(sectionData)) {
-          return {
-            ...prev,
-            [section]: [...sectionData, { name: 'New Entry', description: 'Description here...' }],
-          };
-        }
-        return prev;
-      });
-    },
-    [setStatBlock]
-  );
-
-  const updateTrait = useCallback(
-    (section: TraitSectionKey, index: number, field: 'name' | 'description', value: string) => {
-      setStatBlock((prev) => {
-        const sectionData = prev[section as keyof T];
-        if (Array.isArray(sectionData)) {
-          const current = [...sectionData];
-          current[index] = { ...current[index], [field]: value };
-          return { ...prev, [section]: current };
-        }
-        return prev;
-      });
-    },
-    [setStatBlock]
-  );
-
-  const removeTrait = useCallback(
-    (section: TraitSectionKey, index: number) => {
-      setStatBlock((prev) => {
-        const sectionData = prev[section as keyof T];
-        if (Array.isArray(sectionData)) {
-          const current = [...sectionData];
-          current.splice(index, 1);
-          return { ...prev, [section]: current };
-        }
-        return prev;
-      });
-    },
-    [setStatBlock]
-  );
-
   const loadTemplate = useCallback(
     (template: StatBlockTemplate) => {
       setStatBlock({ ...template.data } as T);
@@ -211,9 +163,6 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T) {
     saveStatus,
     updateField,
     updateAbility,
-    addTrait,
-    updateTrait,
-    removeTrait,
     loadTemplate,
     setStatBlock,
     // History management
@@ -249,9 +198,6 @@ export default function StatBlocksPage() {
     statBlock,
     saveStatus,
     updateField,
-    addTrait,
-    updateTrait,
-    removeTrait,
     loadTemplate,
     setStatBlock,
     undo,
@@ -558,25 +504,6 @@ export default function StatBlocksPage() {
                   onBlur={() => setTimeout(() => captureSnapshot(), 0)}
                   isLightMode={isLightMode}
                 />
-
-                {/* Trait/Feature Sections (dynamically loaded from system schema) */}
-                {currentSystem?.schema.traitSections?.map((section) => (
-                  <TraitEditor
-                    key={section}
-                    section={section as TraitSectionKey}
-                    entries={
-                      section in statBlock && Array.isArray(statBlock[section])
-                        ? statBlock[section]
-                        : []
-                    }
-                    onAdd={() => addTrait(section as TraitSectionKey)}
-                    onUpdate={(index, field, value) =>
-                      updateTrait(section as TraitSectionKey, index, field, value)
-                    }
-                    onRemove={(index) => removeTrait(section as TraitSectionKey, index)}
-                    isLightMode={isLightMode}
-                  />
-                ))}
               </div>
             </div>
           </ErrorBoundary>

@@ -12,10 +12,6 @@
     "abilityScores": { "str": 4, "dex": -1, "con": 3, "int": 4, "wis": 2, "cha": 2 },
     "alignment": "C",
     "level": 8,
-    "features": [
-      { "name": "Curse", "description": "DC 15 CON or target gains a magical curse, turning into a deep one over 2d10 days." },
-      { "name": "Enslave", "description": "In place of attacks, one creature within far DC 15 WIS or aboleth controls for 1d4 rounds." },
-      { "name": "Telepathic", "description": "Read the thoughts of all creatures within far." }
-    ]
+    "features": "**Curse.** DC 15 CON or target gains a magical curse, turning into a deep one over 2d10 days.\n\n**Enslave.** In place of attacks, one creature within far DC 15 WIS or aboleth controls for 1d4 rounds.\n\n**Telepathic.** Read the thoughts of all creatures within far."
   }
 }

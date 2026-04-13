@@ -12,8 +12,6 @@
     "abilityScores": { "str": 3, "dex": 2, "con": 2, "int": -1, "wis": 0, "cha": -1 },
     "alignment": "C",
     "level": 5,
-    "features": [
-      { "name": "Regenerate", "description": "Regains 2d6 HP on its turn unless its wounds are cauterized with fire or acid." }
-    ]
+    "features": "**Regenerate.** Regains 2d6 HP on its turn unless its wounds are cauterized with fire or acid."
   }
 }

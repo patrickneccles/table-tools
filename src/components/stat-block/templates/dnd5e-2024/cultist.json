@@ -22,8 +22,7 @@
     "experiencePoints": 25,
     "proficiencyBonus": 2,
     "gear": "Leather Armor, Sickle",
-    "actions": [
-      { "name": "Ritual Sickle", "description": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 1 Necrotic damage." }
-    ]
+    "traits": "",
+    "actions": "**Ritual Sickle.** *Melee Attack Roll:* +3, reach 5 ft. *Hit:* 3 (1d4 + 1) Slashing damage plus 1 Necrotic damage."
   }
 }

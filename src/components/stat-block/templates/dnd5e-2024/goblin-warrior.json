@@ -23,13 +23,8 @@
     "challengeRating": "1/4",
     "experiencePoints": 50,
     "proficiencyBonus": 2,
-    "traits": [],
-    "actions": [
-      { "name": "Scimitar", "description": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Slashing damage, plus 2 (1d4) Slashing damage if the attack roll had Advantage." },
-      { "name": "Shortbow", "description": "Ranged Attack Roll: +4, range 80/320 ft. Hit: 5 (1d6 + 2) Piercing damage, plus 2 (1d4) Piercing damage if the attack roll had Advantage." }
-    ],
-    "bonusActions": [
-      { "name": "Nimble Escape", "description": "The goblin takes the Disengage or Hide action." }
-    ]
+    "traits": "",
+    "actions": "**Scimitar.** *Melee Attack Roll:* +4, reach 5 ft. *Hit:* 5 (1d6 + 2) Slashing damage, plus 2 (1d4) Slashing damage if the attack roll had Advantage.\n\n**Shortbow.** *Ranged Attack Roll:* +4, range 80/320 ft. *Hit:* 5 (1d6 + 2) Piercing damage, plus 2 (1d4) Piercing damage if the attack roll had Advantage.",
+    "bonusActions": "**Nimble Escape.** The goblin takes the Disengage or Hide action."
   }
 }

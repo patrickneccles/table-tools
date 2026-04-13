@@ -6,6 +6,11 @@ import type { StatBlockSystem } from '../base-system';
 import type { DnD5e2024Data } from './types';
 import { DnD5e2024Renderer } from './renderer';
 
+const TRAIT_PLACEHOLDER =
+  '**Feature Name.** Description of the feature.\n\n**Another Feature.** Description here.';
+const ACTION_PLACEHOLDER =
+  '**Multiattack.** The creature makes two attacks.\n\n**Strike.** *Melee Attack Roll:* +5, reach 5 ft. *Hit:* 7 (1d8 + 3) Bludgeoning damage.';
+
 export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
   schema: {
     metadata: {
@@ -28,6 +33,11 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
       challengeRating: '0',
       experiencePoints: 10,
       proficiencyBonus: 2,
+      traits: '',
+      actions: '',
+      bonusActions: '',
+      reactions: '',
+      legendaryActions: '',
     },
     sections: [
       {
@@ -142,6 +152,66 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
         ],
       },
       {
+        key: 'traits',
+        title: 'Traits',
+        fields: [
+          { key: 'traits', label: 'Traits', type: 'markdown', placeholder: TRAIT_PLACEHOLDER },
+        ],
+      },
+      {
+        key: 'actions',
+        title: 'Actions',
+        fields: [
+          { key: 'actions', label: 'Actions', type: 'markdown', placeholder: ACTION_PLACEHOLDER },
+        ],
+      },
+      {
+        key: 'bonusActions',
+        title: 'Bonus Actions',
+        defaultCollapsed: true,
+        fields: [
+          {
+            key: 'bonusActions',
+            label: 'Bonus Actions',
+            type: 'markdown',
+            placeholder: TRAIT_PLACEHOLDER,
+          },
+        ],
+      },
+      {
+        key: 'reactions',
+        title: 'Reactions',
+        defaultCollapsed: true,
+        fields: [
+          {
+            key: 'reactions',
+            label: 'Reactions',
+            type: 'markdown',
+            placeholder: TRAIT_PLACEHOLDER,
+          },
+        ],
+      },
+      {
+        key: 'legendaryActions',
+        title: 'Legendary Actions',
+        defaultCollapsed: true,
+        fields: [
+          {
+            key: 'legendaryActionsPreamble',
+            label: 'Preamble',
+            type: 'textarea',
+            placeholder:
+              "e.g., Legendary Action Uses: 3 (4 in Lair). Immediately after another creature's turn, the creature can expend a use to take one of the following actions...",
+          },
+          {
+            key: 'legendaryActions',
+            label: 'Actions',
+            type: 'markdown',
+            placeholder: TRAIT_PLACEHOLDER,
+          },
+        ],
+      },
+      {
         key: 'description',
         title: 'Description',
         defaultCollapsed: true,
@@ -155,7 +225,6 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
         ],
       },
     ],
-    traitSections: ['traits', 'actions', 'bonusActions', 'reactions', 'legendaryActions'],
   },
   Renderer: DnD5e2024Renderer,
 };
