@@ -80,6 +80,7 @@ export const shadowdarkSystem: StatBlockSystem<ShadowdarkData> = {
             type: 'markdown',
             placeholder:
               "**Keen Senses.** Can't be surprised.\n\n**Fearless.** Immune to morale checks.",
+            insertTemplates: [{ label: 'Feature', template: '**Name.** Description.' }],
           },
         ],
       },

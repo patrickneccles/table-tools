@@ -2,12 +2,20 @@
 
 import { useRef } from 'react';
 import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { Bold, Italic, Table } from 'lucide-react';
+import { Bold, ChevronDown, Italic, Plus, Table } from 'lucide-react';
 
 const TABLE_TEMPLATE = `| Header | Header |
 | ------ | ------ |
 | Cell   | Cell   |`;
+
+type InsertTemplate = { label: string; template: string };
 
 type Props = {
   id?: string;
@@ -17,6 +25,7 @@ type Props = {
   onBlur?: () => void;
   placeholder?: string;
   isLightMode: boolean;
+  insertTemplates?: InsertTemplate[];
 };
 
 /**
@@ -85,8 +94,12 @@ export function MarkdownEditor({
   onBlur,
   placeholder,
   isLightMode,
+  insertTemplates,
 }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null);
+  // Persists cursor position so inserts work even after focus leaves the textarea
+  // (e.g. when opening a dropdown menu)
+  const cursorRef = useRef<number>(0);
 
   function applyFormat(prefix: string, suffix: string) {
     const ta = ref.current;
@@ -97,6 +110,32 @@ export function MarkdownEditor({
     requestAnimationFrame(() => {
       ta.focus();
       ta.setSelectionRange(cursorStart, cursorEnd);
+    });
+  }
+
+  function insertSnippet(snippet: string) {
+    const at = cursorRef.current;
+    const before = value.slice(0, at);
+    const after = value.slice(at);
+    const sep = before.length > 0 && !before.endsWith('\n') ? '\n\n' : '';
+    const trail = after.length > 0 && !after.startsWith('\n') ? '\n\n' : '';
+    const inserted = sep + snippet;
+    onChange(before + inserted + trail + after);
+
+    // Select the name placeholder inside the first **Name.** pair so the user
+    // can immediately type to replace it.
+    requestAnimationFrame(() => {
+      const ta = ref.current;
+      if (!ta) return;
+      ta.focus();
+      const insertStart = before.length + sep.length;
+      const nameMatch = /\*\*([^*.]+)\.\*\*/.exec(snippet);
+      if (nameMatch) {
+        const nameStart = insertStart + nameMatch.index + 2; // skip opening **
+        ta.setSelectionRange(nameStart, nameStart + nameMatch[1].length);
+      } else {
+        ta.setSelectionRange(insertStart, insertStart + snippet.length);
+      }
     });
   }
 
@@ -127,6 +166,13 @@ export function MarkdownEditor({
 
   const toolbarBtn = cn(
     'rounded p-1 transition-colors',
+    isLightMode
+      ? 'text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800'
+      : 'text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100'
+  );
+
+  const insertBtnCls = cn(
+    'flex items-center gap-1 rounded px-1.5 py-1 text-[10px] font-medium transition-colors',
     isLightMode
       ? 'text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800'
       : 'text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100'
@@ -188,6 +234,43 @@ export function MarkdownEditor({
             <Table className="h-3.5 w-3.5" />
             <span className="text-[10px]">Table</span>
           </button>
+
+          {/* Insert templates */}
+          {insertTemplates && insertTemplates.length > 0 && (
+            <>
+              <div className={cn('w-px h-3.5 mx-1', isLightMode ? 'bg-zinc-300' : 'bg-zinc-600')} />
+              {insertTemplates.length === 1 ? (
+                <button
+                  type="button"
+                  className={insertBtnCls}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    insertSnippet(insertTemplates[0].template);
+                  }}
+                >
+                  <Plus className="h-3 w-3" />
+                  {insertTemplates[0].label}
+                </button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button type="button" className={insertBtnCls}>
+                      <Plus className="h-3 w-3" />
+                      Insert
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[160px]">
+                    {insertTemplates.map((t) => (
+                      <DropdownMenuItem key={t.label} onSelect={() => insertSnippet(t.template)}>
+                        {t.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </>
+          )}
         </div>
 
         {/* Textarea */}
@@ -198,6 +281,15 @@ export function MarkdownEditor({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={onBlur}
+          onSelect={(e) => {
+            cursorRef.current = e.currentTarget.selectionEnd;
+          }}
+          onMouseUp={(e) => {
+            cursorRef.current = e.currentTarget.selectionEnd;
+          }}
+          onKeyUp={(e) => {
+            cursorRef.current = e.currentTarget.selectionEnd;
+          }}
           placeholder={placeholder}
           rows={6}
           className={cn(

@@ -143,6 +143,7 @@ function DynamicField<T extends BaseStatBlockData>({
           onBlur={onBlur}
           placeholder={field.placeholder}
           isLightMode={isLightMode}
+          insertTemplates={field.insertTemplates}
         />
       );
     }

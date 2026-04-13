@@ -11,6 +11,24 @@ const TRAIT_PLACEHOLDER =
 const ACTION_PLACEHOLDER =
   '**Multiattack.** The creature makes two attacks.\n\n**Strike.** *Melee Attack Roll:* +5, reach 5 ft. *Hit:* 7 (1d8 + 3) Bludgeoning damage.';
 
+const FEATURE_TEMPLATE = { label: 'Feature', template: '**Name.** Description.' };
+const ACTION_TEMPLATES = [
+  FEATURE_TEMPLATE,
+  {
+    label: 'Melee Attack',
+    template: '**Name.** *Melee Attack Roll:* +X, reach X ft. *Hit:* X (XdX + X) Type damage.',
+  },
+  {
+    label: 'Ranged Attack',
+    template: '**Name.** *Ranged Attack Roll:* +X, range X/X ft. *Hit:* X (XdX + X) Type damage.',
+  },
+  {
+    label: 'Saving Throw',
+    template:
+      '**Name.** *[Ability] Saving Throw:* DC X, one target. *Failure:* Effect. *Success:* Half damage.',
+  },
+];
+
 export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
   schema: {
     metadata: {
@@ -155,14 +173,26 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
         key: 'traits',
         title: 'Traits',
         fields: [
-          { key: 'traits', label: 'Traits', type: 'markdown', placeholder: TRAIT_PLACEHOLDER },
+          {
+            key: 'traits',
+            label: 'Traits',
+            type: 'markdown',
+            placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: [FEATURE_TEMPLATE],
+          },
         ],
       },
       {
         key: 'actions',
         title: 'Actions',
         fields: [
-          { key: 'actions', label: 'Actions', type: 'markdown', placeholder: ACTION_PLACEHOLDER },
+          {
+            key: 'actions',
+            label: 'Actions',
+            type: 'markdown',
+            placeholder: ACTION_PLACEHOLDER,
+            insertTemplates: ACTION_TEMPLATES,
+          },
         ],
       },
       {
@@ -175,6 +205,7 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
             label: 'Bonus Actions',
             type: 'markdown',
             placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: ACTION_TEMPLATES,
           },
         ],
       },
@@ -188,6 +219,7 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
             label: 'Reactions',
             type: 'markdown',
             placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: [FEATURE_TEMPLATE],
           },
         ],
       },
@@ -208,6 +240,7 @@ export const dnd5e2024System: StatBlockSystem<DnD5e2024Data> = {
             label: 'Actions',
             type: 'markdown',
             placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: [FEATURE_TEMPLATE],
           },
         ],
       },

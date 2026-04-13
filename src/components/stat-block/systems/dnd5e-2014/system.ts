@@ -11,6 +11,21 @@ const TRAIT_PLACEHOLDER =
 const ACTION_PLACEHOLDER =
   '**Multiattack.** The creature makes two attacks.\n\n**Strike.** *Melee Weapon Attack:* +5 to hit, reach 5 ft., one target. *Hit:* 7 (1d8 + 3) bludgeoning damage.';
 
+const FEATURE_TEMPLATE = { label: 'Feature', template: '**Name.** Description.' };
+const ACTION_TEMPLATES = [
+  FEATURE_TEMPLATE,
+  {
+    label: 'Melee Attack',
+    template:
+      '**Name.** *Melee Weapon Attack:* +X to hit, reach X ft., one target. *Hit:* X (XdX + X) type damage.',
+  },
+  {
+    label: 'Ranged Attack',
+    template:
+      '**Name.** *Ranged Weapon Attack:* +X to hit, range X/X ft., one target. *Hit:* X (XdX + X) type damage.',
+  },
+];
+
 export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
   schema: {
     metadata: {
@@ -156,14 +171,26 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
         key: 'traits',
         title: 'Traits',
         fields: [
-          { key: 'traits', label: 'Traits', type: 'markdown', placeholder: TRAIT_PLACEHOLDER },
+          {
+            key: 'traits',
+            label: 'Traits',
+            type: 'markdown',
+            placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: [FEATURE_TEMPLATE],
+          },
         ],
       },
       {
         key: 'actions',
         title: 'Actions',
         fields: [
-          { key: 'actions', label: 'Actions', type: 'markdown', placeholder: ACTION_PLACEHOLDER },
+          {
+            key: 'actions',
+            label: 'Actions',
+            type: 'markdown',
+            placeholder: ACTION_PLACEHOLDER,
+            insertTemplates: ACTION_TEMPLATES,
+          },
         ],
       },
       {
@@ -176,6 +203,7 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
             label: 'Bonus Actions',
             type: 'markdown',
             placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: ACTION_TEMPLATES,
           },
         ],
       },
@@ -189,6 +217,7 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
             label: 'Reactions',
             type: 'markdown',
             placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: [FEATURE_TEMPLATE],
           },
         ],
       },
@@ -202,6 +231,7 @@ export const dnd5e2014System: StatBlockSystem<DnD5e2014Data> = {
             label: 'Legendary Actions',
             type: 'markdown',
             placeholder: TRAIT_PLACEHOLDER,
+            insertTemplates: [FEATURE_TEMPLATE],
           },
         ],
       },

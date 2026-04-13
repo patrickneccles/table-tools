@@ -46,6 +46,8 @@ export type FieldDefinition = {
   helpText?: string;
   /** Whether this field should be displayed */
   visible?: boolean;
+  /** Insert templates for markdown fields — shown as toolbar buttons/dropdown */
+  insertTemplates?: Array<{ label: string; template: string }>;
 };
 
 /**
