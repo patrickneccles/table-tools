@@ -11,7 +11,6 @@ export type DnD5e2024SpellData = {
   duration: string;
   classes: string;
   description: string;
-  atHigherLevels: string;
   source: string;
 };
 

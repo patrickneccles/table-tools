@@ -1,0 +1,213 @@
+'use client';
+
+import { useRef } from 'react';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { Bold, Italic, Table } from 'lucide-react';
+
+const TABLE_TEMPLATE = `| Header | Header |
+| ------ | ------ |
+| Cell   | Cell   |`;
+
+type Props = {
+  id?: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  isLightMode: boolean;
+};
+
+/**
+ * Wraps or unwraps a selection with a markdown marker pair.
+ *
+ * Unwrap is triggered in two cases:
+ *   1. The selection itself includes the markers (e.g. user selected "**foo**")
+ *   2. The markers sit just outside the selection (e.g. cursor is inside *foo*)
+ *
+ * The inner-character check (selected[pl] !== markerChar) prevents matching a
+ * longer marker — so italic (*) won't accidentally strip one layer from bold (**).
+ */
+function toggleMarker(
+  value: string,
+  start: number,
+  end: number,
+  prefix: string,
+  suffix: string
+): { next: string; cursorStart: number; cursorEnd: number } {
+  const pl = prefix.length;
+  const sl = suffix.length;
+  const markerChar = prefix[pl - 1];
+
+  if (start === end) {
+    // No selection — insert empty markers and place cursor between them
+    const next = value.slice(0, start) + prefix + suffix + value.slice(start);
+    const pos = start + pl;
+    return { next, cursorStart: pos, cursorEnd: pos };
+  }
+
+  const selected = value.slice(start, end);
+
+  // Case 1: selection wraps the markers (e.g. user selected "**foo**")
+  if (
+    selected.length > pl + sl &&
+    selected.startsWith(prefix) &&
+    selected.endsWith(suffix) &&
+    selected[pl] !== markerChar &&
+    selected[selected.length - sl - 1] !== markerChar
+  ) {
+    const inner = selected.slice(pl, selected.length - sl);
+    const next = value.slice(0, start) + inner + value.slice(end);
+    return { next, cursorStart: start, cursorEnd: start + inner.length };
+  }
+
+  // Case 2: markers sit just outside the current selection
+  if (
+    start >= pl &&
+    value.slice(start - pl, start) === prefix &&
+    value.slice(end, end + sl) === suffix
+  ) {
+    const next = value.slice(0, start - pl) + selected + value.slice(end + sl);
+    return { next, cursorStart: start - pl, cursorEnd: start - pl + selected.length };
+  }
+
+  // Default: wrap
+  const next = value.slice(0, start) + prefix + selected + suffix + value.slice(end);
+  return { next, cursorStart: start + pl, cursorEnd: start + pl + selected.length };
+}
+
+export function MarkdownEditor({
+  id,
+  label,
+  value,
+  onChange,
+  onBlur,
+  placeholder,
+  isLightMode,
+}: Props) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  function applyFormat(prefix: string, suffix: string) {
+    const ta = ref.current;
+    if (!ta) return;
+    const { selectionStart: start, selectionEnd: end } = ta;
+    const { next, cursorStart, cursorEnd } = toggleMarker(value, start, end, prefix, suffix);
+    onChange(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(cursorStart, cursorEnd);
+    });
+  }
+
+  function insertTable() {
+    const ta = ref.current;
+    if (!ta) return;
+    const at = ta.selectionEnd;
+    const before = value.slice(0, at);
+    const sep = before.length > 0 && !before.endsWith('\n') ? '\n\n' : '';
+    const insert = sep + TABLE_TEMPLATE + '\n';
+    onChange(before + insert + value.slice(at));
+    requestAnimationFrame(() => ta.focus());
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    const mod = e.metaKey || e.ctrlKey;
+    if (!mod) return;
+    if (e.key === 'b' || e.key === 'B') {
+      e.preventDefault();
+      e.stopPropagation();
+      applyFormat('**', '**');
+    } else if (e.key === 'i' || e.key === 'I') {
+      e.preventDefault();
+      e.stopPropagation();
+      applyFormat('*', '*');
+    }
+  }
+
+  const toolbarBtn = cn(
+    'rounded p-1 transition-colors',
+    isLightMode
+      ? 'text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800'
+      : 'text-zinc-400 hover:bg-zinc-700 hover:text-zinc-100'
+  );
+
+  return (
+    <div>
+      <Label
+        htmlFor={id}
+        className={cn('text-xs transition-colors', isLightMode ? 'text-zinc-600' : 'text-zinc-400')}
+      >
+        {label}
+      </Label>
+      <div
+        className={cn(
+          'mt-1 rounded-md border overflow-hidden',
+          isLightMode ? 'border-zinc-300' : 'border-zinc-700'
+        )}
+      >
+        {/* Toolbar */}
+        <div
+          className={cn(
+            'flex items-center gap-0.5 px-2 py-1 border-b',
+            isLightMode ? 'bg-zinc-50 border-zinc-300' : 'bg-zinc-800/80 border-zinc-700'
+          )}
+        >
+          <button
+            type="button"
+            title="Bold (⌘B)"
+            className={toolbarBtn}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              applyFormat('**', '**');
+            }}
+          >
+            <Bold className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            title="Italic (⌘I)"
+            className={toolbarBtn}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              applyFormat('*', '*');
+            }}
+          >
+            <Italic className="h-3.5 w-3.5" />
+          </button>
+          <div className={cn('w-px h-3.5 mx-1', isLightMode ? 'bg-zinc-300' : 'bg-zinc-600')} />
+          <button
+            type="button"
+            title="Insert table"
+            className={cn(toolbarBtn, 'flex items-center gap-1 pr-2')}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              insertTable();
+            }}
+          >
+            <Table className="h-3.5 w-3.5" />
+            <span className="text-[10px]">Table</span>
+          </button>
+        </div>
+
+        {/* Textarea */}
+        <textarea
+          ref={ref}
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          rows={6}
+          className={cn(
+            'w-full resize-y bg-transparent px-3 py-2 text-sm leading-relaxed outline-none font-mono',
+            isLightMode
+              ? 'text-zinc-900 placeholder:text-zinc-400'
+              : 'text-zinc-100 placeholder:text-zinc-600'
+          )}
+        />
+      </div>
+    </div>
+  );
+}

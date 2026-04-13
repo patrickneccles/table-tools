@@ -10,7 +10,6 @@ export type GenericSpellData = {
   duration: string;
   classes: string;
   description: string;
-  atHigherLevels: string;
   source: string;
 };
 

@@ -1,6 +1,7 @@
 'use client';
 
 import type { SystemRendererProps } from '@/components/stat-block/systems/base-system';
+import { MarkdownContent } from '@/components/ui/markdown-content';
 import { cn } from '@/lib/utils';
 import type { DnD5e2024SpellData } from './types';
 import { spellLevelLabel } from './types';
@@ -34,19 +35,15 @@ export function DnD5e2024SpellRenderer({
     duration,
     classes,
     description,
-    atHigherLevels,
     source,
   } = data;
 
   const levelLabel = spellLevelLabel(level, school);
-  // 2024 PHB renamed this section
-  const higherLevelLabel =
-    level === 'cantrip' ? 'Cantrip Upgrade.' : 'Using a Higher-Level Spell Slot.';
 
   return (
     <div
       className={cn(
-        'bg-white font-serif text-stone-900 text-sm max-w-sm rounded-md shadow-lg',
+        'bg-white font-serif text-stone-900 text-sm w-sm rounded-md shadow-lg',
         className
       )}
       style={{ border: '3px double #64748b' }}
@@ -61,7 +58,8 @@ export function DnD5e2024SpellRenderer({
             {name || 'New Spell'}
           </h2>
           <p className="italic text-stone-900 mt-0.5">
-            {levelLabel}&nbsp;({classes})
+            {levelLabel}
+            {classes && ` (${classes})`}
           </p>
         </div>
 
@@ -74,15 +72,7 @@ export function DnD5e2024SpellRenderer({
         </div>
 
         {/* Description body */}
-        {description && <p className="whitespace-pre-wrap">{description}</p>}
-
-        {/* Higher-level scaling */}
-        {atHigherLevels && (
-          <p className="font-serif">
-            <span className="font-semibold italic">{higherLevelLabel} </span>
-            {atHigherLevels}
-          </p>
-        )}
+        <MarkdownContent content={description} />
 
         {/* Footer: classes + source */}
         {source && (

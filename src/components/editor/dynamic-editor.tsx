@@ -8,6 +8,7 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import {
   Select,
   SelectContent,
@@ -123,6 +124,19 @@ function DynamicField<T extends BaseStatBlockData>({
       );
     }
 
+    case 'markdown':
+      return (
+        <MarkdownEditor
+          id={field.key}
+          label={field.label}
+          value={typeof value === 'string' ? value : String(value ?? '')}
+          onChange={(v) => onFieldChange(field.key, v)}
+          onBlur={onBlur}
+          placeholder={field.placeholder}
+          isLightMode={isLightMode}
+        />
+      );
+
     case 'number':
       return (
         <div>
@@ -231,7 +245,10 @@ export function DynamicEditor<T extends BaseStatBlockData>({
                 key={field.key}
                 className={cn(
                   // Full width for textarea and certain fields
-                  field.type === 'textarea' || field.key === 'name' || field.key === 'description'
+                  field.type === 'textarea' ||
+                    field.type === 'markdown' ||
+                    field.key === 'name' ||
+                    field.key === 'description'
                     ? 'col-span-2'
                     : 'col-span-1'
                 )}

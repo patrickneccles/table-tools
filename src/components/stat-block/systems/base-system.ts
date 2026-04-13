@@ -30,7 +30,7 @@ export type FieldDefinition = {
   /** Display label */
   label: string;
   /** Field type */
-  type: 'text' | 'number' | 'textarea' | 'select' | 'checkbox' | 'multiselect';
+  type: 'text' | 'number' | 'textarea' | 'markdown' | 'select' | 'checkbox' | 'multiselect';
   /** Placeholder text (for text/textarea) */
   placeholder?: string;
   /** Options (for select/multiselect) */

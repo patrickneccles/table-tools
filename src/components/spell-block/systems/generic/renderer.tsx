@@ -1,6 +1,7 @@
 'use client';
 
 import type { SystemRendererProps } from '@/components/stat-block/systems/base-system';
+import { MarkdownContent } from '@/components/ui/markdown-content';
 import { cn } from '@/lib/utils';
 import type { GenericSpellData } from './types';
 import { spellLevelLabel } from './types';
@@ -30,7 +31,6 @@ export function GenericSpellRenderer({ data, className }: SystemRendererProps<Ge
     duration,
     classes,
     description,
-    atHigherLevels,
     source,
   } = data;
 
@@ -64,15 +64,7 @@ export function GenericSpellRenderer({ data, className }: SystemRendererProps<Ge
       <Divider />
 
       {/* Description */}
-      {description && <p className="leading-relaxed whitespace-pre-wrap">{description}</p>}
-
-      {/* At Higher Levels */}
-      {atHigherLevels && (
-        <p className="leading-relaxed">
-          <span className="font-semibold italic">At Higher Levels. </span>
-          {atHigherLevels}
-        </p>
-      )}
+      <MarkdownContent content={description} />
 
       {/* Footer */}
       {hasFooter && (

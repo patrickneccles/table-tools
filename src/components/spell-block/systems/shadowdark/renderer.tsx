@@ -1,6 +1,7 @@
 'use client';
 
 import type { SystemRendererProps } from '@/components/stat-block/systems/base-system';
+import { MarkdownContent } from '@/components/ui/markdown-content';
 import type { ShadowdarkSpellData } from './types';
 
 export function ShadowdarkSpellRenderer({ data }: SystemRendererProps<ShadowdarkSpellData>) {
@@ -30,7 +31,7 @@ export function ShadowdarkSpellRenderer({ data }: SystemRendererProps<Shadowdark
         )}
       </div>
 
-      {description && <p className="text-sm leading-snug whitespace-pre-wrap">{description}</p>}
+      <MarkdownContent content={description} className="text-sm leading-snug" />
     </div>
   );
 }

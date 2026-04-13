@@ -47,7 +47,15 @@ export const shadowdarkSpellSystem: StatBlockSystem<ShadowdarkSpellData> = {
       {
         key: 'description',
         title: 'Description',
-        fields: [{ key: 'description', label: 'Description', type: 'textarea' }],
+        fields: [
+          {
+            key: 'description',
+            label: 'Description',
+            type: 'markdown',
+            placeholder:
+              'Supports **bold**, *italic*, and tables.\n\n**Feature Name.** Description of the feature.',
+          },
+        ],
       },
     ],
   },

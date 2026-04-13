@@ -13,7 +13,6 @@ const DEFAULT_SPELL: GenericSpellData = {
   duration: 'Instantaneous',
   classes: '',
   description: '',
-  atHigherLevels: '',
   source: '',
 };
 
@@ -72,11 +71,12 @@ export const genericSpellSystem: StatBlockSystem<GenericSpellData> = {
         key: 'description',
         title: 'Description',
         fields: [
-          { key: 'description', label: 'Description', type: 'textarea' },
           {
-            key: 'atHigherLevels',
-            label: 'At Higher Levels / Cantrip Scaling',
-            type: 'textarea',
+            key: 'description',
+            label: 'Description',
+            type: 'markdown',
+            placeholder:
+              'Supports **bold**, *italic*, and tables.\n\n**Feature Name.** Description of the feature.',
           },
         ],
       },
