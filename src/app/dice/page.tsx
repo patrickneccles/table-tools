@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
+import { isToolEnabled } from '@/lib/feature-flags';
+import { WipPage } from '@/components/wip-page';
 import { cn } from '@/lib/utils';
 import { parseDiceExpression, DiceParseError } from '@/lib/dice-parser';
 import {
@@ -93,6 +95,7 @@ function StatCard({
 type RollDirection = 'over' | 'under';
 
 export default function DicePage() {
+  if (!isToolEnabled('dice')) return <WipPage toolName="Dice Probability" />;
   return (
     <Suspense>
       <DicePageContent />

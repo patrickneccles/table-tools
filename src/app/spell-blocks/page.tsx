@@ -34,6 +34,9 @@ import {
   uploadFile,
 } from '@/lib/file-system';
 import { cn } from '@/lib/utils';
+import { MarkdownView } from '@/components/stat-block/markdown-view';
+import { isToolEnabled } from '@/lib/feature-flags';
+import { WipPage } from '@/components/wip-page';
 import { Download, MoreHorizontal, Redo2, Scroll, Undo2, Upload } from 'lucide-react';
 import { KeyboardShortcutsHelp } from '@/components/ui/keyboard-shortcuts-help';
 import { ToolPageHeader } from '@/components/layout/tool-page-header';
@@ -122,6 +125,11 @@ function useSpellEditor(initialData: AnySpellData) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function SpellBlocksPage() {
+  if (!isToolEnabled('spell-blocks')) return <WipPage toolName="Spell Block Generator" />;
+  return <SpellBlocksContent />;
+}
+
+function SpellBlocksContent() {
   const isLightMode = useIsLightMode();
 
   const activeSystem = useActiveSystem();
@@ -153,6 +161,7 @@ export default function SpellBlocksPage() {
   } = useSpellEditor(initialData);
 
   const [currentFile, setCurrentFile] = useState<TableToolsFile<SpellFileData> | null>(null);
+  const [viewMode, setViewMode] = useState<'preview' | 'markdown'>('preview');
 
   const handleExport = useCallback(() => {
     const payload: SpellFileData = { systemId, spell };
@@ -352,7 +361,26 @@ export default function SpellBlocksPage() {
             <div className="max-w-lg shrink-0 mx-auto">
               <div className="lg:sticky lg:top-[88px]">
                 <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-medium text-zinc-500">Preview</h2>
+                  <div className="flex items-center gap-1">
+                    {(['preview', 'markdown'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setViewMode(mode)}
+                        className={cn(
+                          'rounded px-2 py-0.5 text-sm transition-colors',
+                          viewMode === mode
+                            ? isLightMode
+                              ? 'text-zinc-900 font-medium'
+                              : 'text-zinc-100 font-medium'
+                            : isLightMode
+                              ? 'text-zinc-400 hover:text-zinc-600'
+                              : 'text-zinc-600 hover:text-zinc-400'
+                        )}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
                   <span
                     className={cn(
                       'rounded-full px-2 py-0.5 text-xs',
@@ -362,7 +390,17 @@ export default function SpellBlocksPage() {
                     {currentSystem?.schema.metadata.name ?? systemId}
                   </span>
                 </div>
-                <SystemSpellView systemId={systemId} data={spell as Record<string, unknown>} />
+                {viewMode === 'preview' ? (
+                  <SystemSpellView systemId={systemId} data={spell as Record<string, unknown>} />
+                ) : (
+                  <MarkdownView
+                    markdown={
+                      currentSystem?.generateMarkdown?.(spell as never) ??
+                      '*(markdown not available for this system)*'
+                    }
+                    isLightMode={isLightMode}
+                  />
+                )}
               </div>
             </div>
           </ErrorBoundary>

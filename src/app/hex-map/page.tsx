@@ -5,11 +5,15 @@ import { HexMapCanvas } from '@/components/hex-map';
 import { ToolPageHeader } from '@/components/layout/tool-page-header';
 import { KeyboardShortcutsHelp } from '@/components/ui/keyboard-shortcuts-help';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
+import { isToolEnabled } from '@/lib/feature-flags';
+import { WipPage } from '@/components/wip-page';
 import { cn } from '@/lib/utils';
 import { Hexagon } from 'lucide-react';
 
 export default function HexMapPage() {
   const isLightMode = useIsLightMode();
+
+  if (!isToolEnabled('hex-map')) return <WipPage toolName="Hex Map" />;
 
   return (
     <div

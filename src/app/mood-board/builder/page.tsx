@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import { cn } from '@/lib/utils';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
+import { isToolEnabled } from '@/lib/feature-flags';
+import { WipPage } from '@/components/wip-page';
 import { ArrowLeft, Loader2, Wrench } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -26,6 +28,8 @@ const BoardBuilder = dynamic(
 
 export default function BuilderPage() {
   const isLightMode = useIsLightMode();
+
+  if (!isToolEnabled('mood-board')) return <WipPage toolName="Mood Board" />;
 
   return (
     <div

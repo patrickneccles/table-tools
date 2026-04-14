@@ -57,6 +57,8 @@ import {
 } from 'lucide-react';
 import { KeyboardShortcutsHelp } from '@/components/ui/keyboard-shortcuts-help';
 import { ToolPageHeader } from '@/components/layout/tool-page-header';
+import { isToolEnabled } from '@/lib/feature-flags';
+import { WipPage } from '@/components/wip-page';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Generic stat block data that can be any system's data
@@ -187,6 +189,11 @@ function useStatBlockEditor<T extends AnyStatBlockData>(initialData: T, onLoad?:
 // ============================================================================
 
 export default function StatBlocksPage() {
+  if (!isToolEnabled('stat-blocks')) return <WipPage toolName="Stat Block Generator" />;
+  return <StatBlocksContent />;
+}
+
+function StatBlocksContent() {
   const activeSystem = useActiveSystem();
   const systemId = resolveSystem(
     activeSystem,

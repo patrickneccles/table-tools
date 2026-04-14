@@ -2,6 +2,7 @@ import type { StatBlockSystem } from '@/components/stat-block/systems/base-syste
 import { DnD5e2024SpellRenderer } from './renderer';
 import type { DnD5e2024SpellData } from './types';
 import { SPELL_LEVEL_OPTIONS, SPELL_SCHOOL_OPTIONS } from './types';
+import { generateDnD5e2024SpellMarkdown } from './markdown';
 
 const DEFAULT_SPELL: DnD5e2024SpellData = {
   name: 'New Spell',
@@ -83,4 +84,5 @@ export const dnd5e2024SpellSystem: StatBlockSystem<DnD5e2024SpellData> = {
     ],
   },
   Renderer: DnD5e2024SpellRenderer,
+  generateMarkdown: generateDnD5e2024SpellMarkdown,
 };

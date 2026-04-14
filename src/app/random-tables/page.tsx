@@ -34,6 +34,8 @@ import {
   uploadFile,
 } from '@/lib/file-system';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
+import { isToolEnabled } from '@/lib/feature-flags';
+import { WipPage } from '@/components/wip-page';
 import { cn } from '@/lib/utils';
 import { Download, MoreHorizontal, Shuffle, Table2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -59,6 +61,11 @@ function saveToStorage(data: RandomTableData) {
 }
 
 export default function RandomTablesPage() {
+  if (!isToolEnabled('random-tables')) return <WipPage toolName="Random Tables" />;
+  return <RandomTablesContent />;
+}
+
+function RandomTablesContent() {
   const isLightMode = useIsLightMode();
 
   const [tableData, setTableData] = useState<RandomTableData>(DEFAULT_TABLE);

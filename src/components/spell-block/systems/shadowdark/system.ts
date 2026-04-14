@@ -2,6 +2,7 @@ import type { StatBlockSystem } from '@/components/stat-block/systems/base-syste
 import { ShadowdarkSpellRenderer } from './renderer';
 import type { ShadowdarkSpellData } from './types';
 import { TIER_OPTIONS } from './types';
+import { generateShadowdarkSpellMarkdown } from './markdown';
 
 const DEFAULT_SPELL: ShadowdarkSpellData = {
   name: 'New Spell',
@@ -60,4 +61,5 @@ export const shadowdarkSpellSystem: StatBlockSystem<ShadowdarkSpellData> = {
     ],
   },
   Renderer: ShadowdarkSpellRenderer,
+  generateMarkdown: generateShadowdarkSpellMarkdown,
 };

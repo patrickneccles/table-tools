@@ -3,6 +3,8 @@
 import { useState, useMemo } from 'react';
 import { MoodBoard, Mood, boardTemplates, BoardTemplate } from '@/components/mood-board';
 import { useIsLightMode } from '@/hooks/use-is-light-mode';
+import { isToolEnabled } from '@/lib/feature-flags';
+import { WipPage } from '@/components/wip-page';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Wrench, Loader2, Music } from 'lucide-react';
@@ -11,6 +13,11 @@ import { useAudioPreloader } from '@/lib/audio-manager';
 import { Button } from '@/components/ui/button';
 
 export default function MoodBoardPage() {
+  if (!isToolEnabled('mood-board')) return <WipPage toolName="Mood Board" />;
+  return <MoodBoardContent />;
+}
+
+function MoodBoardContent() {
   // Get the 3 main templates
   const templates = useMemo(() => {
     const forest = boardTemplates.find((t) => t.id === 'forest');

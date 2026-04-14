@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type FC } from 'react';
+import { useMemo, type FC, type RefObject } from 'react';
 import { useHexMapSettings } from './settings-context';
 import { Hex } from './hex';
 
@@ -34,6 +34,7 @@ interface HexGridProps {
   onEditingLabelChange?: (v: string) => void;
   onEditingConfirm?: () => void;
   onEditingCancel?: () => void;
+  svgRef?: RefObject<SVGSVGElement | null>;
 }
 
 function hexToPixel(
@@ -71,6 +72,7 @@ export const HexGrid: FC<HexGridProps> = ({
   onEditingLabelChange,
   onEditingConfirm,
   onEditingCancel,
+  svgRef,
 }) => {
   const ctx = useHexMapSettings();
   const finalSize = size ?? 20;
@@ -101,6 +103,7 @@ export const HexGrid: FC<HexGridProps> = ({
     <div className="h-full w-full overflow-auto">
       <div className="flex min-h-full min-w-full items-center justify-center p-4">
         <svg
+          ref={svgRef}
           width={width}
           height={height}
           style={{ touchAction: 'none' }}

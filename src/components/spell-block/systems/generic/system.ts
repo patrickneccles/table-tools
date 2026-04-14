@@ -2,6 +2,7 @@ import type { StatBlockSystem } from '@/components/stat-block/systems/base-syste
 import { GenericSpellRenderer } from './renderer';
 import type { GenericSpellData } from './types';
 import { SPELL_LEVEL_OPTIONS, SPELL_SCHOOL_OPTIONS } from './types';
+import { generateGenericSpellMarkdown } from './markdown';
 
 const DEFAULT_SPELL: GenericSpellData = {
   name: 'New Spell',
@@ -83,4 +84,5 @@ export const genericSpellSystem: StatBlockSystem<GenericSpellData> = {
     ],
   },
   Renderer: GenericSpellRenderer,
+  generateMarkdown: generateGenericSpellMarkdown,
 };

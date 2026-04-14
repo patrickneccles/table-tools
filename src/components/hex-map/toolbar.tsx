@@ -29,9 +29,11 @@ import {
 import { cn } from '@/lib/utils';
 import {
   Eraser,
+  ImageDown,
   Paintbrush,
   PaintBucket,
   Pipette,
+  Printer,
   Redo2,
   Settings,
   Type,
@@ -102,6 +104,8 @@ function StampTileSwatch({
 
 export interface HexMapToolbarProps {
   handleExport: () => void;
+  handleExportPNG: () => void;
+  handlePrint: () => void;
   handleImportClick: () => void;
   handleClear: () => void;
   onExpandEdge: (edge: ExpandMapEdge) => void;
@@ -121,6 +125,8 @@ export interface HexMapToolbarProps {
 export function HexMapToolbar(props: HexMapToolbarProps) {
   const {
     handleExport,
+    handleExportPNG,
+    handlePrint,
     handleImportClick,
     handleClear,
     onExpandEdge,
@@ -481,6 +487,14 @@ export function HexMapToolbar(props: HexMapToolbarProps) {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleExport}>
               Export <DropdownMenuShortcut>⌘E</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportPNG}>
+              <ImageDown className="mr-2 h-4 w-4" />
+              Export PNG
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" />
+              Print…
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleImportClick}>
               Import <DropdownMenuShortcut>⌘I</DropdownMenuShortcut>

@@ -115,6 +115,7 @@ const HexMapCanvasInner: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const size = 30 * zoom;
 
@@ -283,6 +284,117 @@ const HexMapCanvasInner: React.FC = () => {
     const file = base.name !== mapName ? renameFile(base, mapName) : base;
     setCurrentFile(file);
     downloadFile(file);
+  };
+
+  const handleExportPNG = () => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+
+    const svgClone = svgEl.cloneNode(true) as SVGSVGElement;
+
+    // Add white background rect as first child
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', String(svgEl.width.baseVal.value));
+    bg.setAttribute('height', String(svgEl.height.baseVal.value));
+    bg.setAttribute('fill', 'white');
+    svgClone.insertBefore(bg, svgClone.firstChild);
+
+    // Replace foreignObject stamp elements with native SVG paths so the canvas
+    // isn't tainted. Text editor foreignObjects (contain <input>) are dropped.
+    const liveFOs = Array.from(svgEl.querySelectorAll('foreignObject'));
+    const cloneFOs = Array.from(svgClone.querySelectorAll('foreignObject'));
+    cloneFOs.forEach((cloneFO, idx) => {
+      const liveFO = liveFOs[idx];
+      if (!liveFO || liveFO.querySelector('input')) {
+        cloneFO.remove();
+        return;
+      }
+      const innerSvg = liveFO.querySelector('svg');
+      if (!innerSvg) {
+        cloneFO.remove();
+        return;
+      }
+      const foX = parseFloat(cloneFO.getAttribute('x') ?? '0');
+      const foY = parseFloat(cloneFO.getAttribute('y') ?? '0');
+      const foW = parseFloat(cloneFO.getAttribute('width') ?? '24');
+      const foH = parseFloat(cloneFO.getAttribute('height') ?? '24');
+      const vbParts = (innerSvg.getAttribute('viewBox') ?? '0 0 24 24').split(' ').map(Number);
+      const vbW = vbParts[2] || 24;
+      const vbH = vbParts[3] || 24;
+      const iconSize = foW * 0.7;
+      const scale = iconSize / Math.max(vbW, vbH);
+      const cx = foX + foW / 2;
+      const cy = foY + foH / 2;
+      const colorDiv = liveFO.querySelector('div') as HTMLElement | null;
+      const iconColor = colorDiv?.style.color ?? '#333333';
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute(
+        'transform',
+        `translate(${cx - (vbW * scale) / 2}, ${cy - (vbH * scale) / 2}) scale(${scale})`
+      );
+      g.setAttribute('fill', 'none');
+      g.setAttribute('stroke', iconColor);
+      g.setAttribute('stroke-width', innerSvg.getAttribute('stroke-width') ?? '2');
+      g.setAttribute('stroke-linecap', innerSvg.getAttribute('stroke-linecap') ?? 'round');
+      g.setAttribute('stroke-linejoin', innerSvg.getAttribute('stroke-linejoin') ?? 'round');
+      Array.from(innerSvg.children).forEach((child) => {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', child.tagName);
+        Array.from(child.attributes).forEach((attr) => el.setAttribute(attr.name, attr.value));
+        g.appendChild(el);
+      });
+      cloneFO.parentNode?.replaceChild(g, cloneFO);
+    });
+
+    const svgStr = new XMLSerializer().serializeToString(svgClone);
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = svgEl.width.baseVal.value;
+      canvas.height = svgEl.height.baseVal.value;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((pngBlob) => {
+        if (!pngBlob) return;
+        const pngUrl = URL.createObjectURL(pngBlob);
+        const a = document.createElement('a');
+        a.href = pngUrl;
+        a.download = `${mapName || 'hex-map'}.png`;
+        a.click();
+        URL.revokeObjectURL(pngUrl);
+      }, 'image/png');
+    };
+    img.src = url;
+  };
+
+  const handlePrint = () => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+    const svgStr = new XMLSerializer().serializeToString(svgEl);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <title>${mapName || 'Hex Map'}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: white; }
+    svg { max-width: 100%; height: auto; }
+    @media print { body { min-height: unset; } }
+  </style>
+</head>
+<body>${svgStr}</body>
+</html>`);
+    win.document.close();
+    win.onload = () => {
+      win.focus();
+      win.print();
+    };
   };
 
   const handleImportClick = async () => {
@@ -494,6 +606,8 @@ const HexMapCanvasInner: React.FC = () => {
       <div className="order-1 flex w-full shrink-0 justify-center lg:order-2 lg:w-auto lg:items-start">
         <HexMapToolbar
           handleExport={handleExport}
+          handleExportPNG={handleExportPNG}
+          handlePrint={handlePrint}
           handleImportClick={handleImportClick}
           handleClear={handleClear}
           onExpandEdge={handleExpandEdge}
@@ -532,6 +646,7 @@ const HexMapCanvasInner: React.FC = () => {
           onEditingLabelChange={setEditingLabel}
           onEditingConfirm={handleEditingConfirm}
           onEditingCancel={handleEditingCancel}
+          svgRef={svgRef}
         />
         <SaveStatusIndicator status={saveStatus} />
         <div className="pointer-events-none absolute inset-0 z-10">
